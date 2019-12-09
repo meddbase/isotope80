@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.352
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Isotope79", "Isotope79\Isotope79.csproj", "{105C2048-CBC1-442C-A462-5BB3F7AB29C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Isotope79.Samples", "Isotope79.Samples\Isotope79.Samples.csproj", "{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{105C2048-CBC1-442C-A462-5BB3F7AB29C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{105C2048-CBC1-442C-A462-5BB3F7AB29C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{105C2048-CBC1-442C-A462-5BB3F7AB29C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{105C2048-CBC1-442C-A462-5BB3F7AB29C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F6AD43CD-EEA7-413E-A154-8A6BDA135639}
+	EndGlobalSection
+EndGlobal

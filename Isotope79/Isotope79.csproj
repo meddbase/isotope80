@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Isotope79</AssemblyTitle>
+    <Authors>Meddbase</Authors>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <LangVersion>7.3</LangVersion>
+    <!--<VersionSuffix>preview</VersionSuffix>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeGeneration.Roslyn.BuildTime" Version="0.6.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <DotNetCliToolReference Include="dotnet-codegen" Version="0.6.1" />
+    <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
+    <PackageReference Include="LanguageExt.CodeGen" Version="3.3.39" />
+    <PackageReference Include="LanguageExt.Core" Version="3.3.39" />
+    <PackageReference Include="Selenium.Support" Version="3.141.0" />
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+  </ItemGroup>
+
+</Project>
