@@ -30,11 +30,17 @@ namespace Isotope79.Samples
             context("Click Careers menu",
                     WaitThenClick(By.CssSelector("#menu-item-29 > a")));
 
-        public static Isotope<Unit> GoToPageAndOpenCareers =>
+        public static Isotope<Seq<string>> SelectVacancyTitles =>
+            from links in findElements(By.XPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))
+            let title = links.Map(x => x.Text)
+            select title;
+
+        public static Isotope<Seq<string>> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
             from _2 in ClickMoreMenu
             from _3 in ClickCareersMenu
-            select unit;
+            from titles in SelectVacancyTitles
+            select titles;
 
 
     }

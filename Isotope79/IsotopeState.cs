@@ -10,19 +10,17 @@ namespace Isotope79
     {
         public readonly Option<IWebDriver> Driver;
         public readonly Map<string, string> Configuration;
-        public readonly Option<IWebElement> TargettedElement;
         public readonly Option<string> Error;
         public readonly Log Log;
         public readonly TimeSpan DefaultWait;
         public readonly TimeSpan DefaultInterval;
 
         public static IsotopeState Empty =
-            new IsotopeState(default, default, default, default, Log.Empty, TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(500));
+            new IsotopeState(default, default, default, Log.Empty, TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(500));
 
         private IsotopeState(
             Option<IWebDriver> driver,
-            Map<string, string> configuration, 
-            Option<IWebElement> targettedElement, 
+            Map<string, string> configuration,
             Option<string> error, 
             Log log, 
             TimeSpan defaultWait,
@@ -30,7 +28,6 @@ namespace Isotope79
         {            
             Driver = driver;
             Configuration = configuration;
-            TargettedElement = targettedElement;
             Error = error;
             Log = log;
             DefaultWait = defaultWait;

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using static LanguageExt.Prelude;
+
 namespace Isotope79
 {
     public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
@@ -23,8 +24,11 @@ namespace Isotope79
             return (res.State.Error, res.State.Log, res.Value);
         }
 
-        public static Option<string> Run<A>(this Isotope<A> ma, IWebDriver driver) =>
-            ma(IsotopeState.Empty.With(Driver: Some(driver))).State.Error;
+        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IWebDriver driver)
+        {
+            var res = ma(IsotopeState.Empty.With(Driver: Some(driver)));
+            return (res.State.Error, res.State.Log, res.Value);
+        }
 
         /// <summary>
         /// Run the test computation - throws and error if it fails to pass
@@ -64,12 +68,6 @@ namespace Isotope79
             from s in get
             from r in s.Configuration.Find(key).ToIsotope($"Configuration key not found: {key}")
             select r;
-
-        /// <summary>
-        /// Gets any set target
-        /// </summary>
-        public static Isotope<IWebElement> getTarget =>
-            get.Bind(s => s.TargettedElement.ToIsotope("Target has not been set"));
 
         public static Isotope<Unit> setWindowSize(int width, int height) =>
             from d in webDriver
@@ -322,15 +320,6 @@ namespace Isotope79
         public static Isotope<Unit> sendKeys(IWebElement element, string keys) =>
             Try(() => { element.SendKeys(keys); return unit; }).ToIsotope($@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
 
-        /// <summary>
-        /// Simulates keyboard by sending `keys` to the target
-        /// </summary>
-        /// <param name="keys">String of characters that are typed</param>
-        public static Isotope<Unit> sendKeys(string keys) =>
-            from t in getTarget
-            from _ in sendKeys(t, keys)
-            select unit;
-
         public static Isotope<Unit> click(By selector) =>
             from el in findElement(selector)
             from _ in click(el)
@@ -371,32 +360,6 @@ namespace Isotope79
         /// <param name="element">Element containing value</param>
         public static Isotope<string> value(IWebElement element) =>
             Try(() => element.GetAttribute("Value")).ToIsotope($@"Error getting value from element: {element.PrettyPrint()}");
-
-        /// <summary>
-        /// Select a target
-        /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<Unit> target(By selector, string errorMessage = null) =>
-            from d in webDriver
-            from e in findElement(selector, errorMessage: errorMessage)
-            from s in get
-            from _ in put(s.With(TargettedElement: Some(e)))
-            select unit;
-
-        /// <summary>
-        /// Select a target
-        /// </summary>
-        /// <param name="cssSelector">Selector</param>
-        public static Isotope<Unit> target(string cssSelector, string errorMessage = null) =>
-            target(By.CssSelector(cssSelector), errorMessage);
-
-        /// <summary>
-        /// Click the target
-        /// </summary>
-        public static Isotope<Unit> clickTarget =>
-            from t in getTarget
-            from _ in click(t)
-            select unit;
 
         /// <summary>
         /// Web driver accessor - set by the foreachBrowser call
