@@ -382,14 +382,14 @@ namespace Isotope79
         /// </summary>
         public static Isotope<TimeSpan> defaultWait =>
             from s in get
-            select s.DefaultWait;
+            select s.Settings.Wait;
 
         /// <summary>
         /// Default wait accessor
         /// </summary>
         public static Isotope<TimeSpan> defaultInterval =>
             from s in get
-            select s.DefaultInterval;
+            select s.Settings.Interval;
 
         /// <summary>
         /// Identity - lifts a value of `A` into the Isotope monad
@@ -459,12 +459,12 @@ namespace Isotope79
         /// </summary>
         public static Isotope<Unit> log(string message) =>
             from st in get
-            from _1 in put(st.Write(message, (x,y) => Console.WriteLine(new string('\t', y) + x)))
+            from _1 in put(st.Write(message, st.Settings.LoggingAction))
             select unit;
 
         public static Isotope<Unit> pushLog(string message) =>
             from st in get
-            from _1 in put(st.PushLog(message, (x, y) => Console.WriteLine(new string('\t', y) + x)))
+            from _1 in put(st.PushLog(message, st.Settings.LoggingAction))
             select unit;
 
         public static Isotope<Unit> popLog =>

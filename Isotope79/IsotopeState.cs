@@ -1,7 +1,6 @@
 ﻿using LanguageExt;
 using OpenQA.Selenium;
 using System;
-using static LanguageExt.Prelude;
 
 namespace Isotope79
 {
@@ -9,29 +8,26 @@ namespace Isotope79
     public partial class IsotopeState
     {
         public readonly Option<IWebDriver> Driver;
+        public readonly IsotopeSettings Settings;
         public readonly Map<string, string> Configuration;
         public readonly Option<string> Error;
         public readonly Log Log;
-        public readonly TimeSpan DefaultWait;
-        public readonly TimeSpan DefaultInterval;
 
         public static IsotopeState Empty =
-            new IsotopeState(default, default, default, Log.Empty, TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(500));
+            new IsotopeState(default, IsotopeSettings.Create(), default, default, Log.Empty);
 
         private IsotopeState(
             Option<IWebDriver> driver,
+            IsotopeSettings settings,
             Map<string, string> configuration,
             Option<string> error, 
-            Log log, 
-            TimeSpan defaultWait,
-            TimeSpan defaultInterval)
+            Log log)
         {            
             Driver = driver;
+            Settings = settings;
             Configuration = configuration;
             Error = error;
             Log = log;
-            DefaultWait = defaultWait;
-            DefaultInterval = defaultInterval;
         }
 
         public IsotopeState Write(string log, Action<string, int> action) =>
