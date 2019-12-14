@@ -7,7 +7,7 @@ namespace Isotope79.Samples
     {
         static void Main(string[] args)
         {
-            var result = Meddbase.GoToPageAndOpenCareers.Run(new ChromeDriver());
+            var result = Meddbase.GoToPageAndOpenCareers.Run(new ChromeDriver(), IsotopeSettings.Create(loggingAction: (x,y) => Console.WriteLine(new string('\t', y) + x)));
             
             Console.Clear();
             

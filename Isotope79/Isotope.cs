@@ -17,16 +17,17 @@ namespace Isotope79
         /// The computation succeeds if result.IsNone is true
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma)
+        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty);
+            var res = ma(IsotopeState.Empty.With(Settings: settings));
 
             return (res.State.Error, res.State.Log, res.Value);
         }
 
-        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IWebDriver driver)
+        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty.With(Driver: Some(driver)));
+            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+
             return (res.State.Error, res.State.Log, res.Value);
         }
 
@@ -68,6 +69,11 @@ namespace Isotope79
             from s in get
             from r in s.Configuration.Find(key).ToIsotope($"Configuration key not found: {key}")
             select r;
+
+        public static Isotope<Unit> initSettings(IsotopeSettings settings) =>
+            from s in get
+            from _ in put(s.With(Settings: settings))
+            select unit;
 
         public static Isotope<Unit> setWindowSize(int width, int height) =>
             from d in webDriver
