@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using LanguageExt;
 using OpenQA.Selenium;
 using static Isotope79.Isotope;
@@ -10,6 +8,11 @@ namespace Isotope79
 {
     public static class Assertions
     {
+        public static Isotope<Unit> assert(Isotope<bool> fact, string label) =>
+            from f in fact
+            from _ in assert(f, label)
+            select unit;
+        
         public static Isotope<Unit> assert(Func<bool> fact, string label) =>
             assert(fact(), label);
 
@@ -26,20 +29,16 @@ namespace Isotope79
 
         public static Isotope<Unit> assertElementHasText(IWebElement el, string expected) =>
             from _ in assertElementIsDisplayed(el)
-            from re in assert(() => el.Text == expected, $@"Expected element ""{el}"" to have text ""{expected}"" but it was ""{el.Text}""")
+            from re in assert(hasText(el, expected), $@"Expected element ""{el}"" to have text ""{expected}"" but it was ""{el.Text}""")
             select unit;
 
         public static Isotope<Unit> assertElementIsDisplayed(string cssSelector) =>
             assertElementIsDisplayed(By.CssSelector(cssSelector));
 
         public static Isotope<Unit> assertElementIsDisplayed(By selector) =>
-            from el in findElement(selector)
-            from re in assertElementIsDisplayed(el)
-            select unit;
+            assert(displayed(selector), $@"Expected selector ""{selector}"" to be displayed.");
 
         public static Isotope<Unit> assertElementIsDisplayed(IWebElement el) =>
-            assert(() => el.Displayed, $@"Expected element ""{el}"" to be displayed.");
-
-
+            assert(displayed(el), $@"Expected element ""{el}"" to be displayed.");
     }
 }

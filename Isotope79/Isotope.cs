@@ -739,6 +739,10 @@ namespace Isotope79
             from _1  in log($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
             select !element.Equals(top);
 
+        public static Isotope<bool> hasText(IWebElement element, string comparison) =>
+            from t in text(element)
+            select t == comparison;
+
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
             Func<A, bool> continueCondition) =>
