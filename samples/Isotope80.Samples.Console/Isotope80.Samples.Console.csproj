@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Isotope79\Isotope79.csproj" />
+    <ProjectReference Include="..\..\src\Isotope80\Isotope80.csproj" />
   </ItemGroup>
 
 </Project>

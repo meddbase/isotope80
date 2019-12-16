@@ -1,12 +1,9 @@
 ﻿using LanguageExt;
 using OpenQA.Selenium;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using static LanguageExt.Prelude;
 using static Isotope79.Isotope;
 
-namespace Isotope79.Samples
+namespace Isotope79.Samples.Console
 {
     public static class Meddbase
     {
@@ -41,7 +38,5 @@ namespace Isotope79.Samples
             from _3 in ClickCareersMenu
             from titles in SelectVacancyTitles
             select titles;
-
-
     }
 }
