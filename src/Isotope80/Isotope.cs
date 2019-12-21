@@ -35,9 +35,9 @@ namespace Isotope79
         /// Run the test computation - throws and error if it fails to pass
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static Unit RunAndThrowOnError<A>(this Isotope<A> ma)
+        public static Unit RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var s = ma(IsotopeState.Empty).State;
+            var s = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings)).State;
 
             return s.Error.Match(
                 Some: x => failwith<Unit>(x),
