@@ -1,16 +1,21 @@
-﻿using LanguageExt;
-using OpenQA.Selenium;
-using static LanguageExt.Prelude;
+﻿using Isotope80;
+using System;
+using Xunit;
 using static Isotope80.Isotope;
+using static Isotope80.Assertions;
+using LanguageExt;
+using static LanguageExt.Prelude;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 
-namespace Isotope80.Samples.Console
+namespace Isotope80.Samples.UnitTests
 {
-    public static class Meddbase
+    public class Careers
     {
         public static Isotope<Unit> GoToDesktopSite =>
             context("Go to Desktop Site",
                     from _1 in log("Update Window Size")
-                    from _2 in setWindowSize(1280,960)
+                    from _2 in setWindowSize(1280, 960)
                     from _3 in nav("https://www.meddbase.com")
                     select unit);
 
@@ -32,11 +37,23 @@ namespace Isotope80.Samples.Console
             let title = links.Map(x => x.Text)
             select title;
 
-        public static Isotope<Seq<string>> GoToPageAndOpenCareers =>
+        public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
             from _2 in ClickMoreMenu
             from _3 in ClickCareersMenu
-            from titles in SelectVacancyTitles
-            select titles;
+            select unit;
+
+        [Fact]
+        public void CareersMenuItemLoadsCareersPage() 
+        {
+            var expected = "https://www.meddbase.com/careers/";
+
+            var iso = from _1  in GoToPageAndOpenCareers
+                      from url in url
+                      from _2  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
+                      select unit;
+
+            iso.RunAndThrowOnError(new ChromeDriver());
+        }
     }
 }

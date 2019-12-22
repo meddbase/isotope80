@@ -2,7 +2,7 @@
 using System;
 using static LanguageExt.Prelude;
 
-namespace Isotope79
+namespace Isotope80
 {
     public class Log
     {

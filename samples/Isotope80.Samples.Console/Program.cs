@@ -1,7 +1,7 @@
 ﻿using OpenQA.Selenium.Chrome;
 using static System.Console;
 
-namespace Isotope79.Samples.Console
+namespace Isotope80.Samples.Console
 {
     class Program
     {

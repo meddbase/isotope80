@@ -2,7 +2,7 @@
 using OpenQA.Selenium;
 using System;
 
-namespace Isotope79
+namespace Isotope80
 {
     [With]
     public partial class IsotopeState

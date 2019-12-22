@@ -1,7 +1,7 @@
 ﻿using LanguageExt;
 using System;
 
-namespace Isotope79
+namespace Isotope80
 {
     [With]
     public partial class IsotopeSettings

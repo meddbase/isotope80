@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using static LanguageExt.Prelude;
 
-namespace Isotope79
+namespace Isotope80
 {
     public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
 

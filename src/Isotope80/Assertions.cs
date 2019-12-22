@@ -1,10 +1,10 @@
 ﻿using System;
 using LanguageExt;
 using OpenQA.Selenium;
-using static Isotope79.Isotope;
+using static Isotope80.Isotope;
 using static LanguageExt.Prelude;
 
-namespace Isotope79
+namespace Isotope80
 {
     public static class Assertions
     {
