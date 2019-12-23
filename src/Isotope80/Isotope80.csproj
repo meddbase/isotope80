@@ -2,12 +2,20 @@
 
   <PropertyGroup>
     <AssemblyTitle>Isotope79</AssemblyTitle>
-    <Authors>Meddbase</Authors>
+    <Authors>Medical Management Systems</Authors>
+    <Company />
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>beta</VersionSuffix>
     <LangVersion>7.3</LangVersion>
-    <!--<VersionSuffix>preview</VersionSuffix>-->
+    <RepositoryUrl>https://github.com/meddbase/isotope80</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/meddbase/isotope80/LICENSE</PackageLicenseUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Functional C# wrapper around Selenium and WebDriver for browser automation</Description>
+    <NeutralLanguage></NeutralLanguage>
+    <PackageTags>Selenium WebDriver Language-Ext</PackageTags>
+    <PackageProjectUrl>https://github.com/meddbase/isotope80</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
