@@ -6,11 +6,11 @@
     <Company />
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>0.0.0</VersionPrefix>
     <VersionSuffix>beta</VersionSuffix>
     <LangVersion>8.0</LangVersion>
     <RepositoryUrl>https://github.com/meddbase/isotope80</RepositoryUrl>
-    <PackageLicenseUrl>https://github.com/meddbase/isotope80/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Functional C# wrapper around Selenium and WebDriver for browser automation</Description>
     <NeutralLanguage></NeutralLanguage>
