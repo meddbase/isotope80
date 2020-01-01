@@ -1,6 +1,7 @@
 ﻿using LanguageExt;
 using OpenQA.Selenium;
 using System;
+using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
@@ -38,6 +39,12 @@ namespace Isotope80
 
         public IsotopeState PopLog() =>
             With(Log: Log.Pop());
+
+        public Unit DisposeWebDriver() =>
+            Driver.Match(
+                Some: d => { d.Quit(); return unit; },
+                None: () => unit);
+        
     }
 
     public class IsotopeState<A>

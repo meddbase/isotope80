@@ -39,6 +39,8 @@ namespace Isotope80
         {
             var s = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings)).State;
 
+            var d = s.DisposeWebDriver();
+
             return s.Error.Match(
                 Some: x => failwith<Unit>(x),
                 None: () => unit);
@@ -381,6 +383,11 @@ namespace Isotope80
         public static Isotope<Unit> setWebDriver(IWebDriver d) =>
             from s in get
             from _ in put(s.With(Driver: Some(d)))
+            select unit;
+
+        public static Isotope<Unit> disposeWebDriver =>
+            from d in webDriver
+            from _ in Try(() => { d.Quit(); return unit; }).ToIsotope("Exception whilst disposing of webdriver.")
             select unit;
 
         /// <summary>
