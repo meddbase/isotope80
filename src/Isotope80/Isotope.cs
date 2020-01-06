@@ -21,12 +21,22 @@ namespace Isotope80
         {
             var res = ma(IsotopeState.Empty.With(Settings: settings));
 
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+
             return (res.State.Error, res.State.Log, res.Value);
         }
 
         public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
             var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
 
             return (res.State.Error, res.State.Log, res.Value);
         }
@@ -39,7 +49,10 @@ namespace Isotope80
         {
             var s = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings)).State;
 
-            var d = s.DisposeWebDriver();
+            if (s.Settings.DisposeOnCompletion)
+            {
+                s.DisposeWebDriver();
+            }
 
             return s.Error.Match(
                 Some: x => failwith<Unit>(x),
