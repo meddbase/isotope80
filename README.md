@@ -30,3 +30,14 @@ When the complexity and volume of automation code increases you start to encount
 
 ## DSL
 Isotope provides a domain specific language which addresses the problems previously outlined and results in composable code that wraps up the complexity of logging, error handling, driver instance management and passing config behind the scenes allowing you to focus on automation code.
+
+```cs
+//Create the driver for Chrome
+var driver = new ChromeDriver();
+
+var result = from _1 in nav("https://twitter.com/login")
+             from _2 in sendKeys(By.ClassName("js-username-field"), "Your Email Address")
+             from _3 in sendKeys(By.ClassName("js-password-field"), "Your Password")
+             from _4 in sendKeys(By.CssSelector("button.submit"), Keys.Enter)
+             select unit;
+```
