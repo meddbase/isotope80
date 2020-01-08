@@ -35,9 +35,11 @@ Isotope provides a domain specific language which addresses the problems previou
 //Create the driver for Chrome
 var driver = new ChromeDriver();
 
-var result = from _1 in nav("https://twitter.com/login")
+var logic =  from _1 in nav("https://twitter.com/login")
              from _2 in sendKeys(By.ClassName("js-username-field"), "Your Email Address")
              from _3 in sendKeys(By.ClassName("js-password-field"), "Your Password")
              from _4 in sendKeys(By.CssSelector("button.submit"), Keys.Enter)
              select unit;
+             
+var result = logic.Run(driver);
 ```
