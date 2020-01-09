@@ -1,7 +1,7 @@
 *<sup>80</sup>Se : the most abundant stable isotope of Selenium*
 
 # Isotope80
-Isotope80 (Isotope hereafter) is a functional C# wrapper around Selenium and WebDriver for browser automation. It aims to provide a frictionless way to write declarative, composable statements that can then be run using a WebDriver instance. 
+Isotope80 (Isotope hereafter) is a functional C# wrapper around Selenium and WebDriver for browser automation. It aims to provide a frictionless way to write declarative, composable statements that can then be run using a WebDriver instance. It builds on the functional C# base class library provided by [Language-Ext](https://github.com/louthy/language-ext).
 
 ## Motivation
 Using Selenium in C# often seems trivial at first glance. The Nuget packages can easily be installed and then you can quickly start to automate a browser instance. Here's a quick example of logging into Twitter:
@@ -29,7 +29,7 @@ loginButton.SendKeys(Keys.Enter);
 When the complexity and volume of automation code increases you start to encounter issues. As you break parts of your code into reusable steps you start to need to pass the WebDriver instance around (or worse reference it globally), to get reproducible steps you may need to add logging code, you might need to pass config around and you start to need error handling strategies. Null reference exceptions are common when you attempt to access elements within a page that do not exist and if not handled then you can leave browsers running beyond the lifetime of your program. None of the problems are insurmountable but each one makes the originally trivial and readable code more complex and much harder to maintain.
 
 ## DSL
-Isotope provides a domain specific language which addresses the problems previously outlined and results in composable code that wraps up the complexity of logging, error handling, driver instance management and passing config behind the scenes allowing you to focus on automation code.
+Isotope provides a domain specific language which addresses the problems previously outlined and results in composable code that wraps up the complexity of logging, error handling, driver instance management and passing config behind the scenes allowing you to focus on automation code. The equivalent of the Twitter example in Isotope would be:
 
 ```cs
 //Create the driver for Chrome
@@ -43,3 +43,18 @@ var logic =  from _1 in nav("https://twitter.com/login")
              
 var result = logic.Run(driver);
 ```
+
+## Getting Started
+Isotope can be installed via [Nuget](https://www.nuget.org/packages/Isotope80/0.0.0-beta)
+
+`PM> Install-Package Isotope80 -Version 0.0.0-beta`
+
+Isotope is intended to be referenced via a `using static` statement so that the functions are able to be accessed in a very terse way.
+
+```cs
+using LanguageExt;
+using OpenQA.Selenium;
+using static LanguageExt.Prelude;
+using static Isotope80.Isotope;
+```
+
