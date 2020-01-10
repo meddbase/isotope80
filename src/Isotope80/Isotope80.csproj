@@ -16,6 +16,8 @@
     <NeutralLanguage></NeutralLanguage>
     <PackageTags>Selenium WebDriver Language-Ext</PackageTags>
     <PackageProjectUrl>https://github.com/meddbase/isotope80</PackageProjectUrl>
+      <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
