@@ -58,3 +58,12 @@ using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 ```
 
+Isotope depends on the [Selenium WebDriver](https://www.nuget.org/packages/Selenium.WebDriver) Nuget package but it doesn't include any implementations of `IWebDriver`. To run against a browser you will need the relevant WebDriver package, for example:
+
+- [ChromeDriver](https://www.nuget.org/packages/Selenium.WebDriver.ChromeDriver)
+- [IEDriver](https://www.nuget.org/packages/Selenium.WebDriver.IEDriver/)
+
+The examples presented here will use ChromeDriver and assume that you have both `Isotope80.Isotope` and `LanguageExt.Prelude` as static usings.
+
+## Running Within a Test Framework
+A common mechanism for running web automation tests it to utilise a unit testing framework such as NUnit or XUnit. These frameworks rely on catching exceptions to determine if a test has failed. Since Isotope handles exceptions for you we provide a special function to use for this purpose: `RunAndThrowOnError`. This function runs the automation and if the end result is a failure it handles cleaning up your WebDriver instance before throwing the exception for the test framework to deal with.
