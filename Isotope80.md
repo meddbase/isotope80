@@ -177,14 +177,15 @@ Namespace: Isotope80
 
 | Name | Returns | Summary |
 |---|---|---|
-| **Create(bool? disposeOnCompletion, Action\<string, int\> loggingAction, TimeSpan? wait, TimeSpan? interval)** | [IsotopeSettings](#isotopesettings-class) |  |
-| **With(bool? DisposeOnCompletion, Action\<string, int\> LoggingAction, TimeSpan? Wait, TimeSpan? Interval)** | [IsotopeSettings](#isotopesettings-class) |  |
+| **Create(bool? disposeOnCompletion, Action\<string, int\> loggingAction, Action\<string, [Log](#log-class)\> failureAction, TimeSpan? wait, TimeSpan? interval)** | [IsotopeSettings](#isotopesettings-class) |  |
+| **With(bool? DisposeOnCompletion, Action\<string, int\> LoggingAction, Action\<string, [Log](#log-class)\> FailureAction, TimeSpan? Wait, TimeSpan? Interval)** | [IsotopeSettings](#isotopesettings-class) |  |
 ## Fields
 
 | Name | Type | Summary |
 |---|---|---|
 | **DisposeOnCompletion** | bool |  |
 | **LoggingAction** | Action\<string, int\> |  |
+| **FailureAction** | Action\<string, [Log](#log-class)\> |  |
 | **Wait** | TimeSpan |  |
 | **Interval** | TimeSpan |  |
 # IsotopeState Class

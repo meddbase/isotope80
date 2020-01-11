@@ -55,7 +55,7 @@ namespace Isotope80
             }
 
             return s.Error.Match(
-                Some: x => failwith<Unit>(x),
+                Some: x => { s.Settings.FailureAction(x, s.Log); return failwith<Unit>(x); },
                 None: () => unit);
         }
 

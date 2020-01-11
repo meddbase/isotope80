@@ -7,11 +7,19 @@ using LanguageExt;
 using static LanguageExt.Prelude;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using Xunit.Abstractions;
 
 namespace Isotope80.Samples.UnitTests
 {
     public class Careers
     {
+        private readonly ITestOutputHelper output;
+
+        public Careers(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         public static Isotope<Unit> GoToDesktopSite =>
             context("Go to Desktop Site",
                     from _1 in log("Update Window Size")
@@ -52,8 +60,13 @@ namespace Isotope80.Samples.UnitTests
                       from url in url
                       from _2  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
                       select unit;
+           
+            Action<string, Log> xunitOutput = 
+                (x,y) => output.WriteLine(y.ToString());
 
-            iso.RunAndThrowOnError(new ChromeDriver());
+            var result = iso.RunAndThrowOnError(new ChromeDriver(), settings: IsotopeSettings.Create(failureAction: xunitOutput));
         }
+
+
     }
 }
