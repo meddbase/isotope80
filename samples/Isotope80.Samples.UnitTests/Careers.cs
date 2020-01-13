@@ -64,9 +64,7 @@ namespace Isotope80.Samples.UnitTests
             Action<string, Log> xunitOutput = 
                 (x,y) => output.WriteLine(y.ToString());
 
-            var result = iso.RunAndThrowOnError(new ChromeDriver(), settings: IsotopeSettings.Create(failureAction: xunitOutput));
+            (var state, var value) = iso.RunAndThrowOnError(new ChromeDriver(), settings: IsotopeSettings.Create(failureAction: xunitOutput));
         }
-
-
     }
 }

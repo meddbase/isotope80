@@ -5,16 +5,20 @@ using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
-    [With]
     public partial class IsotopeState
     {
-        public readonly Option<IWebDriver> Driver;
-        public readonly IsotopeSettings Settings;
-        public readonly Map<string, string> Configuration;
+        internal readonly Option<IWebDriver> Driver;
+        internal readonly IsotopeSettings Settings;
+        internal readonly Map<string, string> Configuration;
         public readonly Option<string> Error;
         public readonly Log Log;
 
-        public static IsotopeState Empty =
+        public static IsotopeState Create(IsotopeSettings settings) =>
+            Empty.With(Settings: settings);
+
+        internal IsotopeState With(Option<IWebDriver>? Driver = null, IsotopeSettings Settings = null, Map<string, string>? Configuration = null, Option<string>? Error = null, Log Log = null) => new IsotopeState(Driver ?? this.Driver, Settings ?? this.Settings, Configuration ?? this.Configuration, Error ?? this.Error, Log ?? this.Log);
+
+        internal static IsotopeState Empty =
             new IsotopeState(default, IsotopeSettings.Create(), default, default, Log.Empty);
 
         private IsotopeState(
@@ -31,20 +35,19 @@ namespace Isotope80
             Log = log;
         }
 
-        public IsotopeState Write(string log, Action<string, int> action) =>
+        internal IsotopeState Write(string log, Action<string, int> action) =>
             With(Log: Log.Append(log, action));
 
-        public IsotopeState PushLog(string log, Action<string, int> action) =>
+        internal IsotopeState PushLog(string log, Action<string, int> action) =>
             With(Log: Log.Push(log, action));
 
-        public IsotopeState PopLog() =>
+        internal IsotopeState PopLog() =>
             With(Log: Log.Pop());
 
-        public Unit DisposeWebDriver() =>
+        internal Unit DisposeWebDriver() =>
             Driver.Match(
                 Some: d => { d.Quit(); return unit; },
-                None: () => unit);
-        
+                None: () => unit);       
     }
 
     public class IsotopeState<A>

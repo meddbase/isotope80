@@ -11,8 +11,7 @@ namespace Isotope80.Samples.Console
             Action<string, int> consoleLogger =
                 (x, y) => WriteLine(new string('\t', y) + x);
 
-
-            var result = Meddbase.GoToPageAndOpenCareers.Run(
+            (var state, var value) = Meddbase.GoToPageAndOpenCareers.Run(
                 new ChromeDriver(), 
                     IsotopeSettings.Create(
                         loggingAction: consoleLogger));
@@ -21,13 +20,13 @@ namespace Isotope80.Samples.Console
             
             WriteLine("Current Vacancies:\n");
 
-            result.error.Match(
+            state.Error.Match(
                 Some: x => WriteLine($"ERROR: {x}"),
-                None: () => result.value.Iter(x => WriteLine(x)));
+                None: () => value.Iter(x => WriteLine(x)));
 
             WriteLine("\n\nLogs:\n");
 
-            WriteLine(result.log.ToString());
+            WriteLine(state.Log.ToString());
 
             WriteLine();
         }

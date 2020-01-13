@@ -17,7 +17,7 @@ namespace Isotope80
         /// The computation succeeds if result.IsNone is true
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IsotopeSettings settings = null)
         {
             var res = ma(IsotopeState.Empty.With(Settings: settings));
 
@@ -26,10 +26,10 @@ namespace Isotope80
                 res.State.DisposeWebDriver();
             }
 
-            return (res.State.Error, res.State.Log, res.Value);
+            return(res.State, res.Value);
         }
 
-        public static (Option<string> error, Log log, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
             var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
@@ -38,25 +38,27 @@ namespace Isotope80
                 res.State.DisposeWebDriver();
             }
 
-            return (res.State.Error, res.State.Log, res.Value);
+            return (res.State, res.Value);
         }
 
         /// <summary>
         /// Run the test computation - throws and error if it fails to pass
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static Unit RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var s = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings)).State;
+            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
-            if (s.Settings.DisposeOnCompletion)
+            if (res.State.Settings.DisposeOnCompletion)
             {
-                s.DisposeWebDriver();
+                res.State.DisposeWebDriver();
             }
 
-            return s.Error.Match(
-                Some: x => { s.Settings.FailureAction(x, s.Log); return failwith<Unit>(x); },
+            res.State.Error.Match(
+                Some: x => { res.State.Settings.FailureAction(x, res.State.Log); return failwith<Unit>(x); },
                 None: () => unit);
+
+            return (res.State, res.Value);
         }
 
         /// <summary>
@@ -399,9 +401,8 @@ namespace Isotope80
             select unit;
 
         public static Isotope<Unit> disposeWebDriver =>
-            from d in webDriver
-            from _ in Try(() => { d.Quit(); return unit; }).ToIsotope("Exception whilst disposing of webdriver.")
-            select unit;
+            from s in get
+            select s.DisposeWebDriver();
 
         /// <summary>
         /// Default wait accessor
