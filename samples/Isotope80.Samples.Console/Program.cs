@@ -1,4 +1,5 @@
 ﻿using OpenQA.Selenium.Chrome;
+using System;
 using static System.Console;
 
 namespace Isotope80.Samples.Console
@@ -7,7 +8,14 @@ namespace Isotope80.Samples.Console
     {
         static void Main(string[] args)
         {
-            var result = Meddbase.GoToPageAndOpenCareers.Run(new ChromeDriver(), IsotopeSettings.Create(loggingAction: (x,y) => WriteLine(new string('\t', y) + x)));
+            Action<string, int> consoleLogger =
+                (x, y) => WriteLine(new string('\t', y) + x);
+
+
+            var result = Meddbase.GoToPageAndOpenCareers.Run(
+                new ChromeDriver(), 
+                    IsotopeSettings.Create(
+                        loggingAction: consoleLogger));
             
             Clear();
             
