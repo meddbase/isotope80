@@ -103,9 +103,9 @@ Namespace: Isotope80
 | **pure(A value)** | Isotope\<A\> | Identity - lifts a value of `A` into the Isotope monad<br><br>* Always succeeds * |
 | **pushLog(string message)** | Isotope\<Unit\> |  |
 | **put([IsotopeState](#isotopestate-class) state)** | Isotope\<Unit\> | Puts the state back into the Isotope monad |
-| **Run(Isotope\<A\> ma, [IsotopeSettings](#isotopesettings-class) settings)** | (Option\<string\> error, [Log](#log-class) log, A value) | Run the test computation - returning an optional error. <br>The computation succeeds if result.IsNone is true |
-| **Run(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | (Option\<string\> error, [Log](#log-class) log, A value) |  |
-| **RunAndThrowOnError(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | Unit | Run the test computation - throws and error if it fails to pass |
+| **Run(Isotope\<A\> ma, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) | Run the test computation - returning an optional error. <br>The computation succeeds if result.IsNone is true |
+| **Run(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) |  |
+| **RunAndThrowOnError(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) | Run the test computation - throws and error if it fails to pass |
 | **Select(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
 | **selectByText(string cssSelector, string text)** | Isotope\<Unit\> |  |
 | **selectByText(By selector, string text)** | Isotope\<Unit\> |  |
@@ -197,21 +197,13 @@ Namespace: Isotope80
 
 | Name | Returns | Summary |
 |---|---|---|
-| **DisposeWebDriver()** | Unit |  |
-| **PopLog()** | [IsotopeState](#isotopestate-class) |  |
-| **PushLog(string log, Action\<string, int\> action)** | [IsotopeState](#isotopestate-class) |  |
-| **With(Option\<IWebDriver\>? Driver, [IsotopeSettings](#isotopesettings-class) Settings, Map\<string, string\>? Configuration, Option\<string\>? Error, [Log](#log-class) Log)** | [IsotopeState](#isotopestate-class) |  |
-| **Write(string log, Action\<string, int\> action)** | [IsotopeState](#isotopestate-class) |  |
+| **Create([IsotopeSettings](#isotopesettings-class) settings)** | [IsotopeState](#isotopestate-class) |  |
 ## Fields
 
 | Name | Type | Summary |
 |---|---|---|
-| **Driver** | Option\<IWebDriver\> |  |
-| **Settings** | [IsotopeSettings](#isotopesettings-class) |  |
-| **Configuration** | Map\<string, string\> |  |
 | **Error** | Option\<string\> |  |
 | **Log** | [Log](#log-class) |  |
-| **Empty** | [IsotopeState](#isotopestate-class) |  |
 # IsotopeState<A> Class
 
 Namespace: Isotope80
