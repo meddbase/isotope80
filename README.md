@@ -67,3 +67,44 @@ The examples presented here will use ChromeDriver and assume that you have both 
 
 ## Running Within a Test Framework
 A common mechanism for running web automation tests it to utilise a unit testing framework such as NUnit or XUnit. These frameworks rely on catching exceptions to determine if a test has failed. Since Isotope handles exceptions for you we provide a special function to use for this purpose: `RunAndThrowOnError`. This function runs the automation and if the end result is a failure it handles cleaning up your WebDriver instance before throwing the exception for the test framework to deal with.
+
+## Logging
+Isotope provides a built in logging mechnanism to ensure that detailed output of browser automations can be gathered. Anywhere within an Isotope declaration can use `log` to add to the logs.
+
+```cs
+from _1 in log("Update Window Size")
+from _2 in setWindowSize(1280, 960)
+from _3 in nav("https://www.meddbase.com")
+select unit
+```
+
+This simply adds a log entry prior to doing some work. The system also includes the ability to nest logs to make them more readable.
+
+```cs
+public static Isotope<Unit> GoToDesktopSite =>
+  context("Go to Desktop Site",
+    from _1 in log("Update Window Size")
+    from _2 in setWindowSize(1280, 960)
+    from _3 in nav("https://www.meddbase.com")
+    select unit);
+```
+
+This would log:
+
+```
+Go to Desktop Site
+  Update Window Size
+```
+
+It is also possible via the settings to provide an additional action to the logging mechanism to be performed on each log entry, the following writes all logs to the console as they occur with the relevant level of indentation:
+
+```cs
+Action<string, int> consoleLogger =
+  (x, y) => WriteLine(new string('\t', y) + x);
+
+
+var result = Meddbase.GoToPageAndOpenCareers.Run(
+              new ChromeDriver(), 
+                IsotopeSettings.Create(
+                  loggingAction: consoleLogger));
+```
