@@ -43,6 +43,27 @@ var logic =  from _1 in nav("https://twitter.com/login")
              
 var result = logic.Run(driver);
 ```
+## Using Linq
+Isotope allows statements to be composed together, you can do this using the Bind function, for example:
+
+```cs
+var logic =  nav("https://twitter.com/login")
+              .Bind(x => sendKeys(By.ClassName("js-username-field"), "Your Email Address"));
+```
+
+However the recommended method is to use C#'s LINQ syntax:
+
+```cs
+var logic =  from _1 in nav("https://twitter.com/login")
+             from _2 in sendKeys(By.ClassName("js-username-field"), "Your Email Address")
+             select unit;
+```
+
+Both of these examples perform the same action however the LINQ syntax allows for more flexibility and less clutter.
+
+The Language-Ext wiki contains an article detailing why this works: [What is LINQ Really?](https://github.com/louthy/language-ext/wiki/Thinking-Functionally:-What-is-LINQ-really%3F).
+
+In the above example you can see the use of `_1` and `_2` this is a convention we use for values that we are going to ignore, in this instance both `nav(...)` and `sendKeys(...)` return `Unit` so there is no need to use them.
 
 ## Getting Started
 Isotope can be installed via [Nuget](https://www.nuget.org/packages/Isotope80/0.0.0-beta)
@@ -78,7 +99,7 @@ from _3 in nav("https://www.meddbase.com")
 select unit
 ```
 
-This simply adds a log entry prior to doing some work. The system also includes the ability to nest logs to make them more readable.
+This simply adds a log entry prior to doing some work. The system also includes the ability to nest logs to make them more readable. To do this you call the context function with the top level string and the Isotope<T> that you want to occur within that context.
 
 ```cs
 public static Isotope<Unit> GoToDesktopSite =>
