@@ -87,7 +87,7 @@ Namespace: Isotope80
 | **getSelectedOptionValue(SelectElement sel)** | Isotope\<string\> |  |
 | **getStyle(IWebElement el, string style)** | Isotope\<string\> |  |
 | **getZIndex(IWebElement el)** | Isotope\<int\> |  |
-| **hasText(IWebElement element, string comparison)** | Isotope\<bool\> |  |
+| **hasText(IWebElement element, string comparison)** | Isotope\<bool\> | Compares the text of an element with a string |
 | **initConfig((string, string)[] config)** | Isotope\<Unit\> |  |
 | **initConfig(Map\<string, string\> config)** | Isotope\<Unit\> | Simple configuration setup |
 | **initSettings([IsotopeSettings](#isotopesettings-class) settings)** | Isotope\<Unit\> |  |
@@ -97,7 +97,7 @@ Namespace: Isotope80
 | **log(string message)** | Isotope\<Unit\> | Log some output |
 | **Map(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
 | **nav(string url)** | Isotope\<Unit\> | Navigate to a URL |
-| **obscured(IWebElement element)** | Isotope\<bool\> |  |
+| **obscured(IWebElement element)** | Isotope\<bool\> | Checks whether the centre point of an element is the foremost element at that position on the page.<br>(Uses the JavaScript document.elementFromPoint function) |
 | **pause(TimeSpan interval)** | Isotope\<Unit\> | ONLY USE AS A LAST RESORT<br>Pauses the processing for an interval to brute force waiting for actions to complete |
 | **PrettyPrint(IWebElement x)** | string |  |
 | **pure(A value)** | Isotope\<A\> | Identity - lifts a value of `A` into the Isotope monad<br><br>* Always succeeds * |

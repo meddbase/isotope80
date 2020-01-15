@@ -749,6 +749,12 @@ namespace Isotope80
                         None: () => pure(false))
             select bl;
 
+        /// <summary>
+        /// Checks whether the centre point of an element is the foremost element at that position on the page.
+        /// (Uses the JavaScript document.elementFromPoint function)
+        /// </summary>
+        /// <param name="element">Target element</param>
+        /// <returns>true if the element is foremost</returns>
         public static Isotope<bool> obscured(IWebElement element) =>
             from dvr in webDriver
             let jsExec = (IJavaScriptExecutor)dvr
@@ -760,6 +766,12 @@ namespace Isotope80
             from _1  in log($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
             select !element.Equals(top);
 
+        /// <summary>
+        /// Compares the text of an element with a string
+        /// </summary>
+        /// <param name="element">Element to compare</param>
+        /// <param name="comparison">String to match</param>
+        /// <returns>true if exact match</returns>
         public static Isotope<bool> hasText(IWebElement element, string comparison) =>
             from t in text(element)
             select t == comparison;
