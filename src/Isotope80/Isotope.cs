@@ -527,6 +527,15 @@ namespace Isotope80
                           }).ToIsotope($"Timed out finding element {selector}")
             select unit;
 
+        public static Isotope<IWebElement> waitUntilExists2(By selector, TimeSpan timeout) =>
+            from x in waitUntil(
+                            findOptionalElement(selector),
+                            el => el.IsSome)
+            from y in x.Match(
+                            Some: s => pure(s),
+                            None: () => fail<IWebElement>("Optional Element not found"))
+            select y;
+
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
@@ -558,13 +567,6 @@ namespace Isotope80
                         select r,
                         x => !x)
             select unit;
-            //from d in webDriver
-            //from _ in Try(() =>
-            //{
-            //    var wait = new WebDriverWait(d, timeout);
-            //    return wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(selector));
-            //}).ToIsotope($"Timed out finding element {selector}")
-            //select unit;
 
         public static Isotope<Unit> waitUntilClickable(IWebElement element, TimeSpan timeout) =>
             from d in webDriver
