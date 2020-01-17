@@ -527,6 +527,11 @@ namespace Isotope80
                           }).ToIsotope($"Timed out finding element {selector}")
             select unit;
 
+        public static Isotope<IWebElement> waitUntilExists2(By selector) =>
+            from w in defaultWait
+            from el in waitUntilExists2(selector, w)
+            select el;
+
         public static Isotope<IWebElement> waitUntilExists2(By selector, TimeSpan timeout) =>
             from x in waitUntil(
                             findOptionalElement(selector),
@@ -539,10 +544,10 @@ namespace Isotope80
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
-        public static Isotope<Unit> waitUntilClickable(By selector) =>
-            from w in defaultWait
-            from _ in waitUntilClickable(selector, w)
-            select unit;
+        public static Isotope<IWebElement> waitUntilClickable(By selector) =>
+            from w  in defaultWait
+            from el in waitUntilClickable(selector, w)
+            select el;
 
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
@@ -552,29 +557,21 @@ namespace Isotope80
             from _ in waitUntilClickable(element, w)
             select unit;
 
-        public static Isotope<Unit> waitUntilClickable(By selector, TimeSpan timeout) =>
+        public static Isotope<IWebElement> waitUntilClickable(By selector, TimeSpan timeout) =>
             from _1 in log($"Waiting until clickable: {selector}")
-            from _2 in waitUntil(
-                        from el in findOptionalElement(selector)
-                        from r  in el.Match(
-                                        Some: x => from _1a in log($"Checking clickability "+ selector)
-                                                   from d   in displayed(x)
-                                                   from e   in enabled(x)
-                                                   from o   in obscured(x)
-                                                   from _2a in log($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
-                                                   select d && e && (!o),
-                                        None: () => pure(false))
-                        select r,
-                        x => !x)
-            select unit;
+            from el in waitUntilExists2(selector)
+            from _2 in waitUntilClickable(el, timeout)
+            select el;
 
-        public static Isotope<Unit> waitUntilClickable(IWebElement element, TimeSpan timeout) =>
-            from d in webDriver
-            from _ in Try(() =>
-            {
-                var wait = new WebDriverWait(d, timeout);
-                return wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(element));
-            }).ToIsotope($"Timed out finding element {element.PrettyPrint()}")
+        public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
+            from _ in waitUntil(
+                        from _1a in log($"Checking clickability " + el.PrettyPrint())
+                        from d in displayed(el)
+                        from e in enabled(el)
+                        from o in obscured(el)
+                        from _2a in log($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
+                        select d && e && (!o),
+                        x => !x)
             select unit;
 
         /// <summary>
