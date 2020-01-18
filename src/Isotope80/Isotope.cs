@@ -535,7 +535,7 @@ namespace Isotope80
         public static Isotope<IWebElement> waitUntilExists2(By selector, TimeSpan timeout) =>
             from x in waitUntil(
                             findOptionalElement(selector),
-                            el => el.IsSome)
+                            el => el.IsNone)
             from y in x.Match(
                             Some: s => pure(s),
                             None: () => fail<IWebElement>("Optional Element not found"))
