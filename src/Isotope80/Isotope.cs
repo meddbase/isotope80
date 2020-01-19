@@ -125,10 +125,9 @@ namespace Isotope80
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        public static Isotope<IWebElement> findElement(By selector, bool wait = true, string errorMessage = null) =>
+        public static Isotope<IWebElement> findElement(By selector, bool wait = true, string errorMessage = "Unable to find element") =>
             from d in webDriver
-            from _ in wait ? waitUntilExists(selector, TimeSpan.FromSeconds(5)) : pure(unit)
-            from e in Try(() => d.FindElement(selector)).ToIsotope(errorMessage ?? $"Can't find element {selector}")
+            from e in wait ? waitUntilExists(selector) : fail<IWebElement>(errorMessage)
             select e;
 
         /// <summary>
@@ -180,8 +179,7 @@ namespace Isotope80
         /// <param name="selector">Selector</param>
         public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>
             from d in webDriver
-            from _ in wait ? waitUntilExists(selector, TimeSpan.FromSeconds(5)) : pure(unit)
-            from e in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+            from e in wait ? waitUntilElementsExists(selector) : fail<Seq<IWebElement>>($"Can't find elements {selector}")
             select e;
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(string cssSelector, string error = null) =>
@@ -505,34 +503,26 @@ namespace Isotope80
             from _2 in popLog
             select re;
 
-        /// <summary>
-        /// Wait for an element to be rendered and visible, fail if exceeds timeout
-        /// </summary>
-        public static Isotope<Unit> waitUntilExists(string cssSelector, TimeSpan timeout) =>
-            waitUntilExists(By.CssSelector(cssSelector), timeout);
 
-        /// <summary>
-        /// Wait for an element to be rendered and visible, fail if exceeds timeout
-        /// </summary>
-        public static Isotope<Unit> waitUntilExists(By selector, TimeSpan timeout) =>
-            from d in webDriver
-            from _ in Try(() =>
-                          {
-                              var wait = new WebDriverWait(d, timeout);
-                              return wait.Until(x =>
-                              {
-                                  var els = x.FindElements(selector).ToSeq();
-                                  return els.Count > 0 && els.Exists(el => el.Displayed);
-                              });
-                          }).ToIsotope($"Timed out finding element {selector}")
-            select unit;
-
-        public static Isotope<IWebElement> waitUntilExists2(By selector) =>
-            from w in defaultWait
-            from el in waitUntilExists2(selector, w)
+        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
+            By selector,
+            Option<TimeSpan> interval = default,
+            Option<TimeSpan> wait = default) =>
+            from el in waitUntil(findElementsOrEmpty(selector), x => x.Any(), interval: interval, wait: wait)
             select el;
 
-        public static Isotope<IWebElement> waitUntilExists2(By selector, TimeSpan timeout) =>
+        public static Isotope<IWebElement> waitUntilExists(By selector) =>
+            from w in defaultWait
+            from el in waitUntilExists(selector, w)
+            select el;
+
+        /// <summary>
+        /// Checks for an element and retires for the timeout period
+        /// </summary>
+        /// <param name="selector"></param>
+        /// <param name="timeout"></param>
+        /// <returns></returns>
+        public static Isotope<IWebElement> waitUntilExists(By selector, TimeSpan timeout) =>
             from x in waitUntil(
                             findOptionalElement(selector),
                             el => el.IsNone)
@@ -559,7 +549,7 @@ namespace Isotope80
 
         public static Isotope<IWebElement> waitUntilClickable(By selector, TimeSpan timeout) =>
             from _1 in log($"Waiting until clickable: {selector}")
-            from el in waitUntilExists2(selector)
+            from el in waitUntilExists(selector)
             from _2 in waitUntilClickable(el, timeout)
             select el;
 
@@ -777,31 +767,26 @@ namespace Isotope80
 
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
-            Func<A, bool> continueCondition) =>
-            from w in defaultWait
-            from i in defaultInterval
-            from r in waitUntil(iso, continueCondition, i, w)
-            select r;
-
-        public static Isotope<A> waitUntil<A>(
-            Isotope<A> iso,
             Func<A, bool> continueCondition,
-            TimeSpan sleep,
-            TimeSpan maximumWait) =>
-            waitUntil(iso, continueCondition, sleep, maximumWait, DateTime.Now);
+            Option<TimeSpan> interval = default,
+            Option<TimeSpan> wait = default) =>
+            from w in wait.Match(Some: s => pure(s), None: () => defaultWait)
+            from i in interval.Match(Some: s => pure(s), None: () => defaultInterval)
+            from r in waitUntil(iso, continueCondition, i, w, DateTime.Now)
+            select r;
 
         private static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
             Func<A, bool> continueCondition,
-            TimeSpan sleep,
-            TimeSpan maximumWait,
+            TimeSpan interval,
+            TimeSpan wait,
             DateTime started) =>
-            DateTime.Now - started >= maximumWait
+            DateTime.Now - started >= wait
                 ? fail<A>("Timed Out")
                 : from x in iso
                   from y in continueCondition(x)
-                            ? from _ in pause(sleep)
-                              from r in waitUntil(iso, continueCondition, sleep, maximumWait, started)
+                            ? from _ in pause(interval)
+                              from r in waitUntil(iso, continueCondition, interval, wait, started)
                               select r
                             : pure(x)
                   select y;
