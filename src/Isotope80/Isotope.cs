@@ -177,9 +177,20 @@ namespace Isotope80
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>
-            from d in webDriver
-            from e in wait ? waitUntilElementsExists(selector) : fail<Seq<IWebElement>>($"Can't find elements {selector}")
+        public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>           
+            from e in wait ? waitUntilElementsExists(selector)
+                           : from d in webDriver
+                             from es in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+                             select es
+            select e;
+
+        /// <summary>
+        /// Find HTML elements
+        /// </summary>
+        /// <param name="selector">Selector</param>
+        public static Isotope<Seq<IWebElement>> findElements(IWebElement parent, By selector, bool wait = true, string error = null) =>
+            from e in wait ? waitUntilElementsExists(parent, selector)
+                           : Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(string cssSelector, string error = null) =>
@@ -194,23 +205,6 @@ namespace Isotope80
             findElementsOrEmpty(element, By.CssSelector(cssSelector), error);
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement element, By selector, string error = null) =>
-            from e in Try(() => element.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
-            select e;
-
-        /// <summary>
-        /// Find HTML elements
-        /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(string cssSelector, bool wait = true, string error = null) =>
-            findElements(By.CssSelector(cssSelector), wait, error);
-
-        /// <summary>
-        /// Find HTML elements
-        /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(IWebElement element, By selector, bool wait = true, string error = null) =>
-            from d in webDriver
-            from _ in wait ? waitUntilExists(element, selector, TimeSpan.FromSeconds(5)) : pure(unit)
             from e in Try(() => element.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
@@ -509,6 +503,14 @@ namespace Isotope80
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
             from el in waitUntil(findElementsOrEmpty(selector), x => x.Any(), interval: interval, wait: wait)
+            select el;
+
+        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
+            IWebElement parent,
+            By selector,
+            Option<TimeSpan> interval = default,
+            Option<TimeSpan> wait = default) =>
+            from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.Any(), interval: interval, wait: wait)
             select el;
 
         public static Isotope<IWebElement> waitUntilExists(By selector) =>
