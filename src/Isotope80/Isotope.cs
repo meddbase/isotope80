@@ -10,7 +10,7 @@ namespace Isotope80
 {
     public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
 
-    public static class Isotope
+    public static partial class Isotope
     {
         /// <summary>
         /// Run the test computation - returning an optional error. 
@@ -157,15 +157,6 @@ namespace Isotope80
         /// <summary>
         /// Find an HTML element
         /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<Option<IWebElement>> findOptionalElement(string cssSelector, string errorMessage = null) =>
-            from es in findElementsOrEmpty(cssSelector, errorMessage)
-            from e  in pure(es.HeadOrNone())
-            select e;
-
-        /// <summary>
-        /// Find an HTML element
-        /// </summary>
         /// <param name="selector">CSS selector</param>
         public static Isotope<IWebElement> findElement(IWebElement element, By selector, bool wait = true, string errorMessage = null) =>
             from d in webDriver
@@ -177,24 +168,19 @@ namespace Isotope80
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>           
-            from e in wait ? waitUntilElementsExists(selector)
-                           : from d in webDriver
-                             from es in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
-                             select es
-            select e;
+        public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>
+            wait ? waitUntilElementsExists(selector)
+                 : from d in webDriver
+                   from es in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+                   select es;
 
         /// <summary>
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Selector</param>
         public static Isotope<Seq<IWebElement>> findElements(IWebElement parent, By selector, bool wait = true, string error = null) =>
-            from e in wait ? waitUntilElementsExists(parent, selector)
-                           : Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
-            select e;
-
-        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(string cssSelector, string error = null) =>
-            findElementsOrEmpty(By.CssSelector(cssSelector));
+            wait ? waitUntilElementsExists(parent, selector)
+                 : Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}");
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(By selector, string error = null) =>
             from d in webDriver
@@ -224,13 +210,13 @@ namespace Isotope80
             select se;
 
         /// <summary>
-        /// Find a <select> element
+        /// Find a &lt;select&gt; element
         /// </summary>        
         public static Isotope<SelectElement> findSelectElement(string cssSelector) =>
             findSelectElement(By.CssSelector(cssSelector));
 
         /// <summary>
-        /// Find a <select> element
+        /// Find a &lt;select&gt; element
         /// </summary>        
         public static Isotope<SelectElement> findSelectElement(By selector) =>
             from el in findElement(selector)
@@ -241,7 +227,7 @@ namespace Isotope80
             selectByText(By.CssSelector(cssSelector), text);
 
         /// <summary>
-        /// Select a <select> option by text
+        /// Select a &lt;select&gt; option by text
         /// </summary>     
         public static Isotope<Unit> selectByText(By selector, string text) =>
             from se in findSelectElement(selector)
@@ -249,13 +235,13 @@ namespace Isotope80
             select unit;
 
         /// <summary>
-        /// Select a <select> option by text
+        /// Select a &lt;select&gt; option by text
         /// </summary>        
         public static Isotope<Unit> selectByText(SelectElement select, string text) =>
             Try(() => { select.SelectByText(text); return unit; }).ToIsotope(x => "Unable to select" + x.Message);
 
         /// <summary>
-        /// Select a <select> option by value
+        /// Select a &lt;select&gt; option by value
         /// </summary>     
         public static Isotope<Unit> selectByValue(By selector, string value) =>
             from se in findSelectElement(selector)
@@ -263,7 +249,7 @@ namespace Isotope80
             select unit;
 
         /// <summary>
-        /// Select a <select> option by value
+        /// Select a &lt;select&gt; option by value
         /// </summary>        
         public static Isotope<Unit> selectByValue(SelectElement select, string value) =>
             Try(() => { select.SelectByValue(value); return unit; }).ToIsotope(x => "Unable to select" + x.Message);
@@ -502,7 +488,7 @@ namespace Isotope80
             By selector,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(selector), x => x.Any(), interval: interval, wait: wait)
+            from el in waitUntil(findElementsOrEmpty(selector), x => x.IsEmpty, interval: interval, wait: wait)
             select el;
 
         public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
@@ -510,7 +496,7 @@ namespace Isotope80
             By selector,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.Any(), interval: interval, wait: wait)
+            from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.IsEmpty, interval: interval, wait: wait)
             select el;
 
         public static Isotope<IWebElement> waitUntilExists(By selector) =>

@@ -21,14 +21,14 @@ namespace Isotope80.Samples.Console
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                    WaitThenClick(By.CssSelector("#menu-item-39 > a")));
+                    WaitThenClick(css("#menu-item-39 > a")));
 
         public static Isotope<Unit> ClickCareersMenu =>
             context("Click Careers menu",
-                    WaitThenClick(By.CssSelector("#menu-item-29 > a")));
+                    WaitThenClick(css("#menu-item-29 > a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in findElements(By.XPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))
+            from links in findElements(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))
             let title = links.Map(x => x.Text)
             select title;
 
