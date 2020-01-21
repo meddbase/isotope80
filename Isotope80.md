@@ -47,11 +47,13 @@ Namespace: Isotope80
 |---|---|---|
 | **attribute(IWebElement el, string att)** | Isotope\<string\> |  |
 | **Bind(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> f)** | Isotope\<B\> |  |
+| **className(string classname)** | By |  |
 | **click(By selector)** | Isotope\<Unit\> |  |
 | **click(IWebElement element)** | Isotope\<Unit\> | Simulates the mouse-click |
 | **Collect(Seq\<Isotope\<A\>\> mas)** | Isotope\<Seq\<A\>\> | Flips the sequence of Isotopes to be a Isotope of Sequences |
 | **config(string key)** | Isotope\<string\> | Get a config key |
 | **context(string context, Isotope\<A\> iso)** | Isotope\<A\> |  |
+| **css(string cssSelector)** | By |  |
 | **displayed(string cssSelector)** | Isotope\<bool\> |  |
 | **displayed(By selector)** | Isotope\<bool\> |  |
 | **displayed(IWebElement el)** | Isotope\<bool\> |  |
@@ -67,19 +69,16 @@ Namespace: Isotope80
 | **findElement(IWebElement element, string cssSelector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElement(IWebElement element, By selector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElements(By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElements(string cssSelector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElements(IWebElement element, By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
+| **findElements(IWebElement parent, By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
 | **findElements(IWebElement element, string cssSelector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElementsOrEmpty(string cssSelector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findElementsOrEmpty(By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findElementsOrEmpty(IWebElement element, string cssSelector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findElementsOrEmpty(IWebElement element, By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findOptionalElement(By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> |  |
-| **findOptionalElement(string cssSelector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> | Find an HTML element |
 | **findOptionalElement(IWebElement element, string cssSelector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> |  |
 | **findOptionalElement(IWebElement element, By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> | Find an HTML element |
-| **findSelectElement(string cssSelector)** | Isotope\<SelectElement\> |  |
-| **findSelectElement(By selector)** | Isotope\<SelectElement\> |  |
+| **findSelectElement(string cssSelector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element |
+| **findSelectElement(By selector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element |
 | **findSelectElement(IWebElement container, string cssSelector)** | Isotope\<SelectElement\> |  |
 | **findSelectElement(IWebElement container, By selector)** | Isotope\<SelectElement\> |  |
 | **getSelectedOption(SelectElement select)** | Isotope\<IWebElement\> |  |
@@ -88,16 +87,20 @@ Namespace: Isotope80
 | **getStyle(IWebElement el, string style)** | Isotope\<string\> |  |
 | **getZIndex(IWebElement el)** | Isotope\<int\> |  |
 | **hasText(IWebElement element, string comparison)** | Isotope\<bool\> | Compares the text of an element with a string |
+| **id(string id)** | By |  |
 | **initConfig((string, string)[] config)** | Isotope\<Unit\> |  |
 | **initConfig(Map\<string, string\> config)** | Isotope\<Unit\> | Simple configuration setup |
 | **initSettings([IsotopeSettings](#isotopesettings-class) settings)** | Isotope\<Unit\> |  |
 | **isCheckboxChecked(string cssSelector)** | Isotope\<bool\> |  |
 | **isCheckboxChecked(By selector)** | Isotope\<bool\> |  |
 | **isCheckboxChecked(IWebElement el)** | Isotope\<bool\> |  |
+| **linkText(string linktext)** | By |  |
 | **log(string message)** | Isotope\<Unit\> | Log some output |
 | **Map(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
+| **name(string name)** | By |  |
 | **nav(string url)** | Isotope\<Unit\> | Navigate to a URL |
 | **obscured(IWebElement element)** | Isotope\<bool\> | Checks whether the centre point of an element is the foremost element at that position on the page.<br>(Uses the JavaScript document.elementFromPoint function) |
+| **partialLinkText(string linktext)** | By |  |
 | **pause(TimeSpan interval)** | Isotope\<Unit\> | ONLY USE AS A LAST RESORT<br>Pauses the processing for an interval to brute force waiting for actions to complete |
 | **PrettyPrint(IWebElement x)** | string |  |
 | **pure(A value)** | Isotope\<A\> | Identity - lifts a value of `A` into the Isotope monad<br><br>* Always succeeds * |
@@ -108,10 +111,10 @@ Namespace: Isotope80
 | **RunAndThrowOnError(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) | Run the test computation - throws and error if it fails to pass |
 | **Select(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
 | **selectByText(string cssSelector, string text)** | Isotope\<Unit\> |  |
-| **selectByText(By selector, string text)** | Isotope\<Unit\> |  |
-| **selectByText(SelectElement select, string text)** | Isotope\<Unit\> |  |
-| **selectByValue(By selector, string value)** | Isotope\<Unit\> |  |
-| **selectByValue(SelectElement select, string value)** | Isotope\<Unit\> |  |
+| **selectByText(By selector, string text)** | Isotope\<Unit\> | Select a &lt;select&gt; option by text |
+| **selectByText(SelectElement select, string text)** | Isotope\<Unit\> | Select a &lt;select&gt; option by text |
+| **selectByValue(By selector, string value)** | Isotope\<Unit\> | Select a &lt;select&gt; option by value |
+| **selectByValue(SelectElement select, string value)** | Isotope\<Unit\> | Select a &lt;select&gt; option by value |
 | **SelectMany(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> f)** | Isotope\<B\> |  |
 | **SelectMany(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> bind, Func\<A, B, C\> project)** | Isotope\<C\> |  |
 | **sendKeys(string cssSelector, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
@@ -121,6 +124,7 @@ Namespace: Isotope80
 | **setCheckbox(IWebElement el, bool ticked)** | Isotope\<Unit\> |  |
 | **setWebDriver(IWebDriver d)** | Isotope\<Unit\> | Web driver setter |
 | **setWindowSize(int width, int height)** | Isotope\<Unit\> |  |
+| **tagName(string tagname)** | By |  |
 | **text(IWebElement element)** | Isotope\<string\> | Gets the text inside an element |
 | **ToIsotope(Option\<A\> maybe, string label)** | Isotope\<A\> |  |
 | **ToIsotope(Try\<A\> tried, string label)** | Isotope\<A\> |  |
@@ -129,15 +133,17 @@ Namespace: Isotope80
 | **tryf(Func\<A\> func, string label)** | Isotope\<A\> | Try a function |
 | **value(IWebElement element)** | Isotope\<string\> | Gets the value attribute of an element |
 | **voida(Action action)** | Isotope\<Unit\> | Run an action that returns void and transform it into a unit action |
-| **waitUntil(Isotope\<A\> iso, Func\<A, bool\> continueCondition)** | Isotope\<A\> |  |
-| **waitUntil(Isotope\<A\> iso, Func\<A, bool\> continueCondition, TimeSpan sleep, TimeSpan maximumWait)** | Isotope\<A\> |  |
-| **waitUntilClickable(By selector)** | Isotope\<Unit\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
+| **waitUntil(Isotope\<A\> iso, Func\<A, bool\> continueCondition, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<A\> |  |
+| **waitUntilClickable(By selector)** | Isotope\<IWebElement\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
 | **waitUntilClickable(IWebElement element)** | Isotope\<Unit\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
-| **waitUntilClickable(By selector, TimeSpan timeout)** | Isotope\<Unit\> |  |
-| **waitUntilClickable(IWebElement element, TimeSpan timeout)** | Isotope\<Unit\> |  |
-| **waitUntilExists(string cssSelector, TimeSpan timeout)** | Isotope\<Unit\> | Wait for an element to be rendered and visible, fail if exceeds timeout |
-| **waitUntilExists(By selector, TimeSpan timeout)** | Isotope\<Unit\> | Wait for an element to be rendered and visible, fail if exceeds timeout |
+| **waitUntilClickable(By selector, TimeSpan timeout)** | Isotope\<IWebElement\> |  |
+| **waitUntilClickable(IWebElement el, TimeSpan timeout)** | Isotope\<Unit\> |  |
+| **waitUntilElementsExists(By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<Seq\<IWebElement\>\> |  |
+| **waitUntilElementsExists(IWebElement parent, By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<Seq\<IWebElement\>\> |  |
+| **waitUntilExists(By selector)** | Isotope\<IWebElement\> |  |
+| **waitUntilExists(By selector, TimeSpan timeout)** | Isotope\<IWebElement\> | Checks for an element and retires for the timeout period |
 | **waitUntilExists(IWebElement element, By selector, TimeSpan timeout)** | Isotope\<Unit\> | Wait for an element to be rendered and visible, fail if exceeds timeout |
+| **xPath(string xpath)** | By |  |
 ## Fields
 
 | Name | Type | Summary |
