@@ -173,9 +173,8 @@ namespace Isotope80
             IWebElement parent,
             By selector,
             string errorMessage = null) =>
-            Try(() => parent.FindElement(selector))
-                .ToIsotope(errorMessage
-                ?? $"Can't find element {selector}");
+            tryf(() => parent.FindElement(selector),
+                 errorMessage ?? $"Can't find element {selector}");
 
         /// <summary>
         /// Find HTML elements
@@ -184,7 +183,8 @@ namespace Isotope80
         public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>
             wait ? waitUntilElementsExists(selector)
                  : from d in webDriver
-                   from es in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+                   from es in tryf(() => d.FindElements(selector).ToSeq(),
+                                   error ?? $"Can't find any elements {selector}")
                    select es;
 
         /// <summary>
@@ -200,9 +200,6 @@ namespace Isotope80
             from e in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
-        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement element, string cssSelector, string error = null) =>
-            findElementsOrEmpty(element, By.CssSelector(cssSelector), error);
-
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement element, By selector, string error = null) =>
             from e in Try(() => element.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
@@ -213,9 +210,6 @@ namespace Isotope80
         /// <param name="selector">Selector</param>
         public static Isotope<Seq<IWebElement>> findElements(IWebElement element, string cssSelector, bool wait = true, string error = null) =>
             findElements(element, By.CssSelector(cssSelector), wait, error);
-
-        public static Isotope<SelectElement> findSelectElement(IWebElement container, string cssSelector) =>
-            findSelectElement(container, By.CssSelector(cssSelector));
 
         public static Isotope<SelectElement> findSelectElement(IWebElement container, By selector) =>
             from el in findElement(container, selector)
@@ -235,9 +229,6 @@ namespace Isotope80
             from el in findElement(selector)
             from se in Try(() => new SelectElement(el)).ToIsotope(x => "Problem creating select element: " + x.Message)
             select se;
-
-        public static Isotope<Unit> selectByText(string cssSelector, string text) =>
-            selectByText(By.CssSelector(cssSelector), text);
 
         /// <summary>
         /// Select a &lt;select&gt; option by text
@@ -311,14 +302,6 @@ namespace Isotope80
         /// <summary>
         /// Simulates keyboard by sending `keys` 
         /// </summary>
-        /// <param name="cssSelector">CSS selector for element to type into</param>
-        /// <param name="keys">String of characters that are typed</param>
-        public static Isotope<Unit> sendKeys(string cssSelector, string keys) =>
-            sendKeys(By.CssSelector(cssSelector), keys);
-
-        /// <summary>
-        /// Simulates keyboard by sending `keys` 
-        /// </summary>
         /// <param name="selector">Selector for element to type into</param>
         /// <param name="keys">String of characters that are typed</param>
         public static Isotope<Unit> sendKeys(By selector, string keys) =>
@@ -376,7 +359,7 @@ namespace Isotope80
             Try(() => element.GetAttribute("Value")).ToIsotope($@"Error getting value from element: {element.PrettyPrint()}");
 
         /// <summary>
-        /// Web driver accessor - set by the foreachBrowser call
+        /// Web driver accessor
         /// </summary>
         public static Isotope<IWebDriver> webDriver =>
             from s in get
