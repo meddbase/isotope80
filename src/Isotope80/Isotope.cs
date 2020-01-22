@@ -127,7 +127,7 @@ namespace Isotope80
         /// <param name="selector">CSS selector</param>
         public static Isotope<IWebElement> findElement(By selector, bool wait = true, string errorMessage = "Unable to find element") =>
             from d in webDriver
-            from e in wait ? waitUntilExists(selector) : fail<IWebElement>(errorMessage)
+            from e in wait ? waitUntilElementExists(selector) : fail<IWebElement>(errorMessage)
             select e;
 
         /// <summary>
@@ -158,11 +158,24 @@ namespace Isotope80
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        public static Isotope<IWebElement> findElement(IWebElement element, By selector, bool wait = true, string errorMessage = null) =>
+        public static Isotope<IWebElement> findElement(
+            IWebElement element, 
+            By selector, 
+            bool wait = true, 
+            string errorMessage = null) =>
             from d in webDriver
-            from _ in wait ? waitUntilExists(element, selector, TimeSpan.FromSeconds(5)) : pure(unit)
-            from e in Try(() => element.FindElement(selector)).ToIsotope(errorMessage ?? $"Can't find element {selector}")
+            from e in wait 
+                      ? waitUntilElementExists(element, selector)
+                      : findChildElement(element, selector) 
             select e;
+
+        private static Isotope<IWebElement> findChildElement(
+            IWebElement parent,
+            By selector,
+            string errorMessage = null) =>
+            Try(() => parent.FindElement(selector))
+                .ToIsotope(errorMessage
+                ?? $"Can't find element {selector}");
 
         /// <summary>
         /// Find HTML elements
@@ -499,24 +512,48 @@ namespace Isotope80
             from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.IsEmpty, interval: interval, wait: wait)
             select el;
 
-        public static Isotope<IWebElement> waitUntilExists(By selector) =>
-            from w in defaultWait
-            from el in waitUntilExists(selector, w)
-            select el;
-
         /// <summary>
-        /// Checks for an element and retires for the timeout period
+        /// 
         /// </summary>
         /// <param name="selector"></param>
-        /// <param name="timeout"></param>
+        /// <param name="interval"></param>
+        /// <param name="wait"></param>
         /// <returns></returns>
-        public static Isotope<IWebElement> waitUntilExists(By selector, TimeSpan timeout) =>
+        public static Isotope<IWebElement> waitUntilElementExists(
+            By selector, 
+            Option<TimeSpan> interval = default,
+            Option<TimeSpan> wait = default) =>
             from x in waitUntil(
                             findOptionalElement(selector),
-                            el => el.IsNone)
+                            el => el.IsNone,
+                            interval,
+                            wait)
             from y in x.Match(
                             Some: s => pure(s),
-                            None: () => fail<IWebElement>("Optional Element not found"))
+                            None: () => fail<IWebElement>("Element not found within timeout period"))
+            select y;
+
+        /// <summary>
+        /// Attempts to find a child element within an existing element and if not present retries for a period.
+        /// </summary>
+        /// <param name="element">Parent element</param>
+        /// <param name="selector">Selector within element</param>
+        /// <param name="interval">The time period between attempts to check, if not provided the default value from Settings is used.</param>
+        /// <param name="wait">The overall time period to attempt for, if not provided the default value from Settings is used.</param>
+        /// <returns></returns>
+        public static Isotope<IWebElement> waitUntilElementExists(
+            IWebElement element, 
+            By selector, 
+            Option<TimeSpan> interval = default,
+            Option<TimeSpan> wait = default) =>
+            from x in waitUntil(
+                            findOptionalElement(element, selector),
+                            el => el.IsNone,
+                            interval,
+                            wait)
+            from y in x.Match(
+                            Some: s => pure(s),
+                            None: () => fail<IWebElement>("Element not found within timeout period"))
             select y;
 
         /// <summary>
@@ -537,7 +574,7 @@ namespace Isotope80
 
         public static Isotope<IWebElement> waitUntilClickable(By selector, TimeSpan timeout) =>
             from _1 in log($"Waiting until clickable: {selector}")
-            from el in waitUntilExists(selector)
+            from el in waitUntilElementExists(selector)
             from _2 in waitUntilClickable(el, timeout)
             select el;
 
@@ -550,22 +587,6 @@ namespace Isotope80
                         from _2a in log($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
                         select d && e && (!o),
                         x => !x)
-            select unit;
-
-        /// <summary>
-        /// Wait for an element to be rendered and visible, fail if exceeds timeout
-        /// </summary>
-        public static Isotope<Unit> waitUntilExists(IWebElement element, By selector, TimeSpan timeout) =>
-            from d in webDriver
-            from _ in Try(() =>
-            {
-                var wait = new WebDriverWait(d, timeout);
-                return wait.Until(x =>
-                {
-                    var els = element.FindElements(selector).ToSeq();
-                    return els.Count > 0 && els.Exists(el => el.Displayed);
-                });
-            }).ToIsotope($"Timed out finding element {selector} within {element.PrettyPrint()}")
             select unit;
 
         public static string PrettyPrint(this IWebElement x)

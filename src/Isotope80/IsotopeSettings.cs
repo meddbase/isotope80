@@ -6,7 +6,6 @@ namespace Isotope80
     [With]
     public partial class IsotopeSettings
     {
-
         public readonly bool DisposeOnCompletion;
         private const bool defaultDisposeOnCompletion = true;
         public readonly Action<string, int> LoggingAction;
