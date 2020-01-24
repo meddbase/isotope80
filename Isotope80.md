@@ -35,7 +35,7 @@ Namespace: Isotope80
 | Name | Type | Summary |
 |---|---|---|
 | **url** | Isotope\<string\> | Gets the URL currently displayed by the browser |
-| **webDriver** | Isotope\<IWebDriver\> | Web driver accessor - set by the foreachBrowser call |
+| **webDriver** | Isotope\<IWebDriver\> | Web driver accessor |
 | **disposeWebDriver** | Isotope\<Unit\> |  |
 | **defaultWait** | Isotope\<TimeSpan\> | Default wait accessor |
 | **defaultInterval** | Isotope\<TimeSpan\> | Default wait accessor |
@@ -47,39 +47,30 @@ Namespace: Isotope80
 |---|---|---|
 | **attribute(IWebElement el, string att)** | Isotope\<string\> |  |
 | **Bind(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> f)** | Isotope\<B\> |  |
-| **className(string classname)** | By |  |
+| **className(string classname)** | By | Creates a Class Name Selector for use with WebDriver. Equivalent of `By.ClassName` |
 | **click(By selector)** | Isotope\<Unit\> |  |
 | **click(IWebElement element)** | Isotope\<Unit\> | Simulates the mouse-click |
 | **Collect(Seq\<Isotope\<A\>\> mas)** | Isotope\<Seq\<A\>\> | Flips the sequence of Isotopes to be a Isotope of Sequences |
 | **config(string key)** | Isotope\<string\> | Get a config key |
 | **context(string context, Isotope\<A\> iso)** | Isotope\<A\> |  |
-| **css(string cssSelector)** | By |  |
-| **displayed(string cssSelector)** | Isotope\<bool\> |  |
+| **css(string cssSelector)** | By | Creates a CSS Selector for use with WebDriver. Equivalent of `By.CssSelector` |
 | **displayed(By selector)** | Isotope\<bool\> |  |
 | **displayed(IWebElement el)** | Isotope\<bool\> |  |
 | **doWhile(Isotope\<A\> iso, Func\<A, bool\> continueCondition, int maxRepeats)** | Isotope\<A\> |  |
 | **doWhileOrFail(Isotope\<A\> iso, Func\<A, bool\> continueCondition, string failureMessage, int maxRepeats)** | Isotope\<A\> |  |
 | **doWhileOrFail(Isotope\<A\> iso, Func\<A, bool\> continueCondition, string failureMessage, TimeSpan interval, int maxRepeats)** | Isotope\<A\> |  |
 | **enabled(IWebElement el)** | Isotope\<bool\> |  |
-| **exists(string cssSelector)** | Isotope\<bool\> |  |
 | **exists(By selector)** | Isotope\<bool\> |  |
 | **fail(string message)** | Isotope\<A\> | Failure - creates an Isotope monad that always fails |
-| **findElement(string cssSelector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElement(By selector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
-| **findElement(IWebElement element, string cssSelector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElement(IWebElement element, By selector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElements(By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
 | **findElements(IWebElement parent, By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElements(IWebElement element, string cssSelector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
 | **findElementsOrEmpty(By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
-| **findElementsOrEmpty(IWebElement element, string cssSelector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findElementsOrEmpty(IWebElement element, By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **findOptionalElement(By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> |  |
-| **findOptionalElement(IWebElement element, string cssSelector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> |  |
 | **findOptionalElement(IWebElement element, By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> | Find an HTML element |
-| **findSelectElement(string cssSelector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element |
 | **findSelectElement(By selector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element |
-| **findSelectElement(IWebElement container, string cssSelector)** | Isotope\<SelectElement\> |  |
 | **findSelectElement(IWebElement container, By selector)** | Isotope\<SelectElement\> |  |
 | **getSelectedOption(SelectElement select)** | Isotope\<IWebElement\> |  |
 | **getSelectedOptionText(SelectElement sel)** | Isotope\<string\> |  |
@@ -87,20 +78,19 @@ Namespace: Isotope80
 | **getStyle(IWebElement el, string style)** | Isotope\<string\> |  |
 | **getZIndex(IWebElement el)** | Isotope\<int\> |  |
 | **hasText(IWebElement element, string comparison)** | Isotope\<bool\> | Compares the text of an element with a string |
-| **id(string id)** | By |  |
+| **id(string id)** | By | Creates an Id Selector for use with WebDriver. Equivalent of `By.Id` |
 | **initConfig((string, string)[] config)** | Isotope\<Unit\> |  |
 | **initConfig(Map\<string, string\> config)** | Isotope\<Unit\> | Simple configuration setup |
 | **initSettings([IsotopeSettings](#isotopesettings-class) settings)** | Isotope\<Unit\> |  |
-| **isCheckboxChecked(string cssSelector)** | Isotope\<bool\> |  |
 | **isCheckboxChecked(By selector)** | Isotope\<bool\> |  |
 | **isCheckboxChecked(IWebElement el)** | Isotope\<bool\> |  |
-| **linkText(string linktext)** | By |  |
+| **linkText(string linktext)** | By | Creates a Link Text Selector for use with WebDriver. Equivalent of `By.LinkText` |
 | **log(string message)** | Isotope\<Unit\> | Log some output |
 | **Map(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
-| **name(string name)** | By |  |
+| **name(string name)** | By | Creates a Name Selector for use with WebDriver. Equivalent of `By.Name` |
 | **nav(string url)** | Isotope\<Unit\> | Navigate to a URL |
 | **obscured(IWebElement element)** | Isotope\<bool\> | Checks whether the centre point of an element is the foremost element at that position on the page.<br>(Uses the JavaScript document.elementFromPoint function) |
-| **partialLinkText(string linktext)** | By |  |
+| **partialLinkText(string linktext)** | By | Creates a Partial Link Text Selector for use with WebDriver. Equivalent of `By.PartialLinkText` |
 | **pause(TimeSpan interval)** | Isotope\<Unit\> | ONLY USE AS A LAST RESORT<br>Pauses the processing for an interval to brute force waiting for actions to complete |
 | **PrettyPrint(IWebElement x)** | string |  |
 | **pure(A value)** | Isotope\<A\> | Identity - lifts a value of `A` into the Isotope monad<br><br>* Always succeeds * |
@@ -110,21 +100,19 @@ Namespace: Isotope80
 | **Run(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) |  |
 | **RunAndThrowOnError(Isotope\<A\> ma, IWebDriver driver, [IsotopeSettings](#isotopesettings-class) settings)** | ([IsotopeState](#isotopestate-class) state, A value) | Run the test computation - throws and error if it fails to pass |
 | **Select(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
-| **selectByText(string cssSelector, string text)** | Isotope\<Unit\> |  |
 | **selectByText(By selector, string text)** | Isotope\<Unit\> | Select a &lt;select&gt; option by text |
 | **selectByText(SelectElement select, string text)** | Isotope\<Unit\> | Select a &lt;select&gt; option by text |
 | **selectByValue(By selector, string value)** | Isotope\<Unit\> | Select a &lt;select&gt; option by value |
 | **selectByValue(SelectElement select, string value)** | Isotope\<Unit\> | Select a &lt;select&gt; option by value |
 | **SelectMany(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> f)** | Isotope\<B\> |  |
 | **SelectMany(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> bind, Func\<A, B, C\> project)** | Isotope\<C\> |  |
-| **sendKeys(string cssSelector, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
 | **sendKeys(By selector, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
 | **sendKeys(IWebElement element, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
 | **Sequence(Seq\<Isotope\<A\>\> mas)** | Isotope\<Seq\<A\>\> | Flips the sequence of Isotopes to be a Isotope of Sequences |
 | **setCheckbox(IWebElement el, bool ticked)** | Isotope\<Unit\> |  |
 | **setWebDriver(IWebDriver d)** | Isotope\<Unit\> | Web driver setter |
 | **setWindowSize(int width, int height)** | Isotope\<Unit\> |  |
-| **tagName(string tagname)** | By |  |
+| **tagName(string tagname)** | By | Creates a Tag Name Selector for use with WebDriver. Equivalent of `By.TagName` |
 | **text(IWebElement element)** | Isotope\<string\> | Gets the text inside an element |
 | **ToIsotope(Option\<A\> maybe, string label)** | Isotope\<A\> |  |
 | **ToIsotope(Try\<A\> tried, string label)** | Isotope\<A\> |  |
@@ -138,12 +126,11 @@ Namespace: Isotope80
 | **waitUntilClickable(IWebElement element)** | Isotope\<Unit\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
 | **waitUntilClickable(By selector, TimeSpan timeout)** | Isotope\<IWebElement\> |  |
 | **waitUntilClickable(IWebElement el, TimeSpan timeout)** | Isotope\<Unit\> |  |
+| **waitUntilElementExists(By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<IWebElement\> |  |
+| **waitUntilElementExists(IWebElement element, By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<IWebElement\> | Attempts to find a child element within an existing element and if not present retries for a period. |
 | **waitUntilElementsExists(By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<Seq\<IWebElement\>\> |  |
 | **waitUntilElementsExists(IWebElement parent, By selector, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<Seq\<IWebElement\>\> |  |
-| **waitUntilExists(By selector)** | Isotope\<IWebElement\> |  |
-| **waitUntilExists(By selector, TimeSpan timeout)** | Isotope\<IWebElement\> | Checks for an element and retires for the timeout period |
-| **waitUntilExists(IWebElement element, By selector, TimeSpan timeout)** | Isotope\<Unit\> | Wait for an element to be rendered and visible, fail if exceeds timeout |
-| **xPath(string xpath)** | By |  |
+| **xPath(string xpath)** | By | Creates a XPath Selector for use with WebDriver. Equivalent of `By.XPath` |
 ## Fields
 
 | Name | Type | Summary |

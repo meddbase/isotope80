@@ -117,28 +117,11 @@ namespace Isotope80
         /// <summary>
         /// Find an HTML element
         /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<IWebElement> findElement(string cssSelector, bool wait = true, string errorMessage = null) =>
-            findElement(By.CssSelector(cssSelector), wait, errorMessage);
-
-        /// <summary>
-        /// Find an HTML element
-        /// </summary>
         /// <param name="selector">CSS selector</param>
         public static Isotope<IWebElement> findElement(By selector, bool wait = true, string errorMessage = "Unable to find element") =>
             from d in webDriver
             from e in wait ? waitUntilElementExists(selector) : fail<IWebElement>(errorMessage)
             select e;
-
-        /// <summary>
-        /// Find an HTML element
-        /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<IWebElement> findElement(IWebElement element, string cssSelector, bool wait = true, string errorMessage = null) =>
-            findElement(element, By.CssSelector(cssSelector), wait, errorMessage);
-
-        public static Isotope<Option<IWebElement>> findOptionalElement(IWebElement element, string cssSelector, string errorMessage = null) =>
-            findOptionalElement(element, By.CssSelector(cssSelector), errorMessage);
 
         /// <summary>
         /// Find an HTML element
@@ -208,23 +191,10 @@ namespace Isotope80
             from e in Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
-        /// <summary>
-        /// Find HTML elements
-        /// </summary>
-        /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(IWebElement element, string cssSelector, bool wait = true, string error = null) =>
-            findElements(element, By.CssSelector(cssSelector), wait, error);
-
         public static Isotope<SelectElement> findSelectElement(IWebElement container, By selector) =>
             from el in findElement(container, selector)
             from se in Try(() => new SelectElement(el)).ToIsotope(x => "Problem creating select element: " + x.Message)
             select se;
-
-        /// <summary>
-        /// Find a &lt;select&gt; element
-        /// </summary>        
-        public static Isotope<SelectElement> findSelectElement(string cssSelector) =>
-            findSelectElement(By.CssSelector(cssSelector));
 
         /// <summary>
         /// Find a &lt;select&gt; element
@@ -274,8 +244,6 @@ namespace Isotope80
             from opt in getSelectedOption(sel)
             from val in value(opt)
             select val;
-        public static Isotope<bool> isCheckboxChecked(string cssSelector) =>
-            isCheckboxChecked(By.CssSelector(cssSelector));
 
         public static Isotope<bool> isCheckboxChecked(By selector) =>
             from el in findElement(selector)
@@ -710,9 +678,6 @@ namespace Isotope80
                     Succ: pure,
                     Fail: x => fail<A>(makeError(x)));
 
-        public static Isotope<bool> displayed(string cssSelector) => 
-            displayed(By.CssSelector(cssSelector));
-
         public static Isotope<bool> displayed(By selector) =>
             from el in findElement(selector)
             from d in displayed(el)
@@ -723,9 +688,6 @@ namespace Isotope80
 
         public static Isotope<bool> enabled(IWebElement el) =>
             Try(() => el.Enabled).ToIsotope($"Error getting enabled status of {el}");
-
-        public static Isotope<bool> exists(string cssSelector) =>
-            exists(By.CssSelector(cssSelector));
 
         public static Isotope<bool> exists(By selector) =>
             from op in findOptionalElement(selector)
