@@ -188,9 +188,13 @@ namespace Isotope80
                    select es;
 
         /// <summary>
-        /// Find HTML elements
+        /// Find HTML elements within an element
         /// </summary>
+        /// <param name="parent">Element to search within</param>
         /// <param name="selector">Selector</param>
+        /// <param name="wait">If none are found wait and retry</param>
+        /// <param name="error">Custom error message</param>
+        /// <returns>Matching elements</returns>
         public static Isotope<Seq<IWebElement>> findElements(IWebElement parent, By selector, bool wait = true, string error = null) =>
             wait ? waitUntilElementsExists(parent, selector)
                  : Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}");
@@ -200,8 +204,8 @@ namespace Isotope80
             from e in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
-        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement element, By selector, string error = null) =>
-            from e in Try(() => element.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement parent, By selector, string error = null) =>
+            from e in Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
             select e;
 
         /// <summary>
