@@ -180,7 +180,11 @@ namespace Isotope80
         /// <returns>Matching elements</returns>
         public static Isotope<Seq<IWebElement>> findElements(IWebElement parent, By selector, bool wait = true, string error = null) =>
             wait ? waitUntilElementsExists(parent, selector)
-                 : Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}");
+                 : Try(() => parent.FindElements(selector).ToSeq()).
+                    Match(
+                     Succ: x => x.IsEmpty ? fail<Seq<IWebElement>>(error ?? $"Can't find any elements {selector}")
+                                          : pure(x),
+                     Fail: e => fail<Seq<IWebElement>>(error ?? $"Can't find any elements {selector}"));
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(By selector, string error = null) =>
             from d in webDriver
