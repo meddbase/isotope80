@@ -188,16 +188,16 @@ namespace Isotope80
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(By selector, string error = null) =>
             from d in webDriver
-            from e in Try(() => d.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+            from e in tryf(() => d.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement parent, By selector, string error = null) =>
-            from e in Try(() => parent.FindElements(selector).ToSeq()).ToIsotope(error ?? $"Can't find any elements {selector}")
+            from e in tryf(() => parent.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
         public static Isotope<SelectElement> findSelectElement(IWebElement container, By selector) =>
             from el in findElement(container, selector)
-            from se in Try(() => new SelectElement(el)).ToIsotope(x => "Problem creating select element: " + x.Message)
+            from se in tryf(() => new SelectElement(el), x => "Problem creating select element: " + x.Message)
             select se;
 
         /// <summary>
@@ -421,6 +421,9 @@ namespace Isotope80
         /// </summary>
         public static Isotope<A> tryf<A>(Func<A> func, string label) =>
             Try(() => func()).ToIsotope(label);
+
+        public static Isotope<A> tryf<A>(Func<A> func, Func<Exception, string> makeError) =>
+            Try(() => func()).ToIsotope(makeError);
 
         /// <summary>
         /// Run an action that returns void and transform it into a unit action
