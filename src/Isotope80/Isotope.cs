@@ -195,9 +195,12 @@ namespace Isotope80
             from e in tryf(() => parent.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
+        /// <summary>
+        /// Find a &lt;select&gt; element within an existing element
+        /// </summary>  
         public static Isotope<SelectElement> findSelectElement(IWebElement container, By selector) =>
             from el in findElement(container, selector)
-            from se in tryf(() => new SelectElement(el), x => "Problem creating select element: " + x.Message)
+            from se in toSelectElement(el)
             select se;
 
         /// <summary>
@@ -205,8 +208,14 @@ namespace Isotope80
         /// </summary>        
         public static Isotope<SelectElement> findSelectElement(By selector) =>
             from el in findElement(selector)
-            from se in Try(() => new SelectElement(el)).ToIsotope(x => "Problem creating select element: " + x.Message)
+            from se in toSelectElement(el)
             select se;
+
+        /// <summary>
+        /// Convert an IWebElement to a SelectElement
+        /// </summary>  
+        public static Isotope<SelectElement> toSelectElement(IWebElement element) =>
+            tryf(() => new SelectElement(element), x => "Problem creating select element: " + x.Message);
 
         /// <summary>
         /// Select a &lt;select&gt; option by text
@@ -234,10 +243,10 @@ namespace Isotope80
         /// Select a &lt;select&gt; option by value
         /// </summary>        
         public static Isotope<Unit> selectByValue(SelectElement select, string value) =>
-            Try(() => { select.SelectByValue(value); return unit; }).ToIsotope(x => "Unable to select" + x.Message);
+            trya(() => select.SelectByValue(value), x => "Unable to select" + x.Message);
 
         public static Isotope<IWebElement> getSelectedOption(SelectElement select) =>
-            Try(() => select.SelectedOption).ToIsotope(x => "Unable to get selected option" + x.Message);
+            tryf(() => select.SelectedOption, x => "Unable to get selected option" + x.Message);
 
         public static Isotope<string> getSelectedOptionText(SelectElement sel) =>
             from opt in getSelectedOption(sel)
@@ -415,6 +424,9 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Unit> trya(Action action, string label) =>
             Try(() => { action(); return unit; }).ToIsotope(label);
+
+        public static Isotope<Unit> trya(Action action, Func<Exception, string> makeError) =>
+            Try(() => { action(); return unit; }).ToIsotope(makeError);
 
         /// <summary>
         /// Try a function
