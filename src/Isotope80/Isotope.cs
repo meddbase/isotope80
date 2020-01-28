@@ -229,7 +229,7 @@ namespace Isotope80
         /// Select a &lt;select&gt; option by text
         /// </summary>        
         public static Isotope<Unit> selectByText(SelectElement select, string text) =>
-            Try(() => { select.SelectByText(text); return unit; }).ToIsotope(x => "Unable to select" + x.Message);
+            trya(() => select.SelectByText(text), x => "Unable to select" + x.Message);
 
         /// <summary>
         /// Select a &lt;select&gt; option by value
@@ -274,7 +274,7 @@ namespace Isotope80
             select unit;
 
         public static Isotope<string> getStyle(IWebElement el, string style) =>
-            Try(() => el.GetCssValue(style)).ToIsotope($"Could not find style {style}");
+            tryf(() => el.GetCssValue(style), $"Could not find style {style}");
 
         public static Isotope<int> getZIndex(IWebElement el) =>
             from zis in getStyle(el, "zIndex")
@@ -282,7 +282,7 @@ namespace Isotope80
             select zii;
 
         public static Isotope<string> attribute(IWebElement el, string att) =>
-            Try(() => el.GetAttribute(att)).ToIsotope($"Attribute {att} could not be found.");
+            tryf(() => el.GetAttribute(att), $"Attribute {att} could not be found.");
 
         /// <summary>
         /// Simulates keyboard by sending `keys` 
@@ -300,7 +300,7 @@ namespace Isotope80
         /// <param name="element">Element to type into</param>
         /// <param name="keys">String of characters that are typed</param>
         public static Isotope<Unit> sendKeys(IWebElement element, string keys) =>
-            Try(() => { element.SendKeys(keys); return unit; }).ToIsotope($@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
+            trya(() => element.SendKeys(keys), $@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
 
         public static Isotope<Unit> click(By selector) =>
             from el in findElement(selector)
@@ -312,12 +312,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Element to click</param>
         public static Isotope<Unit> click(IWebElement element) =>
-            Try(() =>
-            {
-                element.Click();
-                return unit;
-
-            }).ToIsotope($@"Error clicking element: {element.PrettyPrint()}");
+            trya(() => element.Click(), $@"Error clicking element: {element.PrettyPrint()}");
 
         /// <summary>
         /// ONLY USE AS A LAST RESORT
@@ -334,14 +329,14 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Element containing txt</param>
         public static Isotope<string> text(IWebElement element) =>
-            Try(() => element.Text).ToIsotope($@"Error getting text from element: {element.PrettyPrint()}");
+            tryf(() => element.Text, $@"Error getting text from element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Gets the value attribute of an element
         /// </summary>
         /// <param name="element">Element containing value</param>
         public static Isotope<string> value(IWebElement element) =>
-            Try(() => element.GetAttribute("Value")).ToIsotope($@"Error getting value from element: {element.PrettyPrint()}");
+            tryf(() => element.GetAttribute("Value"), $@"Error getting value from element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Web driver accessor
@@ -703,10 +698,10 @@ namespace Isotope80
             select d;
 
         public static Isotope<bool> displayed(IWebElement el) =>
-            Try(() => el.Displayed).ToIsotope($"Error getting display status of {el}");
+            tryf(() => el.Displayed, $"Error getting display status of {el}");
 
         public static Isotope<bool> enabled(IWebElement el) =>
-            Try(() => el.Enabled).ToIsotope($"Error getting enabled status of {el}");
+            tryf(() => el.Enabled, $"Error getting enabled status of {el}");
 
         public static Isotope<bool> exists(By selector) =>
             from op in findOptionalElement(selector)
