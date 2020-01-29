@@ -465,7 +465,6 @@ namespace Isotope80
             from _2 in popLog
             select re;
 
-
         public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
             By selector,
             Option<TimeSpan> interval = default,
@@ -691,6 +690,11 @@ namespace Isotope80
             tried.Match(
                     Succ: pure,
                     Fail: x => fail<A>(makeError(x)));
+
+        public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
+            either.Match(
+                Left: l => fail<B>(makeError(l)),
+                Right: pure);
 
         public static Isotope<bool> displayed(By selector) =>
             from el in findElement(selector)
