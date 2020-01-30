@@ -696,17 +696,32 @@ namespace Isotope80
                 Left: l => fail<B>(makeError(l)),
                 Right: pure);
 
+        /// <summary>
+        /// Finds an element by a selector and checks if it is currently displayed
+        /// </summary>
+        /// <param name="selector">WebDriver selector</param>
+        /// <returns>True if the element is currently displayed</returns>
         public static Isotope<bool> displayed(By selector) =>
             from el in findElement(selector)
             from d in displayed(el)
             select d;
 
+        /// <summary>
+        /// Checks if an element is currently displayed
+        /// </summary>
+        /// <param name="el">WebDriver element</param>
+        /// <returns>True if the element is currently displayed</returns>
         public static Isotope<bool> displayed(IWebElement el) =>
             tryf(() => el.Displayed, $"Error getting display status of {el}");
 
         public static Isotope<bool> enabled(IWebElement el) =>
             tryf(() => el.Enabled, $"Error getting enabled status of {el}");
 
+        /// <summary>
+        /// Checks if an element exists that matches the selector
+        /// </summary>
+        /// <param name="selector">WebDriver selector</param>
+        /// <returns>True if a matching element exists</returns>
         public static Isotope<bool> exists(By selector) =>
             from op in findOptionalElement(selector)
             from bl in op.Match(
