@@ -68,7 +68,9 @@ In the above example you can see the use of `_1` and `_2` this is a convention w
 ## Getting Started
 Isotope can be installed via [Nuget](https://www.nuget.org/packages/Isotope80/0.0.0-beta)
 
-`PM> Install-Package Isotope80 -Version 0.0.0-beta`
+```bash
+PM> Install-Package Isotope80 -Version 0.0.0-beta
+```
 
 Isotope is intended to be referenced via a `using static` statement so that the functions are able to be accessed in a very terse way.
 
