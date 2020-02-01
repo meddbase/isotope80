@@ -186,11 +186,24 @@ namespace Isotope80
                                           : pure(x),
                      Fail: e => fail<Seq<IWebElement>>(error ?? $"Can't find any elements {selector}"));
 
+        /// <summary>
+        /// Find a sequence of elements matching a selector
+        /// </summary>
+        /// <param name="selector">Web Driver selector</param>
+        /// <param name="error"></param>
+        /// <returns>Sequence of matching elements</returns>
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(By selector, string error = null) =>
             from d in webDriver
             from e in tryf(() => d.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
+        /// <summary>
+        /// Find a sequence of elements within an existing element matching a selector
+        /// </summary>
+        /// <param name="parent">Parent element</param>
+        /// <param name="selector">Web Driver selector</param>
+        /// <param name="error"></param>
+        /// <returns>Sequence of matching elements</returns>
         public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement parent, By selector, string error = null) =>
             from e in tryf(() => parent.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
