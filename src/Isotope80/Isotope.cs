@@ -259,18 +259,28 @@ namespace Isotope80
             trya(() => select.SelectByValue(value), x => "Unable to select" + x.Message);
 
         /// <summary>
-        /// Retrieves the selected option element for a Select Element
+        /// Retrieves the selected option element in a Select Element
         /// </summary>
-        /// <param name="select">Web Driver Select Element</param>
+        /// <param name="sel">Web Driver Select Element</param>
         /// <returns>The selected Option Web Element</returns>
-        public static Isotope<IWebElement> getSelectedOption(SelectElement select) =>
-            tryf(() => select.SelectedOption, x => "Unable to get selected option" + x.Message);
+        public static Isotope<IWebElement> getSelectedOption(SelectElement sel) =>
+            tryf(() => sel.SelectedOption, x => "Unable to get selected option" + x.Message);
 
+        /// <summary>
+        /// Retrieves the text for the selected option element in a Select Element
+        /// </summary>
+        /// <param name="sel">Web Driver Select Element</param>
+        /// <returns>The selected Option Web Element</returns>
         public static Isotope<string> getSelectedOptionText(SelectElement sel) =>
             from opt in getSelectedOption(sel)
             from txt in text(opt)
             select txt;
 
+        /// <summary>
+        /// Retrieves the value for the selected option element in a Select Element
+        /// </summary>
+        /// <param name="sel">Web Driver Select Element</param>
+        /// <returns>The selected Option Web Element</returns>
         public static Isotope<string> getSelectedOptionValue(SelectElement sel) =>
             from opt in getSelectedOption(sel)
             from val in value(opt)
