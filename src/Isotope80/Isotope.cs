@@ -286,6 +286,11 @@ namespace Isotope80
             from val in value(opt)
             select val;
 
+        /// <summary>
+        /// Finds a checkbox element by selector and identifies whether it is checked
+        /// </summary>
+        /// <param name="selector">Web Driver Selector</param>
+        /// <returns>Is checked\s</returns>
         public static Isotope<bool> isCheckboxChecked(By selector) =>
             from el in findElement(selector)
             from res in isCheckboxChecked(el)
