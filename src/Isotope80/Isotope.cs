@@ -296,9 +296,20 @@ namespace Isotope80
             from res in isCheckboxChecked(el)
             select res;
 
+        /// <summary>
+        /// Identifies whether an existing checkbox is checked
+        /// </summary>
+        /// <param name="el">Web Driver Element</param>
+        /// <returns>Is checked\s</returns>
         public static Isotope<bool> isCheckboxChecked(IWebElement el) =>
             pure(el.Selected);
 
+        /// <summary>
+        /// Set checkbox value for existing element
+        /// </summary>
+        /// <param name="el">Web Driver Element</param>
+        /// <param name="ticked">Check the box or not</param>
+        /// <returns>Unit</returns>
         public static Isotope<Unit> setCheckbox(IWebElement el, bool ticked) =>
             from val in isCheckboxChecked(el)
             from _   in val == ticked
