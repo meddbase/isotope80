@@ -54,27 +54,27 @@ Namespace: Isotope80
 | **config(string key)** | Isotope\<string\> | Get a config key |
 | **context(string context, Isotope\<A\> iso)** | Isotope\<A\> |  |
 | **css(string cssSelector)** | By | Creates a CSS Selector for use with WebDriver. Equivalent of `By.CssSelector` |
-| **displayed(By selector)** | Isotope\<bool\> |  |
-| **displayed(IWebElement el)** | Isotope\<bool\> |  |
+| **displayed(By selector)** | Isotope\<bool\> | Finds an element by a selector and checks if it is currently displayed |
+| **displayed(IWebElement el)** | Isotope\<bool\> | Checks if an element is currently displayed |
 | **doWhile(Isotope\<A\> iso, Func\<A, bool\> continueCondition, int maxRepeats)** | Isotope\<A\> |  |
 | **doWhileOrFail(Isotope\<A\> iso, Func\<A, bool\> continueCondition, string failureMessage, int maxRepeats)** | Isotope\<A\> |  |
 | **doWhileOrFail(Isotope\<A\> iso, Func\<A, bool\> continueCondition, string failureMessage, TimeSpan interval, int maxRepeats)** | Isotope\<A\> |  |
 | **enabled(IWebElement el)** | Isotope\<bool\> |  |
-| **exists(By selector)** | Isotope\<bool\> |  |
+| **exists(By selector)** | Isotope\<bool\> | Checks if an element exists that matches the selector |
 | **fail(string message)** | Isotope\<A\> | Failure - creates an Isotope monad that always fails |
 | **findElement(By selector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElement(IWebElement element, By selector, bool wait, string errorMessage)** | Isotope\<IWebElement\> | Find an HTML element |
 | **findElements(By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElements(IWebElement parent, By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements |
-| **findElementsOrEmpty(By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
-| **findElementsOrEmpty(IWebElement element, By selector, string error)** | Isotope\<Seq\<IWebElement\>\> |  |
+| **findElements(IWebElement parent, By selector, bool wait, string error)** | Isotope\<Seq\<IWebElement\>\> | Find HTML elements within an element |
+| **findElementsOrEmpty(By selector, string error)** | Isotope\<Seq\<IWebElement\>\> | Find a sequence of elements matching a selector |
+| **findElementsOrEmpty(IWebElement parent, By selector, string error)** | Isotope\<Seq\<IWebElement\>\> | Find a sequence of elements within an existing element matching a selector |
 | **findOptionalElement(By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> |  |
 | **findOptionalElement(IWebElement element, By selector, string errorMessage)** | Isotope\<Option\<IWebElement\>\> | Find an HTML element |
 | **findSelectElement(By selector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element |
-| **findSelectElement(IWebElement container, By selector)** | Isotope\<SelectElement\> |  |
-| **getSelectedOption(SelectElement select)** | Isotope\<IWebElement\> |  |
-| **getSelectedOptionText(SelectElement sel)** | Isotope\<string\> |  |
-| **getSelectedOptionValue(SelectElement sel)** | Isotope\<string\> |  |
+| **findSelectElement(IWebElement container, By selector)** | Isotope\<SelectElement\> | Find a &lt;select&gt; element within an existing element |
+| **getSelectedOption(SelectElement sel)** | Isotope\<IWebElement\> | Retrieves the selected option element in a Select Element |
+| **getSelectedOptionText(SelectElement sel)** | Isotope\<string\> | Retrieves the text for the selected option element in a Select Element |
+| **getSelectedOptionValue(SelectElement sel)** | Isotope\<string\> | Retrieves the value for the selected option element in a Select Element |
 | **getStyle(IWebElement el, string style)** | Isotope\<string\> |  |
 | **getZIndex(IWebElement el)** | Isotope\<int\> |  |
 | **hasText(IWebElement element, string comparison)** | Isotope\<bool\> | Compares the text of an element with a string |
@@ -82,7 +82,7 @@ Namespace: Isotope80
 | **initConfig((string, string)[] config)** | Isotope\<Unit\> |  |
 | **initConfig(Map\<string, string\> config)** | Isotope\<Unit\> | Simple configuration setup |
 | **initSettings([IsotopeSettings](#isotopesettings-class) settings)** | Isotope\<Unit\> |  |
-| **isCheckboxChecked(By selector)** | Isotope\<bool\> |  |
+| **isCheckboxChecked(By selector)** | Isotope\<bool\> | Finds a checkbox element by selector and identifies whether it is checked |
 | **isCheckboxChecked(IWebElement el)** | Isotope\<bool\> |  |
 | **linkText(string linktext)** | By | Creates a Link Text Selector for use with WebDriver. Equivalent of `By.LinkText` |
 | **log(string message)** | Isotope\<Unit\> | Log some output |
@@ -117,8 +117,12 @@ Namespace: Isotope80
 | **ToIsotope(Option\<A\> maybe, string label)** | Isotope\<A\> |  |
 | **ToIsotope(Try\<A\> tried, string label)** | Isotope\<A\> |  |
 | **ToIsotope(Try\<A\> tried, Func\<Exception, string\> makeError)** | Isotope\<A\> |  |
+| **ToIsotope(Either\<A, B\> either, Func\<A, string\> makeError)** | Isotope\<B\> |  |
+| **toSelectElement(IWebElement element)** | Isotope\<SelectElement\> | Convert an IWebElement to a SelectElement |
 | **trya(Action action, string label)** | Isotope\<Unit\> | Try an action |
+| **trya(Action action, Func\<Exception, string\> makeError)** | Isotope\<Unit\> |  |
 | **tryf(Func\<A\> func, string label)** | Isotope\<A\> | Try a function |
+| **tryf(Func\<A\> func, Func\<Exception, string\> makeError)** | Isotope\<A\> |  |
 | **value(IWebElement element)** | Isotope\<string\> | Gets the value attribute of an element |
 | **voida(Action action)** | Isotope\<Unit\> | Run an action that returns void and transform it into a unit action |
 | **waitUntil(Isotope\<A\> iso, Func\<A, bool\> continueCondition, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<A\> |  |
