@@ -317,9 +317,20 @@ namespace Isotope80
                         : click(el)
             select unit;
 
+        /// <summary>
+        /// Looks for a particular style attribute on an existing element
+        /// </summary>
+        /// <param name="el">Web Driver Element</param>
+        /// <param name="style">Style attribute to look up</param>
+        /// <returns>A string representing the style value</returns>
         public static Isotope<string> getStyle(IWebElement el, string style) =>
             tryf(() => el.GetCssValue(style), $"Could not find style {style}");
 
+        /// <summary>
+        /// Gets the Z Index style attribute value for an existing element
+        /// </summary>
+        /// <param name="el">Web Driver Element</param>
+        /// <returns>The Z Index value</returns>
         public static Isotope<int> getZIndex(IWebElement el) =>
             from zis in getStyle(el, "zIndex")
             from zii in parseInt(zis).ToIsotope($"z-Index was not valid integer: {zis}.")
