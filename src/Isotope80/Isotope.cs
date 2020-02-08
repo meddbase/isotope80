@@ -336,6 +336,12 @@ namespace Isotope80
             from zii in parseInt(zis).ToIsotope($"z-Index was not valid integer: {zis}.")
             select zii;
 
+        /// <summary>
+        /// Looks for a particular style attribute on an existing element
+        /// </summary>
+        /// <param name="el">Web Driver Element</param>
+        /// <param name="att">Attribute to look up</param>
+        /// <returns>A string representing the attribute value</returns>
         public static Isotope<string> attribute(IWebElement el, string att) =>
             tryf(() => el.GetAttribute(att), $"Attribute {att} could not be found.");
 
@@ -357,6 +363,11 @@ namespace Isotope80
         public static Isotope<Unit> sendKeys(IWebElement element, string keys) =>
             trya(() => element.SendKeys(keys), $@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
 
+        /// <summary>
+        /// Simulates the mouse-click
+        /// </summary>
+        /// <param name="selector">Web Driver Selector</param>
+        /// <returns>Unit</returns>
         public static Isotope<Unit> click(By selector) =>
             from el in findElement(selector)
             from _ in click(el)
