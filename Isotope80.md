@@ -45,10 +45,10 @@ Namespace: Isotope80
 
 | Name | Returns | Summary |
 |---|---|---|
-| **attribute(IWebElement el, string att)** | Isotope\<string\> |  |
+| **attribute(IWebElement el, string att)** | Isotope\<string\> | Looks for a particular style attribute on an existing element |
 | **Bind(Isotope\<A\> ma, Func\<A, Isotope\<B\>\> f)** | Isotope\<B\> |  |
 | **className(string classname)** | By | Creates a Class Name Selector for use with WebDriver. Equivalent of `By.ClassName` |
-| **click(By selector)** | Isotope\<Unit\> |  |
+| **click(By selector)** | Isotope\<Unit\> | Simulates the mouse-click |
 | **click(IWebElement element)** | Isotope\<Unit\> | Simulates the mouse-click |
 | **Collect(Seq\<Isotope\<A\>\> mas)** | Isotope\<Seq\<A\>\> | Flips the sequence of Isotopes to be a Isotope of Sequences |
 | **config(string key)** | Isotope\<string\> | Get a config key |
@@ -75,15 +75,15 @@ Namespace: Isotope80
 | **getSelectedOption(SelectElement sel)** | Isotope\<IWebElement\> | Retrieves the selected option element in a Select Element |
 | **getSelectedOptionText(SelectElement sel)** | Isotope\<string\> | Retrieves the text for the selected option element in a Select Element |
 | **getSelectedOptionValue(SelectElement sel)** | Isotope\<string\> | Retrieves the value for the selected option element in a Select Element |
-| **getStyle(IWebElement el, string style)** | Isotope\<string\> |  |
-| **getZIndex(IWebElement el)** | Isotope\<int\> |  |
+| **getStyle(IWebElement el, string style)** | Isotope\<string\> | Looks for a particular style attribute on an existing element |
+| **getZIndex(IWebElement el)** | Isotope\<int\> | Gets the Z Index style attribute value for an existing element |
 | **hasText(IWebElement element, string comparison)** | Isotope\<bool\> | Compares the text of an element with a string |
 | **id(string id)** | By | Creates an Id Selector for use with WebDriver. Equivalent of `By.Id` |
 | **initConfig((string, string)[] config)** | Isotope\<Unit\> |  |
 | **initConfig(Map\<string, string\> config)** | Isotope\<Unit\> | Simple configuration setup |
 | **initSettings([IsotopeSettings](#isotopesettings-class) settings)** | Isotope\<Unit\> |  |
 | **isCheckboxChecked(By selector)** | Isotope\<bool\> | Finds a checkbox element by selector and identifies whether it is checked |
-| **isCheckboxChecked(IWebElement el)** | Isotope\<bool\> |  |
+| **isCheckboxChecked(IWebElement el)** | Isotope\<bool\> | Identifies whether an existing checkbox is checked |
 | **linkText(string linktext)** | By | Creates a Link Text Selector for use with WebDriver. Equivalent of `By.LinkText` |
 | **log(string message)** | Isotope\<Unit\> | Log some output |
 | **Map(Isotope\<A\> ma, Func\<A, B\> f)** | Isotope\<B\> |  |
@@ -109,7 +109,7 @@ Namespace: Isotope80
 | **sendKeys(By selector, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
 | **sendKeys(IWebElement element, string keys)** | Isotope\<Unit\> | Simulates keyboard by sending `keys`  |
 | **Sequence(Seq\<Isotope\<A\>\> mas)** | Isotope\<Seq\<A\>\> | Flips the sequence of Isotopes to be a Isotope of Sequences |
-| **setCheckbox(IWebElement el, bool ticked)** | Isotope\<Unit\> |  |
+| **setCheckbox(IWebElement el, bool ticked)** | Isotope\<Unit\> | Set checkbox value for existing element |
 | **setWebDriver(IWebDriver d)** | Isotope\<Unit\> | Web driver setter |
 | **setWindowSize(int width, int height)** | Isotope\<Unit\> |  |
 | **tagName(string tagname)** | By | Creates a Tag Name Selector for use with WebDriver. Equivalent of `By.TagName` |
