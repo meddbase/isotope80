@@ -481,26 +481,48 @@ namespace Isotope80
                 new IsotopeState<Unit>(unit, state);
 
         /// <summary>
-        /// Try an action
+        /// Try and action
         /// </summary>
+        /// <param name="action">Action to try</param>
+        /// <param name="label">Error string if exception is thrown</param>
+        /// <returns></returns>
         public static Isotope<Unit> trya(Action action, string label) =>
             Try(() => { action(); return unit; }).ToIsotope(label);
 
+        /// <summary>
+        /// Try an action
+        /// </summary>
+        /// <param name="action">Action to try</param>
+        /// <param name="makeError">Convert Exception to an error string</param>
+        /// <returns></returns>
         public static Isotope<Unit> trya(Action action, Func<Exception, string> makeError) =>
             Try(() => { action(); return unit; }).ToIsotope(makeError);
 
         /// <summary>
         /// Try a function
         /// </summary>
+        /// <typeparam name="A">Return type of the function</typeparam>
+        /// <param name="func">Function to try</param>
+        /// <param name="label">Error string if exception is thrown</param>
+        /// <returns></returns>
         public static Isotope<A> tryf<A>(Func<A> func, string label) =>
             Try(() => func()).ToIsotope(label);
 
+        /// <summary>
+        /// Try a function
+        /// </summary>
+        /// <typeparam name="A">Return type of the function</typeparam>
+        /// <param name="func">Function to try</param>
+        /// <param name="makeError">Convert Exception to an error string</param>
+        /// <returns>The result of the function</returns>
         public static Isotope<A> tryf<A>(Func<A> func, Func<Exception, string> makeError) =>
             Try(() => func()).ToIsotope(makeError);
 
         /// <summary>
-        /// Run an action that returns void and transform it into a unit action
+        /// Run a void returning action
         /// </summary>
+        /// <param name="action">Action to run</param>
+        /// <returns>Unit</returns>
         public static Isotope<Unit> voida(Action action) => state =>
         {
             action();
