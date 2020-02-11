@@ -119,12 +119,12 @@ Namespace: Isotope80
 | **ToIsotope(Try\<A\> tried, Func\<Exception, string\> makeError)** | Isotope\<A\> |  |
 | **ToIsotope(Either\<A, B\> either, Func\<A, string\> makeError)** | Isotope\<B\> |  |
 | **toSelectElement(IWebElement element)** | Isotope\<SelectElement\> | Convert an IWebElement to a SelectElement |
-| **trya(Action action, string label)** | Isotope\<Unit\> | Try an action |
-| **trya(Action action, Func\<Exception, string\> makeError)** | Isotope\<Unit\> |  |
+| **trya(Action action, string label)** | Isotope\<Unit\> | Try and action |
+| **trya(Action action, Func\<Exception, string\> makeError)** | Isotope\<Unit\> | Try an action |
 | **tryf(Func\<A\> func, string label)** | Isotope\<A\> | Try a function |
-| **tryf(Func\<A\> func, Func\<Exception, string\> makeError)** | Isotope\<A\> |  |
+| **tryf(Func\<A\> func, Func\<Exception, string\> makeError)** | Isotope\<A\> | Try a function |
 | **value(IWebElement element)** | Isotope\<string\> | Gets the value attribute of an element |
-| **voida(Action action)** | Isotope\<Unit\> | Run an action that returns void and transform it into a unit action |
+| **voida(Action action)** | Isotope\<Unit\> | Run a void returning action |
 | **waitUntil(Isotope\<A\> iso, Func\<A, bool\> continueCondition, Option\<TimeSpan\> interval, Option\<TimeSpan\> wait)** | Isotope\<A\> |  |
 | **waitUntilClickable(By selector)** | Isotope\<IWebElement\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
 | **waitUntilClickable(IWebElement element)** | Isotope\<Unit\> | Wait for an element to be rendered and clickable, fail if exceeds default timeout |
