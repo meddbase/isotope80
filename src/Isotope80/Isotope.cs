@@ -381,6 +381,14 @@ namespace Isotope80
             trya(() => element.Click(), $@"Error clicking element: {element.PrettyPrint()}");
 
         /// <summary>
+        /// Clears the content of an element
+        /// </summary>
+        /// <param name="element">Web Driver Element</param>
+        /// <returns>Unit</returns>
+        public static Isotope<Unit> clear(IWebElement element) =>
+            trya(() => element.Clear(), $@"Error clearing element: {element.PrettyPrint()}");
+
+        /// <summary>
         /// ONLY USE AS A LAST RESORT
         /// Pauses the processing for an interval to brute force waiting for actions to complete
         /// </summary>
