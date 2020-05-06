@@ -852,6 +852,9 @@ namespace Isotope80
             from t in text(element)
             select t == comparison;
 
+        /// <summary>
+        /// Repeatedly runs an Isotope function and checks whether the condition is met.
+        /// </summary>        
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
             Func<A, bool> continueCondition,
