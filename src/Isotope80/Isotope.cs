@@ -919,5 +919,14 @@ namespace Isotope80
                                 select z
                               : pure(x)
                   select y;
+
+        /// <summary>
+        /// Takes a screenshot if the current WebDriver supports that functionality
+        /// </summary>
+        public static Isotope<Option<Screenshot>> getScreenshot =>
+            from dvr in webDriver
+            let ts = dvr as ITakesScreenshot
+            select ts == null ? None : Some(ts.GetScreenshot());
+
     }
 }
