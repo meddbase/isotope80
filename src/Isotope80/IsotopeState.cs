@@ -13,6 +13,9 @@ namespace Isotope80
         public readonly Option<string> Error;
         public readonly Log Log;
 
+        /// <summary>
+        /// Creates a new instance of IsotopeState with the supplied settings.
+        /// </summary>
         public static IsotopeState Create(IsotopeSettings settings) =>
             Empty.With(Settings: settings);
 
