@@ -1,12 +1,6 @@
-﻿using LanguageExt;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
-using System;
+﻿using System;
 using Xunit;
-using Xunit.Abstractions;
 using static Isotope80.Assertions;
-using static Isotope80.Isotope;
-using static LanguageExt.Prelude;
 
 namespace Isotope80.Samples.UnitTests
 {
