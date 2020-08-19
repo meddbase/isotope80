@@ -1,13 +1,12 @@
-﻿using Isotope80;
-using System;
-using Xunit;
-using static Isotope80.Isotope;
-using static Isotope80.Assertions;
-using LanguageExt;
-using static LanguageExt.Prelude;
+﻿using LanguageExt;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System;
+using Xunit;
 using Xunit.Abstractions;
+using static Isotope80.Assertions;
+using static Isotope80.Isotope;
+using static LanguageExt.Prelude;
 
 namespace Isotope80.Samples.UnitTests
 {
@@ -52,17 +51,17 @@ namespace Isotope80.Samples.UnitTests
             select unit;
 
         [Fact]
-        public void CareersMenuItemLoadsCareersPage() 
+        public void CareersMenuItemLoadsCareersPage()
         {
-            var expected = "https://www.meddbase.com/careers/";
+            var expected = "https://www.meddbase.com/jobs-at-meddbase/";
 
-            var iso = from _1  in GoToPageAndOpenCareers
+            var iso = from _1 in GoToPageAndOpenCareers
                       from url in url<Unit>()
-                      from _2  in assert<Unit>(url == expected, $"Expected URL to be {expected} but it was {url}")
+                      from _2 in assert<Unit>(url == expected, $"Expected URL to be {expected} but it was {url}")
                       select unit;
-           
-            Action<string, Log> xunitOutput = 
-                (x,y) => output.WriteLine(y.ToString());
+
+            Action<string, Log> xunitOutput =
+                (x, y) => output.WriteLine(y.ToString());
 
             (var state, var value) = iso.RunAndThrowOnError(
                 unit,
