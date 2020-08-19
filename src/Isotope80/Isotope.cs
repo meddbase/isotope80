@@ -3,12 +3,13 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
-    public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
+    public delegate IsotopeState<A> Isotope<Env, A>(Env env, IsotopeState state);
 
     public static partial class Isotope
     {
@@ -17,9 +18,9 @@ namespace Isotope80
         /// The computation succeeds if result.IsNone is true
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty.With(Settings: settings));
+            var res = ma(env, IsotopeState.Empty.With(Settings: settings));
 
             if (res.State.Settings.DisposeOnCompletion)
             {
@@ -29,9 +30,9 @@ namespace Isotope80
             return(res.State, res.Value);
         }
 
-        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
             if (res.State.Settings.DisposeOnCompletion)
             {
@@ -45,9 +46,9 @@ namespace Isotope80
         /// Run the test computation - throws and error if it fails to pass
         /// </summary>
         /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
+        public static (IsotopeState state, A value) RunAndThrowOnError<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
             if (res.State.Settings.DisposeOnCompletion)
             {
@@ -65,108 +66,110 @@ namespace Isotope80
         /// Simple configuration setup
         /// </summary>
         /// <param name="config">Map of config items</param>
-        public static Isotope<Unit> initConfig(params (string, string)[] config) =>
-            initConfig(toMap(config));
+        public static Isotope<Env, Unit> initConfig<Env>(params (string, string)[] config) =>
+            initConfig<Env>(toMap(config));
 
         /// <summary>
         /// Simple configuration setup
         /// </summary>
         /// <param name="config">Map of config items</param>
-        public static Isotope<Unit> initConfig(Map<string, string> config) =>
-            from s in get
-            from _ in put(s.With(Configuration: config))
+        public static Isotope<Env, Unit> initConfig<Env>(Map<string, string> config) =>
+            from s in get<Env>()
+            from _ in put<Env>(s.With(Configuration: config))
             select unit;
 
         /// <summary>
         /// Get a config key
         /// </summary>
         /// <param name="key"></param>
-        /// <returns></returns>
-        public static Isotope<string> config(string key) =>
-            from s in get
-            from r in s.Configuration.Find(key).ToIsotope($"Configuration key not found: {key}")
+        public static Isotope<Env, string> config<Env>(string key) =>
+            from s in get<Env>()
+            from r in s.Configuration.Find(key).ToIsotope<Env, string>($"Configuration key not found: {key}")
             select r;
 
-        public static Isotope<Unit> initSettings(IsotopeSettings settings) =>
-            from s in get
-            from _ in put(s.With(Settings: settings))
+        public static Isotope<Env, Unit> initSettings<Env>(IsotopeSettings settings) =>
+            from s in get<Env>()
+            from _ in put<Env>(s.With(Settings: settings))
             select unit;
 
-        public static Isotope<Unit> setWindowSize(int width, int height) =>
-            from d in webDriver
-            let size = new System.Drawing.Size(width, height)
-            from _ in trya(() => d.Manage().Window.Size = size, $"Failed to change browser window size to {width} by {height}")
+        public static Isotope<Env, Unit> setWindowSize<Env>(int width, int height) =>
+            from _ in setWindowSize<Env>(new Size(width, height))
+            select unit;
+
+        public static Isotope<Env, Unit> setWindowSize<Env>(Size size) =>
+            from d in webDriver<Env>()
+            from _ in trya<Env>(() => d.Manage().Window.Size = size, $"Failed to change browser window size to {size}")
             select unit;
 
         /// <summary>
         /// Navigate to a URL
         /// </summary>
         /// <param name="url">URL to navigate to</param>
-        public static Isotope<Unit> nav(string url) =>
-            from d in webDriver
-            from _ in trya(() => d.Navigate().GoToUrl(url), $"Failed to navigate to: {url}")
+        public static Isotope<Env, Unit> nav<Env>(string url) =>
+            from d in webDriver<Env>()
+            from _ in trya<Env>(() => d.Navigate().GoToUrl(url), $"Failed to navigate to: {url}")
             select unit;
 
         /// <summary>
         /// Gets the URL currently displayed by the browser
         /// </summary>
-        public static Isotope<string> url =>
-            from d in webDriver
+        public static Isotope<Env, string> url<Env>() =>
+            from d in webDriver<Env>()
             select d.Url;
 
         /// <summary>
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        public static Isotope<IWebElement> findElement(By selector, bool wait = true, string errorMessage = "Unable to find element") =>
-            from d in webDriver
-            from e in wait ? waitUntilElementExists(selector) : fail<IWebElement>(errorMessage)
+        public static Isotope<Env, IWebElement> findElement<Env>(By selector, bool wait = true, string errorMessage = "Unable to find element") =>
+            from d in webDriver<Env>()
+            from e in wait ? waitUntilElementExists<Env>(selector) : fail<Env, IWebElement>(errorMessage)
             select e;
 
         /// <summary>
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">Selector</param>
-        public static Isotope<Option<IWebElement>> findOptionalElement(IWebElement element, By selector, string errorMessage = null) =>
-            from es in findElementsOrEmpty(element, selector, errorMessage)
-            from e in pure(es.HeadOrNone())
+        public static Isotope<Env, Option<IWebElement>> findOptionalElement<Env>(IWebElement element, By selector, string errorMessage = null) =>
+            from es in findElementsOrEmpty<Env>(element, selector, errorMessage)
+            from e in pure<Env, Option<IWebElement>>(es.HeadOrNone())
             select e;
 
-        public static Isotope<Option<IWebElement>> findOptionalElement(By selector, string errorMessage = null) =>
-            from es in findElementsOrEmpty(selector, errorMessage)
-            from e in pure(es.HeadOrNone())
+        public static Isotope<Env, Option<IWebElement>> findOptionalElement<Env>(By selector, string errorMessage = null) =>
+            from es in findElementsOrEmpty<Env>(selector, errorMessage)
+            from e in pure<Env, Option<IWebElement>>(es.HeadOrNone())
             select e;
 
         /// <summary>
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        public static Isotope<IWebElement> findElement(
+        public static Isotope<Env, IWebElement> findElement<Env>(
             IWebElement element, 
             By selector, 
             bool wait = true, 
             string errorMessage = null) =>
-            from d in webDriver
+            from d in webDriver<Env>()
             from e in wait 
-                      ? waitUntilElementExists(element, selector)
-                      : findChildElement(element, selector) 
+                      ? waitUntilElementExists<Env>(element, selector)
+                      : findChildElement<Env>(element, selector) 
             select e;
 
-        private static Isotope<IWebElement> findChildElement(
+        private static Isotope<Env, IWebElement> findChildElement<Env>(
             IWebElement parent,
             By selector,
             string errorMessage = null) =>
-            tryf(() => parent.FindElement(selector),
+            tryf<Env, IWebElement>(() => parent.FindElement(selector),
                  errorMessage ?? $"Can't find element {selector}");
 
         /// <summary>
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Selector</param>
-        public static Isotope<Seq<IWebElement>> findElements(By selector, bool wait = true, string error = null) =>
-            wait ? waitUntilElementsExists(selector)
-                 : from d in webDriver
-                   from es in tryf(() => d.FindElements(selector).ToSeq(),
+        public static Isotope<Env, Seq<IWebElement>> findElements<Env>(By selector, bool wait = true, string error = null) =>
+            wait ? waitUntilElementsExists<Env>(selector)
+                 : from d in webDriver<Env>()
+                   from es in tryf<Env, Seq<IWebElement>>(() => d.FindElements(selector).ToSeq(),
                                    error ?? $"Can't find any elements {selector}")
                    select es;
 
@@ -178,13 +181,13 @@ namespace Isotope80
         /// <param name="wait">If none are found wait and retry</param>
         /// <param name="error">Custom error message</param>
         /// <returns>Matching elements</returns>
-        public static Isotope<Seq<IWebElement>> findElements(IWebElement parent, By selector, bool wait = true, string error = null) =>
-            wait ? waitUntilElementsExists(parent, selector)
+        public static Isotope<Env, Seq<IWebElement>> findElements<Env>(IWebElement parent, By selector, bool wait = true, string error = null) =>
+            wait ? waitUntilElementsExists<Env>(parent, selector)
                  : Try(() => parent.FindElements(selector).ToSeq()).
                     Match(
-                     Succ: x => x.IsEmpty ? fail<Seq<IWebElement>>(error ?? $"Can't find any elements {selector}")
-                                          : pure(x),
-                     Fail: e => fail<Seq<IWebElement>>(error ?? $"Can't find any elements {selector}"));
+                     Succ: x => x.IsEmpty ? fail<Env, Seq<IWebElement>>(error ?? $"Can't find any elements {selector}")
+                                          : pure<Env, Seq<IWebElement>>(x),
+                     Fail: e => fail<Env, Seq<IWebElement>>(error ?? $"Can't find any elements {selector}"));
 
         /// <summary>
         /// Find a sequence of elements matching a selector
@@ -192,9 +195,9 @@ namespace Isotope80
         /// <param name="selector">Web Driver selector</param>
         /// <param name="error"></param>
         /// <returns>Sequence of matching elements</returns>
-        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(By selector, string error = null) =>
-            from d in webDriver
-            from e in tryf(() => d.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
+        public static Isotope<Env, Seq<IWebElement>> findElementsOrEmpty<Env>(By selector, string error = null) =>
+            from d in webDriver<Env>()
+            from e in tryf<Env, Seq<IWebElement>>(() => d.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
         /// <summary>
@@ -204,76 +207,76 @@ namespace Isotope80
         /// <param name="selector">Web Driver selector</param>
         /// <param name="error"></param>
         /// <returns>Sequence of matching elements</returns>
-        public static Isotope<Seq<IWebElement>> findElementsOrEmpty(IWebElement parent, By selector, string error = null) =>
-            from e in tryf(() => parent.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
+        public static Isotope<Env, Seq<IWebElement>> findElementsOrEmpty<Env>(IWebElement parent, By selector, string error = null) =>
+            from e in tryf<Env, Seq<IWebElement>>(() => parent.FindElements(selector).ToSeq(), error ?? $"Can't find any elements {selector}")
             select e;
 
         /// <summary>
         /// Find a &lt;select&gt; element within an existing element
         /// </summary>  
-        public static Isotope<SelectElement> findSelectElement(IWebElement container, By selector) =>
-            from el in findElement(container, selector)
-            from se in toSelectElement(el)
+        public static Isotope<Env, SelectElement> findSelectElement<Env>(IWebElement container, By selector) =>
+            from el in findElement<Env>(container, selector)
+            from se in toSelectElement<Env>(el)
             select se;
 
         /// <summary>
         /// Find a &lt;select&gt; element
         /// </summary>        
-        public static Isotope<SelectElement> findSelectElement(By selector) =>
-            from el in findElement(selector)
-            from se in toSelectElement(el)
+        public static Isotope<Env, SelectElement> findSelectElement<Env>(By selector) =>
+            from el in findElement<Env>(selector)
+            from se in toSelectElement<Env>(el)
             select se;
 
         /// <summary>
         /// Convert an IWebElement to a SelectElement
         /// </summary>  
-        public static Isotope<SelectElement> toSelectElement(IWebElement element) =>
-            tryf(() => new SelectElement(element), x => "Problem creating select element: " + x.Message);
+        public static Isotope<Env, SelectElement> toSelectElement<Env>(IWebElement element) =>
+            tryf<Env, SelectElement>(() => new SelectElement(element), x => "Problem creating select element: " + x.Message);
 
         /// <summary>
         /// Select a &lt;select&gt; option by text
         /// </summary>     
-        public static Isotope<Unit> selectByText(By selector, string text) =>
-            from se in findSelectElement(selector)
-            from _  in selectByText(se, text)
+        public static Isotope<Env, Unit> selectByText<Env>(By selector, string text) =>
+            from se in findSelectElement<Env>(selector)
+            from _  in selectByText<Env>(se, text)
             select unit;
 
         /// <summary>
         /// Select a &lt;select&gt; option by text
         /// </summary>        
-        public static Isotope<Unit> selectByText(SelectElement select, string text) =>
-            trya(() => select.SelectByText(text), x => "Unable to select" + x.Message);
+        public static Isotope<Env, Unit> selectByText<Env>(SelectElement select, string text) =>
+            trya<Env>(() => select.SelectByText(text), x => "Unable to select" + x.Message);
 
         /// <summary>
         /// Select a &lt;select&gt; option by value
         /// </summary>     
-        public static Isotope<Unit> selectByValue(By selector, string value) =>
-            from se in findSelectElement(selector)
-            from _  in selectByValue(se, value)
+        public static Isotope<Env, Unit> selectByValue<Env>(By selector, string value) =>
+            from se in findSelectElement<Env>(selector)
+            from _  in selectByValue<Env>(se, value)
             select unit;
 
         /// <summary>
         /// Select a &lt;select&gt; option by value
         /// </summary>        
-        public static Isotope<Unit> selectByValue(SelectElement select, string value) =>
-            trya(() => select.SelectByValue(value), x => "Unable to select" + x.Message);
+        public static Isotope<Env, Unit> selectByValue<Env>(SelectElement select, string value) =>
+            trya<Env>(() => select.SelectByValue(value), x => "Unable to select" + x.Message);
 
         /// <summary>
         /// Retrieves the selected option element in a Select Element
         /// </summary>
         /// <param name="sel">Web Driver Select Element</param>
         /// <returns>The selected Option Web Element</returns>
-        public static Isotope<IWebElement> getSelectedOption(SelectElement sel) =>
-            tryf(() => sel.SelectedOption, x => "Unable to get selected option" + x.Message);
+        public static Isotope<Env, IWebElement> getSelectedOption<Env>(SelectElement sel) =>
+            tryf<Env, IWebElement>(() => sel.SelectedOption, x => "Unable to get selected option" + x.Message);
 
         /// <summary>
         /// Retrieves the text for the selected option element in a Select Element
         /// </summary>
         /// <param name="sel">Web Driver Select Element</param>
         /// <returns>The selected Option Web Element</returns>
-        public static Isotope<string> getSelectedOptionText(SelectElement sel) =>
-            from opt in getSelectedOption(sel)
-            from txt in text(opt)
+        public static Isotope<Env, string> getSelectedOptionText<Env>(SelectElement sel) =>
+            from opt in getSelectedOption<Env>(sel)
+            from txt in text<Env>(opt)
             select txt;
 
         /// <summary>
@@ -281,9 +284,9 @@ namespace Isotope80
         /// </summary>
         /// <param name="sel">Web Driver Select Element</param>
         /// <returns>The selected Option Web Element</returns>
-        public static Isotope<string> getSelectedOptionValue(SelectElement sel) =>
-            from opt in getSelectedOption(sel)
-            from val in value(opt)
+        public static Isotope<Env, string> getSelectedOptionValue<Env>(SelectElement sel) =>
+            from opt in getSelectedOption<Env>(sel)
+            from val in value<Env>(opt)
             select val;
 
         /// <summary>
@@ -291,9 +294,9 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web Driver Selector</param>
         /// <returns>Is checked\s</returns>
-        public static Isotope<bool> isCheckboxChecked(By selector) =>
-            from el in findElement(selector)
-            from res in isCheckboxChecked(el)
+        public static Isotope<Env, bool> isCheckboxChecked<Env>(By selector) =>
+            from el in findElement<Env>(selector)
+            from res in isCheckboxChecked<Env>(el)
             select res;
 
         /// <summary>
@@ -301,8 +304,8 @@ namespace Isotope80
         /// </summary>
         /// <param name="el">Web Driver Element</param>
         /// <returns>Is checked\s</returns>
-        public static Isotope<bool> isCheckboxChecked(IWebElement el) =>
-            pure(el.Selected);
+        public static Isotope<Env, bool> isCheckboxChecked<Env>(IWebElement el) =>
+            pure<Env, bool>(el.Selected);
 
         /// <summary>
         /// Set checkbox value for existing element
@@ -310,11 +313,11 @@ namespace Isotope80
         /// <param name="el">Web Driver Element</param>
         /// <param name="ticked">Check the box or not</param>
         /// <returns>Unit</returns>
-        public static Isotope<Unit> setCheckbox(IWebElement el, bool ticked) =>
-            from val in isCheckboxChecked(el)
+        public static Isotope<Env, Unit> setCheckbox<Env>(IWebElement el, bool ticked) =>
+            from val in isCheckboxChecked<Env>(el)
             from _   in val == ticked
-                        ? pure(unit)
-                        : click(el)
+                        ? pure<Env, Unit>(unit)
+                        : click<Env>(el)
             select unit;
 
         /// <summary>
@@ -323,17 +326,17 @@ namespace Isotope80
         /// <param name="el">Web Driver Element</param>
         /// <param name="style">Style attribute to look up</param>
         /// <returns>A string representing the style value</returns>
-        public static Isotope<string> getStyle(IWebElement el, string style) =>
-            tryf(() => el.GetCssValue(style), $"Could not find style {style}");
+        public static Isotope<Env, string> getStyle<Env>(IWebElement el, string style) =>
+            tryf<Env, string>(() => el.GetCssValue(style), $"Could not find style {style}");
 
         /// <summary>
         /// Gets the Z Index style attribute value for an existing element
         /// </summary>
         /// <param name="el">Web Driver Element</param>
         /// <returns>The Z Index value</returns>
-        public static Isotope<int> getZIndex(IWebElement el) =>
-            from zis in getStyle(el, "zIndex")
-            from zii in parseInt(zis).ToIsotope($"z-Index was not valid integer: {zis}.")
+        public static Isotope<Env, int> getZIndex<Env>(IWebElement el) =>
+            from zis in getStyle<Env>(el, "zIndex")
+            from zii in parseInt(zis).ToIsotope<Env, int>($"z-Index was not valid integer: {zis}.")
             select zii;
 
         /// <summary>
@@ -342,17 +345,17 @@ namespace Isotope80
         /// <param name="el">Web Driver Element</param>
         /// <param name="att">Attribute to look up</param>
         /// <returns>A string representing the attribute value</returns>
-        public static Isotope<string> attribute(IWebElement el, string att) =>
-            tryf(() => el.GetAttribute(att), $"Attribute {att} could not be found.");
+        public static Isotope<Env, string> attribute<Env>(IWebElement el, string att) =>
+            tryf<Env, string>(() => el.GetAttribute(att), $"Attribute {att} could not be found.");
 
         /// <summary>
         /// Simulates keyboard by sending `keys` 
         /// </summary>
         /// <param name="selector">Selector for element to type into</param>
         /// <param name="keys">String of characters that are typed</param>
-        public static Isotope<Unit> sendKeys(By selector, string keys) =>
-            from el in findElement(selector)
-            from _  in sendKeys(el, keys)
+        public static Isotope<Env, Unit> sendKeys<Env>(By selector, string keys) =>
+            from el in findElement<Env>(selector)
+            from _  in sendKeys<Env>(el, keys)
             select unit;
 
         /// <summary>
@@ -360,90 +363,90 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Element to type into</param>
         /// <param name="keys">String of characters that are typed</param>
-        public static Isotope<Unit> sendKeys(IWebElement element, string keys) =>
-            trya(() => element.SendKeys(keys), $@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
+        public static Isotope<Env, Unit> sendKeys<Env>(IWebElement element, string keys) =>
+            trya<Env>(() => element.SendKeys(keys), $@"Error sending keys ""{keys}"" to element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Simulates the mouse-click
         /// </summary>
         /// <param name="selector">Web Driver Selector</param>
         /// <returns>Unit</returns>
-        public static Isotope<Unit> click(By selector) =>
-            from el in findElement(selector)
-            from _ in click(el)
+        public static Isotope<Env, Unit> click<Env>(By selector) =>
+            from el in findElement<Env>(selector)
+            from _ in click<Env>(el)
             select unit;
 
         /// <summary>
         /// Simulates the mouse-click
         /// </summary>
         /// <param name="element">Element to click</param>
-        public static Isotope<Unit> click(IWebElement element) =>
-            trya(() => element.Click(), $@"Error clicking element: {element.PrettyPrint()}");
+        public static Isotope<Env, Unit> click<Env>(IWebElement element) =>
+            trya<Env>(() => element.Click(), $@"Error clicking element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Clears the content of an element
         /// </summary>
         /// <param name="element">Web Driver Element</param>
         /// <returns>Unit</returns>
-        public static Isotope<Unit> clear(IWebElement element) =>
-            trya(() => element.Clear(), $@"Error clearing element: {element.PrettyPrint()}");
+        public static Isotope<Env, Unit> clear<Env>(IWebElement element) =>
+            trya<Env>(() => element.Clear(), $@"Error clearing element: {element.PrettyPrint()}");
 
         /// <summary>
         /// ONLY USE AS A LAST RESORT
         /// Pauses the processing for an interval to brute force waiting for actions to complete
         /// </summary>
-        public static Isotope<Unit> pause(TimeSpan interval)
+        public static Isotope<Env, Unit> pause<Env>(TimeSpan interval)
         {
             Thread.Sleep((int)interval.TotalMilliseconds);
-            return pure(unit);
+            return pure<Env, Unit>(unit);
         }
 
         /// <summary>
         /// Gets the text inside an element
         /// </summary>
         /// <param name="element">Element containing txt</param>
-        public static Isotope<string> text(IWebElement element) =>
-            tryf(() => element.Text, $@"Error getting text from element: {element.PrettyPrint()}");
+        public static Isotope<Env, string> text<Env>(IWebElement element) =>
+            tryf<Env, string>(() => element.Text, $@"Error getting text from element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Gets the value attribute of an element
         /// </summary>
         /// <param name="element">Element containing value</param>
-        public static Isotope<string> value(IWebElement element) =>
-            tryf(() => element.GetAttribute("Value"), $@"Error getting value from element: {element.PrettyPrint()}");
+        public static Isotope<Env, string> value<Env>(IWebElement element) =>
+            tryf<Env, string>(() => element.GetAttribute("Value"), $@"Error getting value from element: {element.PrettyPrint()}");
 
         /// <summary>
         /// Web driver accessor
         /// </summary>
-        public static Isotope<IWebDriver> webDriver =>
-            from s in get
-            from r in s.Driver.ToIsotope("web-driver hasn't been selected yet")
+        public static Isotope<Env, IWebDriver> webDriver<Env>() =>
+            from s in get<Env>()
+            from r in s.Driver.ToIsotope<Env, IWebDriver>("web-driver hasn't been selected yet")
             select r;
 
         /// <summary>
         /// Web driver setter
         /// </summary>
-        public static Isotope<Unit> setWebDriver(IWebDriver d) =>
-            from s in get
-            from _ in put(s.With(Driver: Some(d)))
+        public static Isotope<Env, Unit> setWebDriver<Env>(IWebDriver d) =>
+            from s in get<Env>()
+            from _ in put<Env>(s.With(Driver: Some(d)))
             select unit;
 
-        public static Isotope<Unit> disposeWebDriver =>
-            from s in get
+        public static Isotope<Env, Unit> disposeWebDriver<Env>() =>
+            from s in get<Env>()
             select s.DisposeWebDriver();
 
         /// <summary>
         /// Default wait accessor
         /// </summary>
-        public static Isotope<TimeSpan> defaultWait =>
-            from s in get
+        public static Isotope<Env, TimeSpan> defaultWait<Env>() =>
+            from s in get<Env>()
             select s.Settings.Wait;
 
         /// <summary>
         /// Default wait accessor
         /// </summary>
-        public static Isotope<TimeSpan> defaultInterval =>
-            from s in get
+        public static Isotope<Env, TimeSpan> defaultInterval<Env>() =>
+            from s in get<Env>()
             select s.Settings.Interval;
 
         /// <summary>
@@ -452,8 +455,8 @@ namespace Isotope80
         /// * Always succeeds *
         /// 
         /// </summary>
-        public static Isotope<A> pure<A>(A value) =>
-            state =>
+        public static Isotope<Env, A> pure<Env, A>(A value) =>
+            (env, state) =>
                 new IsotopeState<A>(value, state);
 
         /// <summary>
@@ -464,28 +467,43 @@ namespace Isotope80
         ///         let bar = "456"
         ///         from x in ....
         /// </summary>
-        public static Isotope<Unit> unitM => pure(unit);
+        public static Isotope<Env, Unit> unitM<Env>() => pure<Env, Unit>(unit);
 
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
         /// <param name="message">Error message</param>
-        public static Isotope<A> fail<A>(string message) =>
-            state =>
+        public static Isotope<Env, A> fail<Env, A>(string message) =>
+            (env, state) =>
                 new IsotopeState<A>(default, state.With(Error: Some(message)));
+
+        /// <summary>
+        /// Gets the environment from the Isotope monad
+        /// </summary>
+        /// <typeparam name="Env">Environment</typeparam>
+        public static Isotope<Env, Env> ask<Env>() =>
+            (env, state) =>
+                new IsotopeState<Env>(env, state);
+
+        /// <summary>
+        /// Gets a function of the current environment
+        /// </summary>
+        public static Isotope<Env, R> asks<Env, R>(Func<Env, R> f) =>
+            from env in ask<Env>()
+            select f(env);
 
         /// <summary>
         /// Gets the state from the Isotope monad
         /// </summary>
-        public static Isotope<IsotopeState> get =
-            state =>
+        public static Isotope<Env, IsotopeState> get<Env>() =>
+            (env, state) =>
                 new IsotopeState<IsotopeState>(state, state);
 
         /// <summary>
         /// Puts the state back into the Isotope monad
         /// </summary>
-        public static Isotope<Unit> put(IsotopeState state) =>
-            _ =>
+        public static Isotope<Env, Unit> put<Env>(IsotopeState state) =>
+            (_, env) =>
                 new IsotopeState<Unit>(unit, state);
 
         /// <summary>
@@ -493,18 +511,16 @@ namespace Isotope80
         /// </summary>
         /// <param name="action">Action to try</param>
         /// <param name="label">Error string if exception is thrown</param>
-        /// <returns></returns>
-        public static Isotope<Unit> trya(Action action, string label) =>
-            Try(() => { action(); return unit; }).ToIsotope(label);
+        public static Isotope<Env, Unit> trya<Env>(Action action, string label) =>
+            Try(() => { action(); return unit; }).ToIsotope<Env, Unit>(label);
 
         /// <summary>
         /// Try an action
         /// </summary>
         /// <param name="action">Action to try</param>
         /// <param name="makeError">Convert Exception to an error string</param>
-        /// <returns></returns>
-        public static Isotope<Unit> trya(Action action, Func<Exception, string> makeError) =>
-            Try(() => { action(); return unit; }).ToIsotope(makeError);
+        public static Isotope<Env, Unit> trya<Env>(Action action, Func<Exception, string> makeError) =>
+            Try(() => { action(); return unit; }).ToIsotope<Env, Unit>(makeError);
 
         /// <summary>
         /// Try a function
@@ -512,9 +528,8 @@ namespace Isotope80
         /// <typeparam name="A">Return type of the function</typeparam>
         /// <param name="func">Function to try</param>
         /// <param name="label">Error string if exception is thrown</param>
-        /// <returns></returns>
-        public static Isotope<A> tryf<A>(Func<A> func, string label) =>
-            Try(() => func()).ToIsotope(label);
+        public static Isotope<Env, A> tryf<Env, A>(Func<A> func, string label) =>
+            Try(() => func()).ToIsotope<Env, A>(label);
 
         /// <summary>
         /// Try a function
@@ -523,15 +538,15 @@ namespace Isotope80
         /// <param name="func">Function to try</param>
         /// <param name="makeError">Convert Exception to an error string</param>
         /// <returns>The result of the function</returns>
-        public static Isotope<A> tryf<A>(Func<A> func, Func<Exception, string> makeError) =>
-            Try(() => func()).ToIsotope(makeError);
+        public static Isotope<Env, A> tryf<Env, A>(Func<A> func, Func<Exception, string> makeError) =>
+            Try(() => func()).ToIsotope<Env, A>(makeError);
 
         /// <summary>
         /// Run a void returning action
         /// </summary>
         /// <param name="action">Action to run</param>
         /// <returns>Unit</returns>
-        public static Isotope<Unit> voida(Action action) => state =>
+        public static Isotope<Env, Unit> voida<Env>(Action action) => (env, state) =>
         {
             action();
             return new IsotopeState<Unit>(unit, state);
@@ -540,40 +555,40 @@ namespace Isotope80
         /// <summary>
         /// Log some output
         /// </summary>
-        public static Isotope<Unit> log(string message) =>
-            from st in get
-            from _1 in put(st.Write(message, st.Settings.LoggingAction))
+        public static Isotope<Env, Unit> log<Env>(string message) =>
+            from st in get<Env>()
+            from _1 in put<Env>(st.Write(message, st.Settings.LoggingAction))
             select unit;
 
-        public static Isotope<Unit> pushLog(string message) =>
-            from st in get
-            from _1 in put(st.PushLog(message, st.Settings.LoggingAction))
+        public static Isotope<Env, Unit> pushLog<Env>(string message) =>
+            from st in get<Env>()
+            from _1 in put<Env>(st.PushLog(message, st.Settings.LoggingAction))
             select unit;
 
-        public static Isotope<Unit> popLog =>
-            from st in get
-            from _1 in put(st.PopLog())
+        public static Isotope<Env, Unit> popLog<Env>() =>
+            from st in get<Env>()
+            from _1 in put<Env>(st.PopLog())
             select unit;
 
-        public static Isotope<A> context<A>(string context, Isotope<A> iso) =>
-            from _1 in pushLog(context)
+        public static Isotope<Env, A> context<Env, A>(string context, Isotope<Env, A> iso) =>
+            from _1 in pushLog<Env>(context)
             from re in iso
-            from _2 in popLog
+            from _2 in popLog<Env>()
             select re;
 
-        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
+        public static Isotope<Env, Seq<IWebElement>> waitUntilElementsExists<Env>(
             By selector,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(selector), x => x.IsEmpty, interval: interval, wait: wait)
+            from el in waitUntil(findElementsOrEmpty<Env>(selector), x => x.IsEmpty, interval: interval, wait: wait)
             select el;
 
-        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
+        public static Isotope<Env, Seq<IWebElement>> waitUntilElementsExists<Env>(
             IWebElement parent,
             By selector,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.IsEmpty, interval: interval, wait: wait)
+            from el in waitUntil(findElementsOrEmpty<Env>(parent, selector), x => x.IsEmpty, interval: interval, wait: wait)
             select el;
 
         /// <summary>
@@ -583,18 +598,18 @@ namespace Isotope80
         /// <param name="interval"></param>
         /// <param name="wait"></param>
         /// <returns></returns>
-        public static Isotope<IWebElement> waitUntilElementExists(
+        public static Isotope<Env, IWebElement> waitUntilElementExists<Env>(
             By selector, 
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
             from x in waitUntil(
-                            findOptionalElement(selector),
+                            findOptionalElement<Env>(selector),
                             el => el.IsNone,
                             interval,
                             wait)
             from y in x.Match(
-                            Some: s => pure(s),
-                            None: () => fail<IWebElement>("Element not found within timeout period"))
+                            Some: s => pure<Env, IWebElement>(s),
+                            None: () => fail<Env, IWebElement>("Element not found within timeout period"))
             select y;
 
         /// <summary>
@@ -605,50 +620,50 @@ namespace Isotope80
         /// <param name="interval">The time period between attempts to check, if not provided the default value from Settings is used.</param>
         /// <param name="wait">The overall time period to attempt for, if not provided the default value from Settings is used.</param>
         /// <returns></returns>
-        public static Isotope<IWebElement> waitUntilElementExists(
+        public static Isotope<Env, IWebElement> waitUntilElementExists<Env>(
             IWebElement element, 
             By selector, 
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
             from x in waitUntil(
-                            findOptionalElement(element, selector),
+                            findOptionalElement<Env>(element, selector),
                             el => el.IsNone,
                             interval,
                             wait)
             from y in x.Match(
-                            Some: s => pure(s),
-                            None: () => fail<IWebElement>("Element not found within timeout period"))
+                            Some: s => pure<Env, IWebElement>(s),
+                            None: () => fail<Env, IWebElement>("Element not found within timeout period"))
             select y;
 
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
-        public static Isotope<IWebElement> waitUntilClickable(By selector) =>
-            from w  in defaultWait
-            from el in waitUntilClickable(selector, w)
+        public static Isotope<Env, IWebElement> waitUntilClickable<Env>(By selector) =>
+            from w  in defaultWait<Env>()
+            from el in waitUntilClickable<Env>(selector, w)
             select el;
 
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
-        public static Isotope<Unit> waitUntilClickable(IWebElement element) =>
-            from w in defaultWait
-            from _ in waitUntilClickable(element, w)
+        public static Isotope<Env, Unit> waitUntilClickable<Env>(IWebElement element) =>
+            from w in defaultWait<Env>()
+            from _ in waitUntilClickable<Env>(element, w)
             select unit;
 
-        public static Isotope<IWebElement> waitUntilClickable(By selector, TimeSpan timeout) =>
-            from _1 in log($"Waiting until clickable: {selector}")
-            from el in waitUntilElementExists(selector)
-            from _2 in waitUntilClickable(el, timeout)
+        public static Isotope<Env, IWebElement> waitUntilClickable<Env>(By selector, TimeSpan timeout) =>
+            from _1 in log<Env>($"Waiting until clickable: {selector}")
+            from el in waitUntilElementExists<Env>(selector)
+            from _2 in waitUntilClickable<Env>(el, timeout)
             select el;
 
-        public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
+        public static Isotope<Env, Unit> waitUntilClickable<Env>(IWebElement el, TimeSpan timeout) =>
             from _ in waitUntil(
-                        from _1a in log($"Checking clickability " + el.PrettyPrint())
-                        from d in displayed(el)
-                        from e in enabled(el)
-                        from o in obscured(el)
-                        from _2a in log($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
+                        from _1a in log<Env>($"Checking clickability " + el.PrettyPrint())
+                        from d in displayed<Env>(el)
+                        from e in enabled<Env>(el)
+                        from o in obscured<Env>(el)
+                        from _2a in log<Env>($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
                         select d && e && (!o),
                         x => !x)
             select unit;
@@ -667,26 +682,26 @@ namespace Isotope80
         /// </summary>
         /// <typeparam name="A"></typeparam>
         /// <param name="mas"></param>
-        /// <returns></returns>
-        public static Isotope<Seq<A>> Sequence<A>(this Seq<Isotope<A>> mas) => state =>
-        {
-            var rs = new A[mas.Count];
-            int index = 0;
-
-            foreach (var ma in mas)
+        public static Isotope<Env, Seq<A>> Sequence<Env, A>(this Seq<Isotope<Env, A>> mas) =>
+            (env, state) =>
             {
-                var s = ma(state);
-                if (s.State.Error.IsSome)
-                {
-                    return new IsotopeState<Seq<A>>(default, s.State);
-                }
+                var rs = new A[mas.Count];
+                int index = 0;
 
-                state = s.State;
-                rs[index] = s.Value;
-                index++;
-            }
-            return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
-        };
+                foreach (var ma in mas)
+                {
+                    var s = ma(env, state);
+                    if (s.State.Error.IsSome)
+                    {
+                        return new IsotopeState<Seq<A>>(default, s.State);
+                    }
+
+                    state = s.State;
+                    rs[index] = s.Value;
+                    index++;
+                }
+                return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+            };
 
         /// <summary>
         /// Flips the sequence of Isotopes to be a Isotope of Sequences
@@ -694,112 +709,116 @@ namespace Isotope80
         /// <typeparam name="A"></typeparam>
         /// <param name="mas"></param>
         /// <returns></returns>
-        public static Isotope<Seq<A>> Collect<A>(this Seq<Isotope<A>> mas) => state =>
-        {
-            if(state.Error.IsSome)
+        public static Isotope<Env, Seq<A>> Collect<Env, A>(this Seq<Isotope<Env, A>> mas) =>
+            (env, state) =>
             {
-                return new IsotopeState<Seq<A>>(default, state);
-            }
-
-            var rs = new A[mas.Count];
-            int index = 0;
-
-            // Create an empty log TODO
-            //var logs = state.Log.Cons(Seq<Seq<string>>());
-
-            // Clear log from the state
-            state = state.With(Log: Log.Empty);
-
-            bool hasFaulted = false;
-            var errors = new List<string>();
-
-            foreach (var ma in mas)
-            {
-                var s = ma(state);
-
-                // Collect error
-                hasFaulted = hasFaulted || s.State.Error.IsSome;
-                if(s.State.Error.IsSome)
+                if(state.Error.IsSome)
                 {
-                    errors.Add((string)s.State.Error);
+                    return new IsotopeState<Seq<A>>(default, state);
                 }
 
-                // Collect logs TODO
-                //logs = logs.Add(s.State.Log);
+                var rs = new A[mas.Count];
+                int index = 0;
 
-                // Record value
-                rs[index] = s.Value;
-                index++;
-            }
+                // Create an empty log TODO
+                //var logs = state.Log.Cons(Seq<Seq<string>>());
 
-            return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(
-                Error: hasFaulted
-                            ? Some(String.Join(" | ", errors))
-                            : None,
-                Log: Log.Empty));//LanguageExt.Seq.flatten(logs)));
-        };
+                // Clear log from the state
+                state = state.With(Log: Log.Empty);
 
-        public static Isotope<B> Select<A, B>(this Isotope<A> ma, Func<A, B> f) => sa =>
-        {
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
-            return new IsotopeState<B>(f(a.Value), a.State);
-        };
+                bool hasFaulted = false;
+                var errors = new List<string>();
 
-        public static Isotope<B> Map<A, B>(this Isotope<A> ma, Func<A, B> f) => ma.Select(f);
+                foreach (var ma in mas)
+                {
+                    var s = ma(env, state);
 
-        public static Isotope<B> Bind<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) => SelectMany(ma, f);
+                    // Collect error
+                    hasFaulted = hasFaulted || s.State.Error.IsSome;
+                    if(s.State.Error.IsSome)
+                    {
+                        errors.Add((string)s.State.Error);
+                    }
 
-        public static Isotope<B> SelectMany<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) => sa =>
-        {
-            if (sa.Error.IsSome) return new IsotopeState<B>(default, sa);
+                    // Collect logs TODO
+                    //logs = logs.Add(s.State.Log);
 
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                    // Record value
+                    rs[index] = s.Value;
+                    index++;
+                }
 
-            var b = f(a.Value)(a.State);
-            return b;
-        };
+                return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(
+                    Error: hasFaulted
+                                ? Some(String.Join(" | ", errors))
+                                : None,
+                    Log: Log.Empty));//LanguageExt.Seq.flatten(logs)));
+            };
 
-        public static Isotope<C> SelectMany<A, B, C>(this Isotope<A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) => sa =>
-        {
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<C>(default(C), a.State);
+        public static Isotope<Env, B> Select<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) =>
+            (env, sa) =>
+            {
+                var a = ma(env, sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                return new IsotopeState<B>(f(a.Value), a.State);
+            };
 
-            var b = bind(a.Value)(a.State);
-            if (b.State.Error.IsSome) return new IsotopeState<C>(default(C), b.State);
+        public static Isotope<Env, B> Map<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) => ma.Select(f);
 
-            return new IsotopeState<C>(project(a.Value, b.Value), b.State);
-        };
+        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> f) => SelectMany(ma, f);
 
-        public static Isotope<A> ToIsotope<A>(this Option<A> maybe, string label) =>
+        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> f) =>
+            (env, sa) =>
+            {
+                if (sa.Error.IsSome) return new IsotopeState<B>(default, sa);
+
+                var a = ma(env, sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+
+                var b = f(a.Value)(env, a.State);
+                return b;
+            };
+
+        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            (env, sa) =>
+            {
+                var a = ma(env, sa);
+                if (a.State.Error.IsSome) return new IsotopeState<C>(default(C), a.State);
+
+                var b = bind(a.Value)(env, a.State);
+                if (b.State.Error.IsSome) return new IsotopeState<C>(default(C), b.State);
+
+                return new IsotopeState<C>(project(a.Value, b.Value), b.State);
+            };
+
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Option<A> maybe, string label) =>
             maybe.Match(
-                    Some: pure,
-                    None: () => fail<A>(label));
+                    Some: pure<Env, A>,
+                    None: () => fail<Env, A>(label));
 
-        public static Isotope<A> ToIsotope<A>(this Try<A> tried, string label) =>
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, string label) =>
             tried.Match(
-                    Succ: pure,
-                    Fail: x => fail<A>($"{label} {Environment.NewLine}Details: {x.Message}"));
+                    Succ: pure<Env, A>,
+                    Fail: x => fail<Env, A>($"{label} {Environment.NewLine}Details: {x.Message}"));
 
-        public static Isotope<A> ToIsotope<A>(this Try<A> tried, Func<Exception, string> makeError) =>
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, Func<Exception, string> makeError) =>
             tried.Match(
-                    Succ: pure,
-                    Fail: x => fail<A>(makeError(x)));
+                    Succ: pure<Env, A>,
+                    Fail: x => fail<Env, A>(makeError(x)));
 
-        public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
+        public static Isotope<Env, B> ToIsotope<Env, A, B>(this Either<A, B> either, Func<A, string> makeError) =>
             either.Match(
-                Left: l => fail<B>(makeError(l)),
-                Right: pure);
+                Left: l => fail<Env, B>(makeError(l)),
+                Right: pure<Env, B>);
 
         /// <summary>
         /// Finds an element by a selector and checks if it is currently displayed
         /// </summary>
         /// <param name="selector">WebDriver selector</param>
         /// <returns>True if the element is currently displayed</returns>
-        public static Isotope<bool> displayed(By selector) =>
-            from el in findElement(selector)
-            from d in displayed(el)
+        public static Isotope<Env, bool> displayed<Env>(By selector) =>
+            from el in findElement<Env>(selector)
+            from d in displayed<Env>(el)
             select d;
 
         /// <summary>
@@ -807,22 +826,22 @@ namespace Isotope80
         /// </summary>
         /// <param name="el">WebDriver element</param>
         /// <returns>True if the element is currently displayed</returns>
-        public static Isotope<bool> displayed(IWebElement el) =>
-            tryf(() => el.Displayed, $"Error getting display status of {el}");
+        public static Isotope<Env, bool> displayed<Env>(IWebElement el) =>
+            tryf<Env, bool>(() => el.Displayed, $"Error getting display status of {el}");
 
-        public static Isotope<bool> enabled(IWebElement el) =>
-            tryf(() => el.Enabled, $"Error getting enabled status of {el}");
+        public static Isotope<Env, bool> enabled<Env>(IWebElement el) =>
+            tryf<Env, bool>(() => el.Enabled, $"Error getting enabled status of {el}");
 
         /// <summary>
         /// Checks if an element exists that matches the selector
         /// </summary>
         /// <param name="selector">WebDriver selector</param>
         /// <returns>True if a matching element exists</returns>
-        public static Isotope<bool> exists(By selector) =>
-            from op in findOptionalElement(selector)
+        public static Isotope<Env, bool> exists<Env>(By selector) =>
+            from op in findOptionalElement<Env>(selector)
             from bl in op.Match(
-                        Some: _ => pure(true),
-                        None: () => pure(false))
+                        Some: _ => pure<Env, bool>(true),
+                        None: () => pure<Env, bool>(false))
             select bl;
 
         /// <summary>
@@ -831,15 +850,15 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Target element</param>
         /// <returns>true if the element is foremost</returns>
-        public static Isotope<bool> obscured(IWebElement element) =>
-            from dvr in webDriver
+        public static Isotope<Env, bool> obscured<Env>(IWebElement element) =>
+            from dvr in webDriver<Env>()
             let jsExec = (IJavaScriptExecutor)dvr
             let coords = element.Location
             let x = coords.X + (int)Math.Floor((double)(element.Size.Width / 2))
             let y = coords.Y + (int)Math.Floor((double)(element.Size.Height / 2))
-            from _ in log($"X: {x}, Y: {y}")
-            from top in pure((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
-            from _1  in log($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
+            from _ in log<Env>($"X: {x}, Y: {y}")
+            from top in pure<Env, IWebElement>((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
+            from _1  in log<Env>($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
             select !element.Equals(top);
 
         /// <summary>
@@ -848,86 +867,86 @@ namespace Isotope80
         /// <param name="element">Element to compare</param>
         /// <param name="comparison">String to match</param>
         /// <returns>true if exact match</returns>
-        public static Isotope<bool> hasText(IWebElement element, string comparison) =>
-            from t in text(element)
+        public static Isotope<Env, bool> hasText<Env>(IWebElement element, string comparison) =>
+            from t in text<Env>(element)
             select t == comparison;
 
         /// <summary>
         /// Repeatedly runs an Isotope function and checks whether the condition is met.
         /// </summary>        
-        public static Isotope<A> waitUntil<A>(
-            Isotope<A> iso,
+        public static Isotope<Env, A> waitUntil<Env, A>(
+            Isotope<Env, A> iso,
             Func<A, bool> continueCondition,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
-            from w in wait.Match(Some: s => pure(s), None: () => defaultWait)
-            from i in interval.Match(Some: s => pure(s), None: () => defaultInterval)
+            from w in wait.Match(Some: s => pure<Env, TimeSpan>(s), None: () => defaultWait<Env>())
+            from i in interval.Match(Some: s => pure<Env, TimeSpan>(s), None: () => defaultInterval<Env>())
             from r in waitUntil(iso, continueCondition, i, w, DateTime.Now)
             select r;
 
-        private static Isotope<A> waitUntil<A>(
-            Isotope<A> iso,
+        private static Isotope<Env, A> waitUntil<Env, A>(
+            Isotope<Env, A> iso,
             Func<A, bool> continueCondition,
             TimeSpan interval,
             TimeSpan wait,
             DateTime started) =>
             DateTime.Now - started >= wait
-                ? fail<A>("Timed Out")
+                ? fail<Env, A>("Timed Out")
                 : from x in iso
                   from y in continueCondition(x)
-                            ? from _ in pause(interval)
+                            ? from _ in pause<Env>(interval)
                               from r in waitUntil(iso, continueCondition, interval, wait, started)
                               select r
-                            : pure(x)
+                            : pure<Env, A>(x)
                   select y;
 
 
-        public static Isotope<A> doWhile<A>(
-            Isotope<A> iso,
+        public static Isotope<Env, A> doWhile<Env, A>(
+            Isotope<Env, A> iso,
             Func<A, bool> continueCondition,
             int maxRepeats = 100) =>
             maxRepeats <= 0
-                ? pure(default(A))
+                ? pure<Env, A>(default(A))
                 : from x in iso
                   from y in continueCondition(x)
                               ? doWhile(iso, continueCondition, maxRepeats - 1)
-                              : pure(x)
+                              : pure<Env, A>(x)
                   select y;
 
-        public static Isotope<A> doWhileOrFail<A>(
-            Isotope<A> iso,
+        public static Isotope<Env, A> doWhileOrFail<Env, A>(
+            Isotope<Env, A> iso,
             Func<A, bool> continueCondition,
             string failureMessage,
             int maxRepeats = 100) =>
             maxRepeats <= 0
-                ? fail<A>(failureMessage)
+                ? fail<Env, A>(failureMessage)
                 : from x in iso
                   from y in continueCondition(x)
                               ? doWhileOrFail(iso, continueCondition, failureMessage, maxRepeats - 1)
-                              : pure(x)
+                              : pure<Env, A>(x)
                   select y;
 
-        public static Isotope<A> doWhileOrFail<A>(
-            Isotope<A> iso,
+        public static Isotope<Env, A> doWhileOrFail<Env, A>(
+            Isotope<Env, A> iso,
             Func<A, bool> continueCondition,
             string failureMessage,
             TimeSpan interval,
             int maxRepeats = 1000) =>
             maxRepeats <= 0
-                ? fail<A>(failureMessage)
+                ? fail<Env, A>(failureMessage)
                 : from x in iso
                   from y in continueCondition(x)
-                              ? from _ in pause(interval)
+                              ? from _ in pause<Env>(interval)
                                 from z in doWhileOrFail(iso, continueCondition, failureMessage, interval, maxRepeats - 1)
                                 select z
-                              : pure(x)
+                              : pure<Env, A>(x)
                   select y;
 
         /// <summary>
         /// Takes a screenshot if the current WebDriver supports that functionality
         /// </summary>
-        public static Isotope<Option<Screenshot>> getScreenshot =>
-            from dvr in webDriver
+        public static Isotope<Env, Option<Screenshot>> getScreenshot<Env>() =>
+            from dvr in webDriver<Env>()
             let ts = dvr as ITakesScreenshot
             select ts == null ? None : Some(ts.GetScreenshot());
 
