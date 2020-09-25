@@ -3,12 +3,14 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
     public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
+    public delegate IsotopeState<A> Isotope<Env, A>(Env env, IsotopeState state);
 
     public static partial class Isotope
     {
@@ -29,9 +31,38 @@ namespace Isotope80
             return(res.State, res.Value);
         }
 
+        /// <summary>
+        /// Run the test computation - returning an optional error. 
+        /// The computation succeeds if result.IsNone is true
+        /// </summary>
+        /// <param name="ma">Test computation</param>
+        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IsotopeSettings settings = null)
+        {
+            var res = ma(env, IsotopeState.Empty.With(Settings: settings));
+
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+
+            return (res.State, res.Value);
+        }
+
         public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
             var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+
+            return (res.State, res.Value);
+        }
+
+        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
             if (res.State.Settings.DisposeOnCompletion)
             {
@@ -48,6 +79,26 @@ namespace Isotope80
         public static (IsotopeState state, A value) RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
         {
             var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+
+            res.State.Error.Match(
+                Some: x => { res.State.Settings.FailureAction(x, res.State.Log); return failwith<Unit>(x); },
+                None: () => unit);
+
+            return (res.State, res.Value);
+        }
+
+        /// <summary>
+        /// Run the test computation - throws and error if it fails to pass
+        /// </summary>
+        /// <param name="ma">Test computation</param>
+        public static (IsotopeState state, A value) RunAndThrowOnError<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
 
             if (res.State.Settings.DisposeOnCompletion)
             {
@@ -93,9 +144,11 @@ namespace Isotope80
             select unit;
 
         public static Isotope<Unit> setWindowSize(int width, int height) =>
+            setWindowSize(new Size(width, height));
+
+        public static Isotope<Unit> setWindowSize(Size size) =>
             from d in webDriver
-            let size = new System.Drawing.Size(width, height)
-            from _ in trya(() => d.Manage().Window.Size = size, $"Failed to change browser window size to {width} by {height}")
+            from _ in trya(() => d.Manage().Window.Size = size, $"Failed to change browser window size to {size.Width} by {size.Height}")
             select unit;
 
         /// <summary>
@@ -457,6 +510,16 @@ namespace Isotope80
                 new IsotopeState<A>(value, state);
 
         /// <summary>
+        /// Identity - lifts a value of `A` into the Isotope monad
+        /// 
+        /// * Always succeeds *
+        /// 
+        /// </summary>
+        public static Isotope<Env, A> pure<Env, A>(A value) =>
+            (env, state) =>
+                new IsotopeState<A>(value, state);
+
+        /// <summary>
         /// Useful for starting a linq expression if you need lets first
         /// i.e.
         ///         from _ in unitM
@@ -473,6 +536,29 @@ namespace Isotope80
         public static Isotope<A> fail<A>(string message) =>
             state =>
                 new IsotopeState<A>(default, state.With(Error: Some(message)));
+
+        /// <summary>
+        /// Failure - creates an Isotope monad that always fails
+        /// </summary>
+        /// <param name="message">Error message</param>
+        public static Isotope<Env, A> fail<Env, A>(string message) =>
+            (env, state) =>
+                new IsotopeState<A>(default, state.With(Error: Some(message)));
+
+        /// <summary>
+        /// Gets the environment from the Isotope monad
+        /// </summary>
+        /// <typeparam name="Env">Environment</typeparam>
+        public static Isotope<Env, Env> ask<Env>() =>
+            (env, state) =>
+                new IsotopeState<Env>(env, state);
+
+        /// <summary>
+        /// Gets a function of the current environment
+        /// </summary>
+        public static Isotope<Env, R> asks<Env, R>(Func<Env, R> f) =>
+            from env in ask<Env>()
+            select f(env);
 
         /// <summary>
         /// Gets the state from the Isotope monad
@@ -739,58 +825,135 @@ namespace Isotope80
                 Log: Log.Empty));//LanguageExt.Seq.flatten(logs)));
         };
 
-        public static Isotope<B> Select<A, B>(this Isotope<A> ma, Func<A, B> f) => sa =>
-        {
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
-            return new IsotopeState<B>(f(a.Value), a.State);
-        };
+        public static Isotope<B> Select<A, B>(this Isotope<A> ma, Func<A, B> f) =>
+            sa =>
+            {
+                var a = ma(sa);
+                return a.State.Error.IsSome
+                    ? new IsotopeState<B>(default(B), a.State)
+                    : new IsotopeState<B>(f(a.Value), a.State);
+            };
+
+        public static Isotope<Env, B> Select<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) =>
+            (env, sa) =>
+            {
+                var a = ma(env, sa);
+                return a.State.Error.IsSome
+                    ? new IsotopeState<B>(default(B), a.State)
+                    : new IsotopeState<B>(f(a.Value), a.State);
+            };
 
         public static Isotope<B> Map<A, B>(this Isotope<A> ma, Func<A, B> f) => ma.Select(f);
+        public static Isotope<Env, B> Map<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) => ma.Select(f);
 
         public static Isotope<B> Bind<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) => SelectMany(ma, f);
 
-        public static Isotope<B> SelectMany<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) => sa =>
-        {
-            if (sa.Error.IsSome) return new IsotopeState<B>(default, sa);
+        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> f) => SelectMany(ma, f);
 
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<A> ma, Func<A, Isotope<Env, B>> f) => SelectMany(ma, f);
 
-            var b = f(a.Value)(a.State);
-            return b;
-        };
+        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<B>> f) => SelectMany(ma, f);
 
-        public static Isotope<C> SelectMany<A, B, C>(this Isotope<A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) => sa =>
-        {
-            var a = ma(sa);
-            if (a.State.Error.IsSome) return new IsotopeState<C>(default(C), a.State);
+        public static Isotope<B> SelectMany<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) =>
+            sa =>
+            {
+                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
 
-            var b = bind(a.Value)(a.State);
-            if (b.State.Error.IsSome) return new IsotopeState<C>(default(C), b.State);
+                var a = ma(sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
 
-            return new IsotopeState<C>(project(a.Value, b.Value), b.State);
-        };
+                var b = f(a.Value)(a.State);
+                return b;
+            };
+
+        public static Isotope<C> SelectMany<A, B, C>(this Isotope<A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+
+        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> bind) =>
+            (env, sa) =>
+            {
+                if (sa.Error.IsSome) return new IsotopeState<B>(default, sa);
+
+                var a = ma(env, sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+
+                var b = bind(a.Value)(env, a.State);
+                return b;
+            };
+
+        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+
+        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<A> ma, Func<A, Isotope<Env, B>> bind) =>
+            (env, sa) =>
+            {
+                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
+
+                var a = ma(sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+
+                var b = bind(a.Value)(env, a.State);
+                return b;
+            };
+
+        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<A> ma, Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+
+        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<B>> bind) =>
+            (env, sa) =>
+            {
+                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
+
+                var a = ma(env, sa);
+                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+
+                var b = bind(a.Value)(a.State);
+
+                return b;
+            };
+
+        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<Env, A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
 
         public static Isotope<A> ToIsotope<A>(this Option<A> maybe, string label) =>
             maybe.Match(
                     Some: pure,
                     None: () => fail<A>(label));
 
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Option<A> maybe, string label) =>
+            maybe.Match(
+                    Some: pure<Env, A>,
+                    None: () => fail<Env, A>(label));
+
         public static Isotope<A> ToIsotope<A>(this Try<A> tried, string label) =>
             tried.Match(
                     Succ: pure,
                     Fail: x => fail<A>($"{label} {Environment.NewLine}Details: {x.Message}"));
+
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, string label) =>
+            tried.Match(
+                    Succ: pure<Env, A>,
+                    Fail: x => fail<Env, A>($"{label} {Environment.NewLine}Details: {x.Message}"));
 
         public static Isotope<A> ToIsotope<A>(this Try<A> tried, Func<Exception, string> makeError) =>
             tried.Match(
                     Succ: pure,
                     Fail: x => fail<A>(makeError(x)));
 
+        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, Func<Exception, string> makeError) =>
+            tried.Match(
+                    Succ: pure<Env, A>,
+                    Fail: x => fail<Env, A>(makeError(x)));
+
         public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
             either.Match(
                 Left: l => fail<B>(makeError(l)),
                 Right: pure);
+
+        public static Isotope<Env, B> ToIsotope<Env, A, B>(this Either<A, B> either, Func<A, string> makeError) =>
+            either.Match(
+                Left: l => fail<Env, B>(makeError(l)),
+                Right: pure<Env, B>);
 
         /// <summary>
         /// Finds an element by a selector and checks if it is currently displayed
@@ -880,7 +1043,6 @@ namespace Isotope80
                               select r
                             : pure(x)
                   select y;
-
 
         public static Isotope<A> doWhile<A>(
             Isotope<A> iso,
