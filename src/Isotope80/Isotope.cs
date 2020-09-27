@@ -110,9 +110,13 @@ namespace Isotope80
             new Isotope<A>(s =>
             {
                 var l = lhs.Invoke(s);
-                return l.IsFaulted
+                var r = l.IsFaulted
                            ? rhs.Invoke(s)
                            : l;
+
+                return r.IsFaulted
+                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           : r;
             });
 
         /// <summary>
@@ -416,9 +420,13 @@ namespace Isotope80
         public static Isotope<Env, A> operator |(Isotope<Env, A> lhs, Isotope<Env, A> rhs) =>
             new Isotope<Env, A>((e, s) => {
                                     var l = lhs.Invoke(e, s);
-                                    return l.IsFaulted
-                                               ? rhs.Invoke(e, s)
-                                               : l;
+                                    var r = l.IsFaulted
+                                                ? rhs.Invoke(e, s)
+                                                : l;
+
+                                    return r.IsFaulted
+                                               ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                                               : r;
                                 });
 
         /// <summary>
@@ -719,9 +727,13 @@ namespace Isotope80
             new IsotopeAsync<A>(async s =>
             {
                 var l = await lhs.Invoke(s);
-                return l.IsFaulted
-                           ? await rhs.Invoke(s)
-                           : l;
+                var r = l.IsFaulted
+                            ? await rhs.Invoke(s)
+                            : l;
+
+                return r.IsFaulted
+                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           : r;
             });
 
         /// <summary>
@@ -1041,9 +1053,13 @@ namespace Isotope80
         public static IsotopeAsync<Env, A> operator |(IsotopeAsync<Env, A> lhs, IsotopeAsync<Env, A> rhs) =>
             new IsotopeAsync<Env, A>(async (e, s) => {
                                          var l = await lhs.Invoke(e, s);
-                                         return l.IsFaulted
-                                                    ? await rhs.Invoke(e, s)
-                                                    : l;
+                                         var r = l.IsFaulted
+                                                     ? await rhs.Invoke(e, s)
+                                                     : l;
+
+                                         return r.IsFaulted
+                                                    ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                                                    : r;
                                      });
 
         /// <summary>
