@@ -1,5 +1,7 @@
 ﻿using OpenQA.Selenium.Chrome;
 using System;
+using LanguageExt;
+using LanguageExt.Common;
 using static System.Console;
 
 namespace Isotope80.Samples.Console
@@ -20,15 +22,19 @@ namespace Isotope80.Samples.Console
             
             WriteLine("Current Vacancies:\n");
 
-            state.Error.Match(
-                Some: x => WriteLine($"ERROR: {x}"),
-                None: () => value.Iter(x => WriteLine(x)));
-
+            if (state.Error.IsEmpty)
+            {
+                value.Iter(x => WriteLine(x));
+            }
+            else
+            {
+                WriteLine($"ERROR: {state.Error.Head}");
+            }
+            
             WriteLine("\n\nLogs:\n");
-
             WriteLine(state.Log.ToString());
-
             WriteLine();
         }
+      
     }
 }

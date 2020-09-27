@@ -4,6 +4,7 @@ using Xunit;
 using static Isotope80.Isotope;
 using static Isotope80.Assertions;
 using LanguageExt;
+using LanguageExt.Common;
 using static LanguageExt.Prelude;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -61,7 +62,7 @@ namespace Isotope80.Samples.UnitTests
                       from _2  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
                       select unit;
            
-            Action<string, Log> xunitOutput = 
+            Action<Error, Log> xunitOutput = 
                 (x,y) => output.WriteLine(y.ToString());
 
             (var state, var value) = iso.RunAndThrowOnError(new ChromeDriver(), settings: IsotopeSettings.Create(failureAction: xunitOutput));

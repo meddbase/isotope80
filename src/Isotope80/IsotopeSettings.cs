@@ -1,5 +1,6 @@
 ﻿using LanguageExt;
 using System;
+using LanguageExt.Common;
 
 namespace Isotope80
 {
@@ -10,8 +11,8 @@ namespace Isotope80
         private const bool defaultDisposeOnCompletion = true;
         public readonly Action<string, int> LoggingAction;
         private static Action<string, int> defaultLoggingAction = (x,y) => { };
-        public readonly Action<string, Log> FailureAction;
-        private static Action<string, Log> defaultFailureAction = (x, y) => { };
+        public readonly Action<Error, Log> FailureAction;
+        private static Action<Error, Log> defaultFailureAction = (x, y) => { };
         public readonly TimeSpan Wait;
         private static TimeSpan defaultWait = TimeSpan.FromSeconds(10);
         public readonly TimeSpan Interval;
@@ -20,7 +21,7 @@ namespace Isotope80
         private IsotopeSettings(
             bool disposeOnCompletion,
             Action<string, int> loggingAction,
-            Action<string, Log> failureAction,
+            Action<Error, Log> failureAction,
             TimeSpan wait,
             TimeSpan interval)
         {
@@ -34,7 +35,7 @@ namespace Isotope80
         public static IsotopeSettings Create(
             bool? disposeOnCompletion = null,
             Action<string, int> loggingAction = null,
-            Action<string, Log> failureAction = null,
+            Action<Error, Log> failureAction = null,
             TimeSpan? wait = null,
             TimeSpan? interval = null) =>
             new IsotopeSettings(
@@ -43,5 +44,11 @@ namespace Isotope80
                 failureAction ?? defaultFailureAction,
                 wait ?? defaultWait,
                 interval ?? defaultInterval);
+
+        static Action<Error, Log> MakeFail(Action<string, Log> f) =>
+            f == null
+                ? defaultFailureAction
+                : (Error err, Log log) => f(err.ToString(), log);
+
     }
 }

@@ -5,65 +5,349 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
+using System.Threading.Tasks;
+using LanguageExt.Common;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
-    public delegate IsotopeState<A> Isotope<A>(IsotopeState state);
-    public delegate IsotopeState<A> Isotope<Env, A>(Env env, IsotopeState state);
-
-    public static partial class Isotope
+    /// <summary>
+    /// Environment-free isotope computation
+    /// </summary>
+    /// <typeparam name="A">Bound value</typeparam>
+    public struct Isotope<A>
     {
+        readonly Func<IsotopeState, IsotopeState<A>> Thunk;
+        
         /// <summary>
-        /// Run the test computation - returning an optional error. 
-        /// The computation succeeds if result.IsNone is true
+        /// Ctor
         /// </summary>
-        /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IsotopeSettings settings = null)
-        {
-            var res = ma(IsotopeState.Empty.With(Settings: settings));
+        /// <param name="thunk">Thunk</param>
+        public Isotope(Func<IsotopeState, IsotopeState<A>> thunk) =>
+            Thunk = thunk;
 
+        /// <summary>
+        /// Invoke the computation
+        /// </summary>
+        /// <param name="state">State</param>
+        /// <returns>Result of invoking the isotope computation</returns>
+        internal IsotopeState<A> Invoke(IsotopeState state)
+        {
+            try
+            {
+                return Thunk?.Invoke(state) ?? throw new InvalidOperationException("Isotope computation not initialised");
+            }
+            catch (Exception e)
+            {
+                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
+            }
+        }
+
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) Run(IsotopeSettings settings = null)
+        {
+            var res = Invoke(IsotopeState.Empty.With(Settings: settings));
             if (res.State.Settings.DisposeOnCompletion)
             {
                 res.State.DisposeWebDriver();
             }
-
             return(res.State, res.Value);
         }
 
         /// <summary>
-        /// Run the test computation - returning an optional error. 
-        /// The computation succeeds if result.IsNone is true
+        /// Invoke the test computation
         /// </summary>
-        /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IsotopeSettings settings = null)
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) RunAndThrowOnError(IsotopeSettings settings = null)
         {
-            var res = ma(env, IsotopeState.Empty.With(Settings: settings));
-
+            var (state, value) = Run(settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) Run(IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = Invoke(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
             if (res.State.Settings.DisposeOnCompletion)
             {
                 res.State.DisposeWebDriver();
             }
-
             return (res.State, res.Value);
+        }        
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) RunAndThrowOnError(IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var (state, value) = Run(driver, settings);
+            state.IfFailedThrow();
+            return (state, value);
         }
 
-        public static (IsotopeState state, A value) Run<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
-
-            if (res.State.Settings.DisposeOnCompletion)
+        /// <summary>
+        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
+        /// </summary>
+        public static Isotope<A> operator |(Isotope<A> lhs, Isotope<A> rhs) => 
+            new Isotope<A>(s =>
             {
-                res.State.DisposeWebDriver();
-            }
+                var l = lhs.Invoke(s);
+                return l.IsFaulted
+                           ? rhs.Invoke(s)
+                           : l;
+            });
 
-            return (res.State, res.Value);
+        /// <summary>
+        /// Lift the pure value into the monadic space 
+        /// </summary>
+        public static Isotope<A> Pure(A value) =>
+            new Isotope<A>(s => new IsotopeState<A>(value, s));
+        
+        /// <summary>
+        /// Lift the error into the monadic space 
+        /// </summary>
+        public static Isotope<A> Fail(Error error) =>
+            new Isotope<A>(s => new IsotopeState<A>(default(A), s.AddError(error)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<B> Bind<B>(Func<A, Isotope<B>> f)
+        {
+            var self = this;   
+            return new Isotope<B>(state => 
+            { 
+                var s = self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(s.State);
+            });
         }
 
-        public static (IsotopeState state, A value) Run<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> Bind<Env, B>(Func<A, Isotope<Env, B>> f)
         {
-            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            var self = this;   
+            return new Isotope<Env, B>((env, state) => 
+            { 
+                var s = self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(env, s.State);
+            });
+        }
 
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> Bind<B>(Func<A, IsotopeAsync<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<B>(async state => 
+            { 
+                var s = self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, IsotopeAsync<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<B> SelectMany<B>(Func<A, Isotope<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> SelectMany<Env, B>(Func<A, Isotope<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, IsotopeAsync<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, C> SelectMany<Env, B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public Isotope<B> Map<B>(Func<A, B> f)
+        {
+            var self = this;   
+            return new Isotope<B>(state => 
+            {
+                var s = self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return new IsotopeState<B>(f(s.Value), s.State);
+            });
+        }
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public Isotope<B> Select<B>(Func<A, B> f) =>
+            Map(f);
+
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<A> MapFail(Func<Seq<Error>, Seq<Error>> f)
+        {
+            var self = this;
+            return new Isotope<A>(
+                s => {
+                    var r = self.Invoke(s);
+                    return r.IsFaulted
+                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
+                               : r;
+                });
+        }
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
+        {
+            var self = this;
+            return new Isotope<B>(
+                s => {
+                    var r = self.Invoke(s);
+                    return r.IsFaulted
+                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
+                               : new IsotopeState<B>(Succ(r.Value), r.State);
+                });
+        }
+        
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<A> MapFail(Func<Seq<Error>, Error> f) =>
+            MapFail(s => Seq1(f(s)));
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
+            BiMap(Succ, s => Seq1(Fail(s)));
+    }
+
+    /// <summary>
+    /// Isotope computation with an environment
+    /// </summary>
+    /// <typeparam name="Env">Environment</typeparam>
+    /// <typeparam name="A">Bound value</typeparam>
+    public struct Isotope<Env, A>
+    {
+        readonly Func<Env, IsotopeState, IsotopeState<A>> Thunk;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="thunk">Thunk</param>
+        public Isotope(Func<Env, IsotopeState, IsotopeState<A>> thunk) =>
+            Thunk = thunk;
+
+        /// <summary>
+        /// Invoke the computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="state">State</param>
+        /// <returns>Result of invoking the isotope computation</returns>
+        internal IsotopeState<A> Invoke(Env env, IsotopeState state)
+        {
+            try
+            {
+                return Thunk?.Invoke(env, state) ?? throw new InvalidOperationException("Isotope computation not initialised");
+            }
+            catch (Exception e)
+            {
+                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
+            }
+        }
+
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) Run(Env env, IsotopeSettings settings = null)
+        {
+            var res = Invoke(env, IsotopeState.Empty.With(Settings: settings));
             if (res.State.Settings.DisposeOnCompletion)
             {
                 res.State.DisposeWebDriver();
@@ -73,45 +357,888 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Run the test computation - throws and error if it fails to pass
+        /// Invoke the test computation
         /// </summary>
-        /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) RunAndThrowOnError<A>(this Isotope<A> ma, IWebDriver driver, IsotopeSettings settings = null)
+        /// <param name="env">Environment</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) RunAndThrowOnError(Env env, IsotopeSettings settings = null)
         {
-            var res = ma(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            var (state, value) = Run(env, settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
 
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) Run(Env env, IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = Invoke(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
             if (res.State.Settings.DisposeOnCompletion)
             {
                 res.State.DisposeWebDriver();
             }
-
-            res.State.Error.Match(
-                Some: x => { res.State.Settings.FailureAction(x, res.State.Log); return failwith<Unit>(x); },
-                None: () => unit);
 
             return (res.State, res.Value);
         }
 
         /// <summary>
-        /// Run the test computation - throws and error if it fails to pass
+        /// Invoke the test computation
         /// </summary>
-        /// <param name="ma">Test computation</param>
-        public static (IsotopeState state, A value) RunAndThrowOnError<Env, A>(this Isotope<Env, A> ma, Env env, IWebDriver driver, IsotopeSettings settings = null)
+        /// <param name="env">Environment</param>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public (IsotopeState state, A value) RunAndThrowOnError(Env env, IWebDriver driver, IsotopeSettings settings = null)
         {
-            var res = ma(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            var (state, value) = Run(env, driver, settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
 
+        /// <summary>
+        /// Implicit conversion 
+        /// </summary>
+        public static implicit operator Isotope<Env, A>(Isotope<A> ma) =>
+            new Isotope<Env, A>((_, state) => ma.Invoke(state));
+
+        /// <summary>
+        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
+        /// </summary>
+        public static Isotope<Env, A> operator |(Isotope<Env, A> lhs, Isotope<Env, A> rhs) =>
+            new Isotope<Env, A>((e, s) => {
+                                    var l = lhs.Invoke(e, s);
+                                    return l.IsFaulted
+                                               ? rhs.Invoke(e, s)
+                                               : l;
+                                });
+
+        /// <summary>
+        /// Lift the pure value into the monadic space 
+        /// </summary>
+        public static Isotope<Env, A> Pure(A value) =>
+            new Isotope<Env, A>((e, s) => new IsotopeState<A>(value, s));
+
+        /// <summary>
+        /// Lift the error into the monadic space 
+        /// </summary>
+        public static Isotope<Env, A> Fail(Error error) =>
+            new Isotope<Env, A>((e, s) => new IsotopeState<A>(default(A), s.AddError(error)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> Bind<B>(Func<A, Isotope<B>> f)
+        {
+            var self = this;   
+            return new Isotope<Env, B>((env, state) => 
+            { 
+                var s = self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> Bind<B>(Func<A, Isotope<Env, B>> f)
+        {
+            var self = this;   
+            return new Isotope<Env, B>((env, state) => 
+            { 
+                var s = self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> SelectMany<B>(Func<A, Isotope<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, B> SelectMany<B>(Func<A, Isotope<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public Isotope<Env, C> SelectMany<B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public Isotope<Env, B> Map<B>(Func<A, B> f)
+        {
+            var self = this;   
+            return new Isotope<Env, B>((env, state) => 
+            {
+                var s = self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return new IsotopeState<B>(f(s.Value), s.State);
+            });
+        }
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public Isotope<Env, B> Select<B>(Func<A, B> f) =>
+            Map(f);
+
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<Env, A> MapFail(Func<Seq<Error>, Seq<Error>> f)
+        {
+            var self = this;
+            return new Isotope<Env, A>(
+                (e, s) => {
+                    var r = self.Invoke(e, s);
+                    return r.IsFaulted
+                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
+                               : r;
+                });
+        }
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<Env, B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
+        {
+            var self = this;
+            return new Isotope<Env, B>(
+                (e, s) => {
+                    var r = self.Invoke(e, s);
+                    return r.IsFaulted
+                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
+                               : new IsotopeState<B>(Succ(r.Value), r.State);
+                });
+        }    
+        
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<Env, A> MapFail(Func<Seq<Error>, Error> f) =>
+            MapFail(s => Seq1(f(s)));
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public Isotope<Env, B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
+            BiMap(Succ, s => Seq1(Fail(s)));
+    }
+
+    /// <summary>
+    /// Asynchronous, environment-free, isotope computation
+    /// </summary>
+    /// <typeparam name="A">Bound value</typeparam>
+    public struct IsotopeAsync<A>
+    {
+        readonly Func<IsotopeState, ValueTask<IsotopeState<A>>> Thunk;
+        
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="thunk">Thunk</param>
+        public IsotopeAsync(Func<IsotopeState, ValueTask<IsotopeState<A>>> thunk) =>
+            Thunk = thunk;
+
+        /// <summary>
+        /// Invoke the computation
+        /// </summary>
+        /// <param name="state">State</param>
+        /// <returns>Result of invoking the isotope computation</returns>
+        internal async ValueTask<IsotopeState<A>> Invoke(IsotopeState state)
+        {
+            try
+            {
+                if (Thunk == null)
+                {
+                    throw new InvalidOperationException("Isotope computation not initialised");
+                }
+                return await Thunk(state);
+            }
+            catch (Exception e)
+            {
+                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
+            }
+        }
+
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> Run(IsotopeSettings settings = null)
+        {
+            var res = await Invoke(IsotopeState.Empty.With(Settings: settings));
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+            return(res.State, res.Value);
+        }
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(IsotopeSettings settings = null)
+        {
+            var (state, value) = await Run(settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> Run(IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = await Invoke(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
+            return (res.State, res.Value);
+        }  
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var (state, value) = await Run(driver, settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
+
+        /// <summary>
+        /// Implicit conversion 
+        /// </summary>
+        public static implicit operator IsotopeAsync<A>(Isotope<A> ma) =>
+            new IsotopeAsync<A>(state => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
+        
+        /// <summary>
+        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
+        /// </summary>
+        public static IsotopeAsync<A> operator |(IsotopeAsync<A> lhs, IsotopeAsync<A> rhs) => 
+            new IsotopeAsync<A>(async s =>
+            {
+                var l = await lhs.Invoke(s);
+                return l.IsFaulted
+                           ? await rhs.Invoke(s)
+                           : l;
+            });
+
+        /// <summary>
+        /// Lift the pure value into the monadic space 
+        /// </summary>
+        public static IsotopeAsync<A> Pure(A value) =>
+            new IsotopeAsync<A>(s => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(value, s)));
+        
+        /// <summary>
+        /// Lift the error into the monadic space 
+        /// </summary>
+        public static IsotopeAsync<A> Fail(Error error) =>
+            new IsotopeAsync<A>(s => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(default(A), s.AddError(error))));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> Bind<B>(Func<A, Isotope<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<B>(async state => 
+            { 
+                var s = await self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, Isotope<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = await self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> Bind<B>(Func<A, IsotopeAsync<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<B>(async state => 
+            { 
+                var s = await self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, IsotopeAsync<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = await self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> SelectMany<B>(Func<A, Isotope<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, Isotope<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, IsotopeAsync<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public IsotopeAsync<B> Map<B>(Func<A, B> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<B>(async state => 
+            {
+                var s = await self.Invoke(state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return new IsotopeState<B>(f(s.Value), s.State);
+            });
+        }
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public IsotopeAsync<B> Select<B>(Func<A, B> f) =>
+            Map(f);        
+    
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<A> MapFail(Func<Seq<Error>, Seq<Error>> f)
+        {
+            var self = this;
+            return new IsotopeAsync<A>(
+                async s => {
+                    var r = await self.Invoke(s);
+                    return r.IsFaulted
+                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
+                               : r;
+                });
+        }
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
+        {
+            var self = this;
+            return new IsotopeAsync<B>(
+                async s => {
+                    var r = await self.Invoke(s);
+                    return r.IsFaulted
+                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
+                               : new IsotopeState<B>(Succ(r.Value), r.State);
+                });
+        }
+        
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<A> MapFail(Func<Seq<Error>, Error> f) =>
+            MapFail(s => Seq1(f(s)));
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
+            BiMap(Succ, s => Seq1(Fail(s)));
+    }
+
+    /// <summary>
+    /// Asynchronous isotope computation with an environment
+    /// </summary>
+    /// <typeparam name="Env">Environment</typeparam>
+    /// <typeparam name="A">Bound value</typeparam>
+    public struct IsotopeAsync<Env, A>
+    {
+        readonly Func<Env, IsotopeState, ValueTask<IsotopeState<A>>> Thunk;
+        
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="thunk">Thunk</param>
+        public IsotopeAsync(Func<Env, IsotopeState, ValueTask<IsotopeState<A>>> thunk) =>
+            Thunk = thunk;
+
+        /// <summary>
+        /// Invoke the computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="state">State</param>
+        /// <returns>Result of invoking the isotope computation</returns>
+        internal async ValueTask<IsotopeState<A>> Invoke(Env env, IsotopeState state)
+        {
+            try
+            {
+                if (Thunk == null)
+                {
+                    throw new InvalidOperationException("Isotope computation not initialised");
+                }
+                return await Thunk(env, state);
+            }
+            catch (Exception e)
+            {
+                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
+            }
+        }
+
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> Run(Env env, IsotopeSettings settings = null)
+        {
+            var res = await Invoke(env, IsotopeState.Empty.With(Settings: settings));
             if (res.State.Settings.DisposeOnCompletion)
             {
                 res.State.DisposeWebDriver();
             }
 
-            res.State.Error.Match(
-                Some: x => { res.State.Settings.FailureAction(x, res.State.Log); return failwith<Unit>(x); },
-                None: () => unit);
+            return (res.State, res.Value);
+        }
+
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(Env env, IsotopeSettings settings = null)
+        {
+            var (state, value) = await Run(env, settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
+        
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> Run(Env env, IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var res = await Invoke(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
+            if (res.State.Settings.DisposeOnCompletion)
+            {
+                res.State.DisposeWebDriver();
+            }
 
             return (res.State, res.Value);
         }
 
+        /// <summary>
+        /// Invoke the test computation
+        /// </summary>
+        /// <param name="env">Environment</param>
+        /// <param name="driver">Web driver</param>
+        /// <param name="settings">Optional settings</param>
+        /// <returns>Returning an optional error. 
+        /// The computation succeeds if result.IsNone is true</returns>
+        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(Env env, IWebDriver driver, IsotopeSettings settings = null)
+        {
+            var (state, value) = await Run(env, driver, settings);
+            state.IfFailedThrow();
+            return (state, value);
+        }
+
+        /// <summary>
+        /// Implicit conversion 
+        /// </summary>
+        public static implicit operator IsotopeAsync<Env, A>(Isotope<A> ma) =>
+            new IsotopeAsync<Env, A>((_, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
+
+        /// <summary>
+        /// Implicit conversion 
+        /// </summary>
+        public static implicit operator IsotopeAsync<Env, A>(Isotope<Env, A> ma) =>
+            new IsotopeAsync<Env, A>((env, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(env, state)));
+
+        /// <summary>
+        /// Implicit conversion 
+        /// </summary>
+        public static implicit operator IsotopeAsync<Env, A>(IsotopeAsync<A> ma) =>
+            new IsotopeAsync<Env, A>((_, state) => ma.Invoke(state));
+
+        /// <summary>
+        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
+        /// </summary>
+        public static IsotopeAsync<Env, A> operator |(IsotopeAsync<Env, A> lhs, IsotopeAsync<Env, A> rhs) =>
+            new IsotopeAsync<Env, A>(async (e, s) => {
+                                         var l = await lhs.Invoke(e, s);
+                                         return l.IsFaulted
+                                                    ? await rhs.Invoke(e, s)
+                                                    : l;
+                                     });
+
+        /// <summary>
+        /// Lift the pure value into the monadic space 
+        /// </summary>
+        public static IsotopeAsync<Env, A> Pure(A value) =>
+            new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(value, s)));
+
+        /// <summary>
+        /// Lift the error into the monadic space 
+        /// </summary>
+        public static IsotopeAsync<Env, A> Fail(Error error) =>
+            new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(default(A), s.AddError(error))));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>( async (env, state) => 
+            { 
+                var s = await self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>( async (env, state) => 
+            { 
+                var s = await self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = await self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<Env, B>> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>(async (env, state) => 
+            { 
+                var s = await self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return await f(s.Value).Invoke(env, s.State);
+            });
+        }
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<Env, B>> f) =>
+            Bind(f);
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Monadic bind 
+        /// </summary>
+        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
+            Bind(a => bind(a).Map(b => project(a, b)));
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public IsotopeAsync<Env, B> Map<B>(Func<A, B> f)
+        {
+            var self = this;   
+            return new IsotopeAsync<Env, B>( async (env, state) => 
+            {
+                var s = await self.Invoke(env, state);
+                if (s.IsFaulted) return s.CastError<B>();
+                return new IsotopeState<B>(f(s.Value), s.State);
+            });
+        }
+
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public IsotopeAsync<Env, B> Select<B>(Func<A, B> f) =>
+            Map(f);
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<Env, A> MapFail(Func<Seq<Error>, Seq<Error>> f)
+        {
+            var self = this;
+            return new IsotopeAsync<Env, A>(
+                async (e, s) => {
+                    var r = await self.Invoke(e, s);
+                    return r.IsFaulted
+                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
+                               : r;
+                });
+        }
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<Env, B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
+        {
+            var self = this;
+            return new IsotopeAsync<Env, B>(
+                async (e, s) => {
+                    var r = await self.Invoke(e, s);
+                    return r.IsFaulted
+                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
+                               : new IsotopeState<B>(Succ(r.Value), r.State);
+                });
+        }
+        
+        /// <summary>
+        /// Map the alternative value (errors)
+        /// </summary>
+        /// <param name="f">Mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<Env, A> MapFail(Func<Seq<Error>, Error> f) =>
+            MapFail(s => Seq1(f(s)));
+
+        /// <summary>
+        /// Map both sides of the isotope (success and failure)
+        /// </summary>
+        /// <param name="Succ">Success mapping function</param>
+        /// <param name="Fail">Failure mapping function</param>
+        /// <returns>Mapped isotope computation</returns>
+        public IsotopeAsync<Env, B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
+            BiMap(Succ, s => Seq1(Fail(s)));
+    }
+
+    /// <summary>
+    /// Isotope extensions
+    /// </summary>
+    public static partial class Isotope
+    {
         /// <summary>
         /// Simple configuration setup
         /// </summary>
@@ -506,19 +1633,8 @@ namespace Isotope80
         /// 
         /// </summary>
         public static Isotope<A> pure<A>(A value) =>
-            state =>
-                new IsotopeState<A>(value, state);
-
-        /// <summary>
-        /// Identity - lifts a value of `A` into the Isotope monad
-        /// 
-        /// * Always succeeds *
-        /// 
-        /// </summary>
-        public static Isotope<Env, A> pure<Env, A>(A value) =>
-            (env, state) =>
-                new IsotopeState<A>(value, state);
-
+            Isotope<A>.Pure(value);
+        
         /// <summary>
         /// Useful for starting a linq expression if you need lets first
         /// i.e.
@@ -527,52 +1643,132 @@ namespace Isotope80
         ///         let bar = "456"
         ///         from x in ....
         /// </summary>
-        public static Isotope<Unit> unitM => pure(unit);
+        public static Isotope<Unit> unitM =>
+            pure(unit);
 
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
         /// <param name="message">Error message</param>
         public static Isotope<A> fail<A>(string message) =>
-            state =>
-                new IsotopeState<A>(default, state.With(Error: Some(message)));
+            Isotope<A>.Fail(Error.New(message));
 
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
-        /// <param name="message">Error message</param>
-        public static Isotope<Env, A> fail<Env, A>(string message) =>
-            (env, state) =>
-                new IsotopeState<A>(default, state.With(Error: Some(message)));
+        /// <param name="error">Error</param>
+        public static Isotope<A> fail<A>(Error error) =>
+            Isotope<A>.Fail(error);
+
+        /// <summary>
+        /// Failure - creates an Isotope monad that always fails
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        public static Isotope<A> fail<A>(Exception ex) =>
+            Isotope<A>.Fail(ex);
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<A> iso<A>(Func<A> f) =>
+            new Isotope<A>(s => new IsotopeState<A>(f(), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<A> iso<A>(Func<Fin<A>> f) =>
+            new Isotope<A>(s => f().Match(Succ: a => new IsotopeState<A>(a, s),
+                                          Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<A> iso<A>(Func<IsotopeState, A> f) =>
+            new Isotope<A>(s => new IsotopeState<A>(f(s), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<A> iso<A>(Func<IsotopeState, Fin<A>> f) =>
+            new Isotope<A>(s => f(s).Match(Succ: a => new IsotopeState<A>(a, s),
+                                           Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<Env, A> iso<Env, A>(Func<Env, IsotopeState, A> f) =>
+            new Isotope<Env, A>((e, s) => new IsotopeState<A>(f(e, s), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static Isotope<Env, A> iso<Env, A>(Func<Env, IsotopeState, Fin<A>> f) =>
+            new Isotope<Env, A>((e, s) => f(e, s).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                       Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<A> isoAsync<A>(Func<ValueTask<A>> f) =>
+            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f(), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<A> isoAsync<A>(Func<ValueTask<Fin<A>>> f) =>
+            new IsotopeAsync<A>(async s => (await f()).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                             Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<A> isoAsync<A>(Func<IsotopeState, ValueTask<A>> f) =>
+            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f(s), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<A> isoAsync<A>(Func<IsotopeState, ValueTask<Fin<A>>> f) =>
+            new IsotopeAsync<A>(async s => (await f(s)).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                              Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<Env, A> isoAsync<Env, A>(Func<Env, IsotopeState, ValueTask<A>> f) =>
+            new IsotopeAsync<Env, A>(async (e, s) => new IsotopeState<A>(await f(e, s), s)); 
+
+        /// <summary>
+        /// Lift the function into the isotope monadic space
+        /// </summary>
+        public static IsotopeAsync<Env, A> isoAsync<Env, A>(Func<Env, IsotopeState, ValueTask<Fin<A>>> f) =>
+            new IsotopeAsync<Env, A>(async (e, s) => (await f(e, s)).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                                           Fail: e => new IsotopeState<A>(default, s.AddError(e))));
 
         /// <summary>
         /// Gets the environment from the Isotope monad
         /// </summary>
         /// <typeparam name="Env">Environment</typeparam>
         public static Isotope<Env, Env> ask<Env>() =>
-            (env, state) =>
-                new IsotopeState<Env>(env, state);
+            iso((Env env, IsotopeState _) => env);
 
         /// <summary>
         /// Gets a function of the current environment
         /// </summary>
         public static Isotope<Env, R> asks<Env, R>(Func<Env, R> f) =>
-            from env in ask<Env>()
-            select f(env);
+            ask<Env>().Map(f);
 
         /// <summary>
         /// Gets the state from the Isotope monad
         /// </summary>
         public static Isotope<IsotopeState> get =
-            state =>
-                new IsotopeState<IsotopeState>(state, state);
+            iso(identity);
 
         /// <summary>
         /// Puts the state back into the Isotope monad
         /// </summary>
         public static Isotope<Unit> put(IsotopeState state) =>
-            _ =>
-                new IsotopeState<Unit>(unit, state);
+            new Isotope<Unit>(_ => new IsotopeState<Unit>(default, state));
 
         /// <summary>
         /// Try and action
@@ -581,16 +1777,18 @@ namespace Isotope80
         /// <param name="label">Error string if exception is thrown</param>
         /// <returns></returns>
         public static Isotope<Unit> trya(Action action, string label) =>
-            Try(() => { action(); return unit; }).ToIsotope(label);
+            iso(fun(action))
+               .MapFail(e => Error.New(label, Aggregate(e)));
 
         /// <summary>
-        /// Try an action
+        /// Try and action
         /// </summary>
         /// <param name="action">Action to try</param>
-        /// <param name="makeError">Convert Exception to an error string</param>
+        /// <param name="makeError">Convert errors to string</param>
         /// <returns></returns>
-        public static Isotope<Unit> trya(Action action, Func<Exception, string> makeError) =>
-            Try(() => { action(); return unit; }).ToIsotope(makeError);
+        public static Isotope<Unit> trya(Action action, Func<Error, string> makeError) =>
+            iso(fun(action))
+               .MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));        
 
         /// <summary>
         /// Try a function
@@ -600,28 +1798,30 @@ namespace Isotope80
         /// <param name="label">Error string if exception is thrown</param>
         /// <returns></returns>
         public static Isotope<A> tryf<A>(Func<A> func, string label) =>
-            Try(() => func()).ToIsotope(label);
+            iso(func)
+               .MapFail(e => Error.New(label, Aggregate(e)));
 
         /// <summary>
         /// Try a function
         /// </summary>
         /// <typeparam name="A">Return type of the function</typeparam>
         /// <param name="func">Function to try</param>
-        /// <param name="makeError">Convert Exception to an error string</param>
-        /// <returns>The result of the function</returns>
-        public static Isotope<A> tryf<A>(Func<A> func, Func<Exception, string> makeError) =>
-            Try(() => func()).ToIsotope(makeError);
+        /// <param name="makeError">Convert errors to string</param>
+        /// <returns></returns>
+        public static Isotope<A> tryf<A>(Func<A> func, Func<Error, string> makeError) =>
+            iso(func)
+               .MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
 
         /// <summary>
         /// Run a void returning action
         /// </summary>
         /// <param name="action">Action to run</param>
         /// <returns>Unit</returns>
-        public static Isotope<Unit> voida(Action action) => state =>
+        public static Isotope<Unit> voida(Action action) => new Isotope<Unit>(state =>
         {
             action();
             return new IsotopeState<Unit>(unit, state);
-        };
+        });
 
         /// <summary>
         /// Log some output
@@ -701,9 +1901,7 @@ namespace Isotope80
                             el => el.IsNone,
                             interval,
                             wait)
-            from y in x.Match(
-                            Some: s => pure(s),
-                            None: () => fail<IWebElement>("Element not found within timeout period"))
+            from y in x.ToIsotope("Element not found within timeout period")
             select y;
 
         /// <summary>
@@ -751,209 +1949,361 @@ namespace Isotope80
         /// <summary>
         /// Flips the sequence of Isotopes to be a Isotope of Sequences
         /// </summary>
-        /// <typeparam name="A"></typeparam>
-        /// <param name="mas"></param>
-        /// <returns></returns>
-        public static Isotope<Seq<A>> Sequence<A>(this Seq<Isotope<A>> mas) => state =>
-        {
-            var rs = new A[mas.Count];
-            int index = 0;
+        public static Isotope<Seq<A>> Sequence<A>(this Seq<Isotope<A>> mas) =>
+            new Isotope<Seq<A>>(
+                state => {
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-            foreach (var ma in mas)
-            {
-                var s = ma(state);
-                if (s.State.Error.IsSome)
-                {
-                    return new IsotopeState<Seq<A>>(default, s.State);
-                }
+                    foreach (var ma in mas)
+                    {
+                        var s = ma.Invoke(state);
+                        if (s.State.IsFaulted)
+                        {
+                            return new IsotopeState<Seq<A>>(default, s.State);
+                        }
 
-                state = s.State;
-                rs[index] = s.Value;
-                index++;
-            }
-            return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
-        };
+                        state     = s.State;
+                        rs[index] = s.Value;
+                        index++;
+                    }
+
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                });
 
         /// <summary>
         /// Flips the sequence of Isotopes to be a Isotope of Sequences
         /// </summary>
-        /// <typeparam name="A"></typeparam>
-        /// <param name="mas"></param>
-        /// <returns></returns>
-        public static Isotope<Seq<A>> Collect<A>(this Seq<Isotope<A>> mas) => state =>
-        {
-            if(state.Error.IsSome)
-            {
-                return new IsotopeState<Seq<A>>(default, state);
-            }
+        public static Isotope<Env, Seq<A>> Sequence<Env, A>(this Seq<Isotope<Env, A>> mas) =>
+            new Isotope<Env, Seq<A>>(
+                (env, state) => {
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-            var rs = new A[mas.Count];
-            int index = 0;
+                    foreach (var ma in mas)
+                    {
+                        var s = ma.Invoke(env, state);
+                        if (s.State.IsFaulted)
+                        {
+                            return new IsotopeState<Seq<A>>(default, s.State);
+                        }
 
-            // Create an empty log TODO
-            //var logs = state.Log.Cons(Seq<Seq<string>>());
+                        state     = s.State;
+                        rs[index] = s.Value;
+                        index++;
+                    }
 
-            // Clear log from the state
-            state = state.With(Log: Log.Empty);
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                });
 
-            bool hasFaulted = false;
-            var errors = new List<string>();
 
-            foreach (var ma in mas)
-            {
-                var s = ma(state);
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static IsotopeAsync<Seq<A>> Sequence<A>(this Seq<IsotopeAsync<A>> mas) =>
+            new IsotopeAsync<Seq<A>>(
+                async state => {
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-                // Collect error
-                hasFaulted = hasFaulted || s.State.Error.IsSome;
-                if(s.State.Error.IsSome)
-                {
-                    errors.Add((string)s.State.Error);
-                }
+                    foreach (var ma in mas)
+                    {
+                        var s = await ma.Invoke(state);
+                        if (s.State.IsFaulted)
+                        {
+                            return new IsotopeState<Seq<A>>(default, s.State);
+                        }
 
-                // Collect logs TODO
-                //logs = logs.Add(s.State.Log);
+                        state     = s.State;
+                        rs[index] = s.Value;
+                        index++;
+                    }
 
-                // Record value
-                rs[index] = s.Value;
-                index++;
-            }
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                });
 
-            return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(
-                Error: hasFaulted
-                            ? Some(String.Join(" | ", errors))
-                            : None,
-                Log: Log.Empty));//LanguageExt.Seq.flatten(logs)));
-        };
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static IsotopeAsync<Env, Seq<A>> Sequence<Env, A>(this Seq<IsotopeAsync<Env, A>> mas) =>
+            new IsotopeAsync<Env, Seq<A>>(
+                async (env, state) => {
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-        public static Isotope<B> Select<A, B>(this Isotope<A> ma, Func<A, B> f) =>
-            sa =>
-            {
-                var a = ma(sa);
-                return a.State.Error.IsSome
-                    ? new IsotopeState<B>(default(B), a.State)
-                    : new IsotopeState<B>(f(a.Value), a.State);
-            };
+                    foreach (var ma in mas)
+                    {
+                        var s = await ma.Invoke(env, state);
+                        if (s.State.IsFaulted)
+                        {
+                            return new IsotopeState<Seq<A>>(default, s.State);
+                        }
 
-        public static Isotope<Env, B> Select<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) =>
-            (env, sa) =>
-            {
-                var a = ma(env, sa);
-                return a.State.Error.IsSome
-                    ? new IsotopeState<B>(default(B), a.State)
-                    : new IsotopeState<B>(f(a.Value), a.State);
-            };
+                        state     = s.State;
+                        rs[index] = s.Value;
+                        index++;
+                    }
 
-        public static Isotope<B> Map<A, B>(this Isotope<A> ma, Func<A, B> f) => ma.Select(f);
-        public static Isotope<Env, B> Map<Env, A, B>(this Isotope<Env, A> ma, Func<A, B> f) => ma.Select(f);
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                });
 
-        public static Isotope<B> Bind<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) => SelectMany(ma, f);
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static Isotope<Seq<A>> Collect<A>(this Seq<Isotope<A>> mas) =>
+            new Isotope<Seq<A>>(
+                state => {
+                    if (state.IsFaulted)
+                    {
+                        return new IsotopeState<Seq<A>>(default, state);
+                    }
 
-        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> f) => SelectMany(ma, f);
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<A> ma, Func<A, Isotope<Env, B>> f) => SelectMany(ma, f);
+                    // Create an empty log TODO
+                    //var logs = state.Log.Cons(Seq<Seq<string>>());
 
-        public static Isotope<Env, B> Bind<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<B>> f) => SelectMany(ma, f);
+                    // Clear log from the state
+                    state = state.With(Log: Log.Empty);
 
-        public static Isotope<B> SelectMany<A, B>(this Isotope<A> ma, Func<A, Isotope<B>> f) =>
-            sa =>
-            {
-                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
+                    bool hasFaulted = false;
+                    var  errors     = new Seq<Error>();
 
-                var a = ma(sa);
-                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                    foreach (var ma in mas)
+                    {
+                        var s = ma.Invoke(state);
 
-                var b = f(a.Value)(a.State);
-                return b;
-            };
+                        // Collect error
+                        hasFaulted = hasFaulted || s.State.IsFaulted;
+                        if (s.State.IsFaulted)
+                        {
+                            errors = errors + s.State.Error;
+                        }
 
-        public static Isotope<C> SelectMany<A, B, C>(this Isotope<A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+                        // Collect logs TODO
+                        //logs = logs.Add(s.State.Log);
 
-        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> bind) =>
-            (env, sa) =>
-            {
-                if (sa.Error.IsSome) return new IsotopeState<B>(default, sa);
+                        // Record value
+                        rs[index] = s.Value;
+                        index++;
+                    }
 
-                var a = ma(env, sa);
-                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                });
 
-                var b = bind(a.Value)(env, a.State);
-                return b;
-            };
 
-        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<Env, A> ma, Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static Isotope<Env,  Seq<A>> Collect<Env, A>(this Seq<Isotope<Env,  A>> mas) =>
+            new Isotope<Env,  Seq<A>>(
+                (env, state) => {
+                    if (state.IsFaulted)
+                    {
+                        return new IsotopeState<Seq<A>>(default, state);
+                    }
 
-        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<A> ma, Func<A, Isotope<Env, B>> bind) =>
-            (env, sa) =>
-            {
-                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
+                    var rs    = new A[mas.Count];
+                    int index = 0;
 
-                var a = ma(sa);
-                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                    // Create an empty log TODO
+                    //var logs = state.Log.Cons(Seq<Seq<string>>());
 
-                var b = bind(a.Value)(env, a.State);
-                return b;
-            };
+                    // Clear log from the state
+                    state = state.With(Log: Log.Empty);
 
-        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<A> ma, Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+                    bool hasFaulted = false;
+                    var  errors     = new Seq<Error>();
 
-        public static Isotope<Env, B> SelectMany<Env, A, B>(this Isotope<Env, A> ma, Func<A, Isotope<B>> bind) =>
-            (env, sa) =>
-            {
-                if (sa.Error.IsSome) return new IsotopeState<B>(default(B), sa);
+                    foreach (var ma in mas)
+                    {
+                        var s = ma.Invoke(env, state);
 
-                var a = ma(env, sa);
-                if (a.State.Error.IsSome) return new IsotopeState<B>(default(B), a.State);
+                        // Collect error
+                        hasFaulted = hasFaulted || s.State.IsFaulted;
+                        if (s.State.IsFaulted)
+                        {
+                            errors = errors + s.State.Error;
+                        }
 
-                var b = bind(a.Value)(a.State);
+                        // Collect logs TODO
+                        //logs = logs.Add(s.State.Log);
 
-                return b;
-            };
+                        // Record value
+                        rs[index] = s.Value;
+                        index++;
+                    }
 
-        public static Isotope<Env, C> SelectMany<Env, A, B, C>(this Isotope<Env, A> ma, Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            ma.SelectMany(a => Map(bind(a), b => project(a, b)));
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                });        
+        
+        
+        
 
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static IsotopeAsync<Seq<A>> Collect<A>(this Seq<IsotopeAsync<A>> mas) =>
+            new IsotopeAsync<Seq<A>>(
+                async state => {
+                    if (state.IsFaulted)
+                    {
+                        return new IsotopeState<Seq<A>>(default, state);
+                    }
+
+                    var rs    = new A[mas.Count];
+                    int index = 0;
+
+                    // Create an empty log TODO
+                    //var logs = state.Log.Cons(Seq<Seq<string>>());
+
+                    // Clear log from the state
+                    state = state.With(Log: Log.Empty);
+
+                    bool hasFaulted = false;
+                    var  errors     = new Seq<Error>();
+
+                    foreach (var ma in mas)
+                    {
+                        var s = await ma.Invoke(state);
+
+                        // Collect error
+                        hasFaulted = hasFaulted || s.State.IsFaulted;
+                        if (s.State.IsFaulted)
+                        {
+                            errors = errors + s.State.Error;
+                        }
+
+                        // Collect logs TODO
+                        //logs = logs.Add(s.State.Log);
+
+                        // Record value
+                        rs[index] = s.Value;
+                        index++;
+                    }
+
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                });
+
+
+        /// <summary>
+        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// </summary>
+        public static IsotopeAsync<Env,  Seq<A>> Collect<Env, A>(this Seq<IsotopeAsync<Env,  A>> mas) =>
+            new IsotopeAsync<Env,  Seq<A>>(
+                async (env, state) => {
+                    if (state.IsFaulted)
+                    {
+                        return new IsotopeState<Seq<A>>(default, state);
+                    }
+
+                    var rs    = new A[mas.Count];
+                    int index = 0;
+
+                    // Create an empty log TODO
+                    //var logs = state.Log.Cons(Seq<Seq<string>>());
+
+                    // Clear log from the state
+                    state = state.With(Log: Log.Empty);
+
+                    bool hasFaulted = false;
+                    var  errors     = new Seq<Error>();
+
+                    foreach (var ma in mas)
+                    {
+                        var s = await ma.Invoke(env, state);
+
+                        // Collect error
+                        hasFaulted = hasFaulted || s.State.IsFaulted;
+                        if (s.State.IsFaulted)
+                        {
+                            errors = errors + s.State.Error;
+                        }
+
+                        // Collect logs TODO
+                        //logs = logs.Add(s.State.Log);
+
+                        // Record value
+                        rs[index] = s.Value;
+                        index++;
+                    }
+
+                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                });              
+        
+        
+        /// <summary>
+        /// Convert an option to a pure isotope
+        /// </summary>
+        /// <param name="maybe">Optional value</param>
+        /// <param name="label">Failure value to use if None</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Pure isotope</returns>
         public static Isotope<A> ToIsotope<A>(this Option<A> maybe, string label) =>
-            maybe.Match(
-                    Some: pure,
-                    None: () => fail<A>(label));
+            maybe.Match(Some: pure, None: fail<A>(label));
 
-        public static Isotope<Env, A> ToIsotope<Env, A>(this Option<A> maybe, string label) =>
-            maybe.Match(
-                    Some: pure<Env, A>,
-                    None: () => fail<Env, A>(label));
+        /// <summary>
+        /// Convert a try to an isotope computation
+        /// </summary>
+        /// <param name="tried">Try value</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Try computation wrapped in an isotope computation</returns>
+        public static Isotope<A> ToIsotope<A>(this Try<A> tried) =>
+            tried.Match(
+                Succ: pure,
+                Fail: x => fail<A>(Error.New(x)));
 
+        /// <summary>
+        /// Convert a try to an isotope computation
+        /// </summary>
+        /// <param name="tried">Try value</param>
+        /// <param name="label">Failure value to use if None</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Try computation wrapped in an isotope computation</returns>
         public static Isotope<A> ToIsotope<A>(this Try<A> tried, string label) =>
-            tried.Match(
-                    Succ: pure,
-                    Fail: x => fail<A>($"{label} {Environment.NewLine}Details: {x.Message}"));
+            tried.ToIsotope().MapFail(e => Error.New(label, Aggregate(e)));
 
-        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, string label) =>
-            tried.Match(
-                    Succ: pure<Env, A>,
-                    Fail: x => fail<Env, A>($"{label} {Environment.NewLine}Details: {x.Message}"));
+        /// <summary>
+        /// Convert a try to an isotope computation
+        /// </summary>
+        /// <param name="tried">Try value</param>
+        /// <param name="makeError">Failure value to use if None</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Try computation wrapped in an isotope computation</returns>
+        public static Isotope<A> ToIsotope<A>(this Try<A> tried, Func<Error, string> makeError) =>
+            tried.ToIsotope().MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
 
-        public static Isotope<A> ToIsotope<A>(this Try<A> tried, Func<Exception, string> makeError) =>
-            tried.Match(
-                    Succ: pure,
-                    Fail: x => fail<A>(makeError(x)));
+        /// <summary>
+        /// Convert an Either to a pure isotope
+        /// </summary>
+        /// <param name="either">Either to convert</param>
+        /// <typeparam name="R">Right param</typeparam>
+        /// <returns>Pure isotope</returns>
+        public static Isotope<R> ToIsotope<R>(this Either<Error, R> either) =>
+            either.Match(Left: fail<R>, Right: pure);
 
-        public static Isotope<Env, A> ToIsotope<Env, A>(this Try<A> tried, Func<Exception, string> makeError) =>
-            tried.Match(
-                    Succ: pure<Env, A>,
-                    Fail: x => fail<Env, A>(makeError(x)));
-
-        public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
+        /// <summary>
+        /// Convert an Either to a pure isotope
+        /// </summary>
+        /// <param name="either">Either to convert</param>
+        /// <param name="label">Label for the failure</param>
+        /// <returns>Pure isotope</returns>
+        public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, string label) =>
             either.Match(
-                Left: l => fail<B>(makeError(l)),
+                Left: _ => fail<B>(Error.New(label)),
                 Right: pure);
 
-        public static Isotope<Env, B> ToIsotope<Env, A, B>(this Either<A, B> either, Func<A, string> makeError) =>
+        /// <summary>
+        /// Convert an Either to a pure isotope
+        /// </summary>
+        /// <param name="either">Either to convert</param>
+        /// <param name="makeError">Label for the failure</param>
+        /// <returns>Pure isotope</returns>
+        public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
             either.Match(
-                Left: l => fail<Env, B>(makeError(l)),
-                Right: pure<Env, B>);
+                Left: e => fail<B>(Error.New(makeError(e))),
+                Right: pure);
 
         /// <summary>
         /// Finds an element by a selector and checks if it is currently displayed
@@ -1093,5 +2443,11 @@ namespace Isotope80
             let ts = dvr as ITakesScreenshot
             select ts == null ? None : Some(ts.GetScreenshot());
 
+        static Exception Aggregate(Seq<Error> errs) =>
+            errs.IsEmpty
+                ? null
+                : errs.Count == 1
+                    ? (Exception) errs.Head
+                    : new AggregateException(errs.Map(e => (Exception) e));
     }
 }
