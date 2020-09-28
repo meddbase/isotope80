@@ -237,33 +237,41 @@ namespace Isotope80
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static Isotope<A> withWebDriver<A>(IWebDriver driver, Isotope<A> ma) =>
-            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
-                                               from r in ma
-                                               select r);
+            use(driver, disposeWebDriver, d => from od in webDriver
+                                               from _1 in setWebDriver(driver)  
+                                               from rs in ma
+                                               from _2 in setWebDriver(od)  
+                                               select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static Isotope<Env, A> withWebDriver<Env, A>(IWebDriver driver, Isotope<Env, A> ma) =>
-            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
-                                               from r in ma
-                                               select r);
+            use(driver, disposeWebDriver, d => from od in webDriver
+                                               from _1 in setWebDriver(driver)  
+                                               from rs in ma
+                                               from _2 in setWebDriver(od)  
+                                               select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static IsotopeAsync<A> withWebDriver<A>(IWebDriver driver, IsotopeAsync<A> ma) =>
-            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
-                                               from r in ma
-                                               select r);
+            use(driver, disposeWebDriver, d => from od in webDriver
+                                               from _1 in setWebDriver(driver)  
+                                               from rs in ma
+                                               from _2 in setWebDriver(od)  
+                                               select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static IsotopeAsync<Env, A> withWebDriver<Env, A>(IWebDriver driver, IsotopeAsync<Env, A> ma) =>
-            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
-                                               from r in ma
-                                               select r);
+            use(driver, disposeWebDriver, d => from od in webDriver
+                                               from _1 in setWebDriver(driver)  
+                                               from rs in ma
+                                               from _2 in setWebDriver(od)  
+                                               select rs);
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
