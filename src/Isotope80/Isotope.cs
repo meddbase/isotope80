@@ -10,6 +10,7 @@ using LanguageExt.Common;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.IE;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
@@ -274,6 +275,118 @@ namespace Isotope80
                                                select rs);
 
         /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static Isotope<Unit> withWebDrivers<A>(Isotope<A> ma, params WebDriverSelect[] webDrivers) =>
+            new Isotope<Unit>(s => {
+                           
+                Seq<Error> errors = Empty;
+                
+                foreach (var webDriver in webDrivers)
+                {
+                    var (d, nm) = webDriver switch
+                            {
+                                WebDriverSelect.Chrome           => (new ChromeDriver() as IWebDriver, "Chrome"),
+                                WebDriverSelect.Firefox          => (new FirefoxDriver(), "Firefox"),
+                                WebDriverSelect.Edge             => (new EdgeDriver(), "Edge"),
+                                WebDriverSelect.InternetExplorer => (new InternetExplorerDriver(), "IE"),
+                                _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                            };
+
+                    // Run with the web-driver
+                    var r = withWebDriver(d, ma).Invoke(s);
+
+                    // Collect the errors, prefix them with the name of the browser
+                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                }
+                return new IsotopeState<Unit>(default, s.With(Error: errors));
+            });
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static Isotope<Env, Unit> withWebDrivers<Env, A>(Isotope<Env, A> ma, params WebDriverSelect[] webDrivers) =>
+            new Isotope<Env, Unit>((e, s) => {
+                           
+                Seq<Error> errors = Empty;
+                
+                foreach (var webDriver in webDrivers)
+                {
+                    var (d, nm) = webDriver switch
+                            {
+                                WebDriverSelect.Chrome           => (new ChromeDriver() as IWebDriver, "Chrome"),
+                                WebDriverSelect.Firefox          => (new FirefoxDriver(), "Firefox"),
+                                WebDriverSelect.Edge             => (new EdgeDriver(), "Edge"),
+                                WebDriverSelect.InternetExplorer => (new InternetExplorerDriver(), "IE"),
+                                _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                            };
+
+                    // Run with the web-driver
+                    var r = withWebDriver(d, ma).Invoke(e, s);
+
+                    // Collect the errors, prefix them with the name of the browser
+                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                }
+                return new IsotopeState<Unit>(default, s.With(Error: errors));
+            });
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static IsotopeAsync<Unit> withWebDrivers<A>(IsotopeAsync<A> ma, params WebDriverSelect[] webDrivers) =>
+            new IsotopeAsync<Unit>(async s => {
+                           
+                Seq<Error> errors = Empty;
+                
+                foreach (var webDriver in webDrivers)
+                {
+                    var (d, nm) = webDriver switch
+                            {
+                                WebDriverSelect.Chrome           => (new ChromeDriver() as IWebDriver, "Chrome"),
+                                WebDriverSelect.Firefox          => (new FirefoxDriver(), "Firefox"),
+                                WebDriverSelect.Edge             => (new EdgeDriver(), "Edge"),
+                                WebDriverSelect.InternetExplorer => (new InternetExplorerDriver(), "IE"),
+                                _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                            };
+
+                    // Run with the web-driver
+                    var r = await withWebDriver(d, ma).Invoke(s).ConfigureAwait(false);
+
+                    // Collect the errors, prefix them with the name of the browser
+                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                }
+                return new IsotopeState<Unit>(default, s.With(Error: errors));
+            });
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static IsotopeAsync<Env, Unit> withWebDrivers<Env, A>(IsotopeAsync<Env, A> ma, params WebDriverSelect[] webDrivers) =>
+            new IsotopeAsync<Env, Unit>(async (e, s) => {
+                           
+                Seq<Error> errors = Empty;
+                
+                foreach (var webDriver in webDrivers)
+                {
+                    var (d, nm) = webDriver switch
+                            {
+                                WebDriverSelect.Chrome           => (new ChromeDriver() as IWebDriver, "Chrome"),
+                                WebDriverSelect.Firefox          => (new FirefoxDriver(), "Firefox"),
+                                WebDriverSelect.Edge             => (new EdgeDriver(), "Edge"),
+                                WebDriverSelect.InternetExplorer => (new InternetExplorerDriver(), "IE"),
+                                _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                            };
+
+                    // Run with the web-driver
+                    var r = await withWebDriver(d, ma).Invoke(e, s);
+
+                    // Collect the errors, prefix them with the name of the browser
+                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                }
+                return new IsotopeState<Unit>(default, s.With(Error: errors));
+            });
+        
+        /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static Isotope<A> withChromeDriver<A>(Isotope<A> ma) =>
@@ -290,6 +403,12 @@ namespace Isotope80
         /// </summary>
         public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma) =>
             withWebDriver(new FirefoxDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Internet Explorer web-driver
+        /// </summary>
+        public static Isotope<A> withInternetExplorerDriver<A>(Isotope<A> ma) =>
+            withWebDriver(new InternetExplorerDriver(), ma);
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
@@ -310,6 +429,12 @@ namespace Isotope80
             withWebDriver(new FirefoxDriver(), ma);
         
         /// <summary>
+        /// Run the isotope provided with Internet Explorer web-driver
+        /// </summary>
+        public static Isotope<Env, A> withInternetExplorerDriver<Env, A>(Isotope<Env, A> ma) =>
+            withWebDriver(new InternetExplorerDriver(), ma);
+
+        /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma) =>
@@ -326,6 +451,12 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma) =>
             withWebDriver(new FirefoxDriver(), ma);
+                
+        /// <summary>
+        /// Run the isotope provided with Internet Explorer web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withInternetExplorerDriver<A>(IsotopeAsync<A> ma) =>
+            withWebDriver(new InternetExplorerDriver(), ma);
         
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
@@ -344,6 +475,12 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
             withWebDriver(new FirefoxDriver(), ma);
+                
+        /// <summary>
+        /// Run the isotope provided with Internet Explorer web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withInternetExplorerDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withWebDriver(new InternetExplorerDriver(), ma);
         
         /// <summary>
         /// Set the window size of the browser
