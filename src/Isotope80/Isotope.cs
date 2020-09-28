@@ -7,1249 +7,13 @@ using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 using LanguageExt.Common;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Edge;
+using OpenQA.Selenium.Firefox;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
-    /// <summary>
-    /// Environment-free isotope computation
-    /// </summary>
-    /// <typeparam name="A">Bound value</typeparam>
-    public struct Isotope<A>
-    {
-        readonly Func<IsotopeState, IsotopeState<A>> Thunk;
-        
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="thunk">Thunk</param>
-        public Isotope(Func<IsotopeState, IsotopeState<A>> thunk) =>
-            Thunk = thunk;
-
-        /// <summary>
-        /// Invoke the computation
-        /// </summary>
-        /// <param name="state">State</param>
-        /// <returns>Result of invoking the isotope computation</returns>
-        internal IsotopeState<A> Invoke(IsotopeState state)
-        {
-            try
-            {
-                return Thunk?.Invoke(state) ?? throw new InvalidOperationException("Isotope computation not initialised");
-            }
-            catch (Exception e)
-            {
-                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
-            }
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) Run(IsotopeSettings settings = null)
-        {
-            var res = Invoke(IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-            return(res.State, res.Value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) RunAndThrowOnError(IsotopeSettings settings = null)
-        {
-            var (state, value) = Run(settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) Run(IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var res = Invoke(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-            return (res.State, res.Value);
-        }        
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) RunAndThrowOnError(IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var (state, value) = Run(driver, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-
-        /// <summary>
-        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
-        /// </summary>
-        public static Isotope<A> operator |(Isotope<A> lhs, Isotope<A> rhs) => 
-            new Isotope<A>(s =>
-            {
-                var l = lhs.Invoke(s);
-                var r = l.IsFaulted
-                           ? rhs.Invoke(s)
-                           : l;
-
-                return r.IsFaulted
-                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
-                           : r;
-            });
-
-        /// <summary>
-        /// Lift the pure value into the monadic space 
-        /// </summary>
-        public static Isotope<A> Pure(A value) =>
-            new Isotope<A>(s => new IsotopeState<A>(value, s));
-        
-        /// <summary>
-        /// Lift the error into the monadic space 
-        /// </summary>
-        public static Isotope<A> Fail(Error error) =>
-            new Isotope<A>(s => new IsotopeState<A>(default(A), s.AddError(error)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<B> Bind<B>(Func<A, Isotope<B>> f)
-        {
-            var self = this;   
-            return new Isotope<B>(state => 
-            { 
-                var s = self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> Bind<Env, B>(Func<A, Isotope<Env, B>> f)
-        {
-            var self = this;   
-            return new Isotope<Env, B>((env, state) => 
-            { 
-                var s = self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> Bind<B>(Func<A, IsotopeAsync<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<B>(async state => 
-            { 
-                var s = self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, IsotopeAsync<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<B> SelectMany<B>(Func<A, Isotope<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> SelectMany<Env, B>(Func<A, Isotope<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, IsotopeAsync<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, C> SelectMany<Env, B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public Isotope<B> Map<B>(Func<A, B> f)
-        {
-            var self = this;   
-            return new Isotope<B>(state => 
-            {
-                var s = self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return new IsotopeState<B>(f(s.Value), s.State);
-            });
-        }
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public Isotope<B> Select<B>(Func<A, B> f) =>
-            Map(f);
-
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<A> MapFail(Func<Seq<Error>, Seq<Error>> f)
-        {
-            var self = this;
-            return new Isotope<A>(
-                s => {
-                    var r = self.Invoke(s);
-                    return r.IsFaulted
-                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
-                               : r;
-                });
-        }
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
-        {
-            var self = this;
-            return new Isotope<B>(
-                s => {
-                    var r = self.Invoke(s);
-                    return r.IsFaulted
-                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
-                               : new IsotopeState<B>(Succ(r.Value), r.State);
-                });
-        }
-        
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<A> MapFail(Func<Seq<Error>, Error> f) =>
-            MapFail(s => Seq1(f(s)));
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
-            BiMap(Succ, s => Seq1(Fail(s)));
-    }
-
-    /// <summary>
-    /// Isotope computation with an environment
-    /// </summary>
-    /// <typeparam name="Env">Environment</typeparam>
-    /// <typeparam name="A">Bound value</typeparam>
-    public struct Isotope<Env, A>
-    {
-        readonly Func<Env, IsotopeState, IsotopeState<A>> Thunk;
-
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="thunk">Thunk</param>
-        public Isotope(Func<Env, IsotopeState, IsotopeState<A>> thunk) =>
-            Thunk = thunk;
-
-        /// <summary>
-        /// Invoke the computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="state">State</param>
-        /// <returns>Result of invoking the isotope computation</returns>
-        internal IsotopeState<A> Invoke(Env env, IsotopeState state)
-        {
-            try
-            {
-                return Thunk?.Invoke(env, state) ?? throw new InvalidOperationException("Isotope computation not initialised");
-            }
-            catch (Exception e)
-            {
-                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
-            }
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) Run(Env env, IsotopeSettings settings = null)
-        {
-            var res = Invoke(env, IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
-            return (res.State, res.Value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) RunAndThrowOnError(Env env, IsotopeSettings settings = null)
-        {
-            var (state, value) = Run(env, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) Run(Env env, IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var res = Invoke(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
-            return (res.State, res.Value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public (IsotopeState state, A value) RunAndThrowOnError(Env env, IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var (state, value) = Run(env, driver, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-
-        /// <summary>
-        /// Implicit conversion 
-        /// </summary>
-        public static implicit operator Isotope<Env, A>(Isotope<A> ma) =>
-            new Isotope<Env, A>((_, state) => ma.Invoke(state));
-
-        /// <summary>
-        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
-        /// </summary>
-        public static Isotope<Env, A> operator |(Isotope<Env, A> lhs, Isotope<Env, A> rhs) =>
-            new Isotope<Env, A>((e, s) => {
-                                    var l = lhs.Invoke(e, s);
-                                    var r = l.IsFaulted
-                                                ? rhs.Invoke(e, s)
-                                                : l;
-
-                                    return r.IsFaulted
-                                               ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
-                                               : r;
-                                });
-
-        /// <summary>
-        /// Lift the pure value into the monadic space 
-        /// </summary>
-        public static Isotope<Env, A> Pure(A value) =>
-            new Isotope<Env, A>((e, s) => new IsotopeState<A>(value, s));
-
-        /// <summary>
-        /// Lift the error into the monadic space 
-        /// </summary>
-        public static Isotope<Env, A> Fail(Error error) =>
-            new Isotope<Env, A>((e, s) => new IsotopeState<A>(default(A), s.AddError(error)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> Bind<B>(Func<A, Isotope<B>> f)
-        {
-            var self = this;   
-            return new Isotope<Env, B>((env, state) => 
-            { 
-                var s = self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> Bind<B>(Func<A, Isotope<Env, B>> f)
-        {
-            var self = this;   
-            return new Isotope<Env, B>((env, state) => 
-            { 
-                var s = self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> SelectMany<B>(Func<A, Isotope<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, B> SelectMany<B>(Func<A, Isotope<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public Isotope<Env, C> SelectMany<B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public Isotope<Env, B> Map<B>(Func<A, B> f)
-        {
-            var self = this;   
-            return new Isotope<Env, B>((env, state) => 
-            {
-                var s = self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return new IsotopeState<B>(f(s.Value), s.State);
-            });
-        }
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public Isotope<Env, B> Select<B>(Func<A, B> f) =>
-            Map(f);
-
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<Env, A> MapFail(Func<Seq<Error>, Seq<Error>> f)
-        {
-            var self = this;
-            return new Isotope<Env, A>(
-                (e, s) => {
-                    var r = self.Invoke(e, s);
-                    return r.IsFaulted
-                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
-                               : r;
-                });
-        }
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<Env, B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
-        {
-            var self = this;
-            return new Isotope<Env, B>(
-                (e, s) => {
-                    var r = self.Invoke(e, s);
-                    return r.IsFaulted
-                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
-                               : new IsotopeState<B>(Succ(r.Value), r.State);
-                });
-        }    
-        
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<Env, A> MapFail(Func<Seq<Error>, Error> f) =>
-            MapFail(s => Seq1(f(s)));
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public Isotope<Env, B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
-            BiMap(Succ, s => Seq1(Fail(s)));
-    }
-
-    /// <summary>
-    /// Asynchronous, environment-free, isotope computation
-    /// </summary>
-    /// <typeparam name="A">Bound value</typeparam>
-    public struct IsotopeAsync<A>
-    {
-        readonly Func<IsotopeState, ValueTask<IsotopeState<A>>> Thunk;
-        
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="thunk">Thunk</param>
-        public IsotopeAsync(Func<IsotopeState, ValueTask<IsotopeState<A>>> thunk) =>
-            Thunk = thunk;
-
-        /// <summary>
-        /// Invoke the computation
-        /// </summary>
-        /// <param name="state">State</param>
-        /// <returns>Result of invoking the isotope computation</returns>
-        internal async ValueTask<IsotopeState<A>> Invoke(IsotopeState state)
-        {
-            try
-            {
-                if (Thunk == null)
-                {
-                    throw new InvalidOperationException("Isotope computation not initialised");
-                }
-                return await Thunk(state);
-            }
-            catch (Exception e)
-            {
-                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
-            }
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> Run(IsotopeSettings settings = null)
-        {
-            var res = await Invoke(IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-            return(res.State, res.Value);
-        }
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(IsotopeSettings settings = null)
-        {
-            var (state, value) = await Run(settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> Run(IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var res = await Invoke(IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-            return (res.State, res.Value);
-        }  
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var (state, value) = await Run(driver, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-
-        /// <summary>
-        /// Implicit conversion 
-        /// </summary>
-        public static implicit operator IsotopeAsync<A>(Isotope<A> ma) =>
-            new IsotopeAsync<A>(state => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
-        
-        /// <summary>
-        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
-        /// </summary>
-        public static IsotopeAsync<A> operator |(IsotopeAsync<A> lhs, IsotopeAsync<A> rhs) => 
-            new IsotopeAsync<A>(async s =>
-            {
-                var l = await lhs.Invoke(s);
-                var r = l.IsFaulted
-                            ? await rhs.Invoke(s)
-                            : l;
-
-                return r.IsFaulted
-                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
-                           : r;
-            });
-
-        /// <summary>
-        /// Lift the pure value into the monadic space 
-        /// </summary>
-        public static IsotopeAsync<A> Pure(A value) =>
-            new IsotopeAsync<A>(s => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(value, s)));
-        
-        /// <summary>
-        /// Lift the error into the monadic space 
-        /// </summary>
-        public static IsotopeAsync<A> Fail(Error error) =>
-            new IsotopeAsync<A>(s => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(default(A), s.AddError(error))));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> Bind<B>(Func<A, Isotope<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<B>(async state => 
-            { 
-                var s = await self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, Isotope<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = await self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> Bind<B>(Func<A, IsotopeAsync<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<B>(async state => 
-            { 
-                var s = await self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<Env, B>(Func<A, IsotopeAsync<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = await self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> SelectMany<B>(Func<A, Isotope<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, Isotope<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<Env, B>(Func<A, IsotopeAsync<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<Env, B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public IsotopeAsync<B> Map<B>(Func<A, B> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<B>(async state => 
-            {
-                var s = await self.Invoke(state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return new IsotopeState<B>(f(s.Value), s.State);
-            });
-        }
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public IsotopeAsync<B> Select<B>(Func<A, B> f) =>
-            Map(f);        
-    
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<A> MapFail(Func<Seq<Error>, Seq<Error>> f)
-        {
-            var self = this;
-            return new IsotopeAsync<A>(
-                async s => {
-                    var r = await self.Invoke(s);
-                    return r.IsFaulted
-                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
-                               : r;
-                });
-        }
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
-        {
-            var self = this;
-            return new IsotopeAsync<B>(
-                async s => {
-                    var r = await self.Invoke(s);
-                    return r.IsFaulted
-                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
-                               : new IsotopeState<B>(Succ(r.Value), r.State);
-                });
-        }
-        
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<A> MapFail(Func<Seq<Error>, Error> f) =>
-            MapFail(s => Seq1(f(s)));
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
-            BiMap(Succ, s => Seq1(Fail(s)));
-    }
-
-    /// <summary>
-    /// Asynchronous isotope computation with an environment
-    /// </summary>
-    /// <typeparam name="Env">Environment</typeparam>
-    /// <typeparam name="A">Bound value</typeparam>
-    public struct IsotopeAsync<Env, A>
-    {
-        readonly Func<Env, IsotopeState, ValueTask<IsotopeState<A>>> Thunk;
-        
-        /// <summary>
-        /// Ctor
-        /// </summary>
-        /// <param name="thunk">Thunk</param>
-        public IsotopeAsync(Func<Env, IsotopeState, ValueTask<IsotopeState<A>>> thunk) =>
-            Thunk = thunk;
-
-        /// <summary>
-        /// Invoke the computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="state">State</param>
-        /// <returns>Result of invoking the isotope computation</returns>
-        internal async ValueTask<IsotopeState<A>> Invoke(Env env, IsotopeState state)
-        {
-            try
-            {
-                if (Thunk == null)
-                {
-                    throw new InvalidOperationException("Isotope computation not initialised");
-                }
-                return await Thunk(env, state);
-            }
-            catch (Exception e)
-            {
-                return new IsotopeState<A>(default, state.AddError(Error.New(e)));
-            }
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> Run(Env env, IsotopeSettings settings = null)
-        {
-            var res = await Invoke(env, IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
-            return (res.State, res.Value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(Env env, IsotopeSettings settings = null)
-        {
-            var (state, value) = await Run(env, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-        
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> Run(Env env, IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var res = await Invoke(env, IsotopeState.Empty.With(Driver: Some(driver), Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
-            return (res.State, res.Value);
-        }
-
-        /// <summary>
-        /// Invoke the test computation
-        /// </summary>
-        /// <param name="env">Environment</param>
-        /// <param name="driver">Web driver</param>
-        /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
-        /// The computation succeeds if result.IsNone is true</returns>
-        public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(Env env, IWebDriver driver, IsotopeSettings settings = null)
-        {
-            var (state, value) = await Run(env, driver, settings);
-            state.IfFailedThrow();
-            return (state, value);
-        }
-
-        /// <summary>
-        /// Implicit conversion 
-        /// </summary>
-        public static implicit operator IsotopeAsync<Env, A>(Isotope<A> ma) =>
-            new IsotopeAsync<Env, A>((_, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
-
-        /// <summary>
-        /// Implicit conversion 
-        /// </summary>
-        public static implicit operator IsotopeAsync<Env, A>(Isotope<Env, A> ma) =>
-            new IsotopeAsync<Env, A>((env, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(env, state)));
-
-        /// <summary>
-        /// Implicit conversion 
-        /// </summary>
-        public static implicit operator IsotopeAsync<Env, A>(IsotopeAsync<A> ma) =>
-            new IsotopeAsync<Env, A>((_, state) => ma.Invoke(state));
-
-        /// <summary>
-        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
-        /// </summary>
-        public static IsotopeAsync<Env, A> operator |(IsotopeAsync<Env, A> lhs, IsotopeAsync<Env, A> rhs) =>
-            new IsotopeAsync<Env, A>(async (e, s) => {
-                                         var l = await lhs.Invoke(e, s);
-                                         var r = l.IsFaulted
-                                                     ? await rhs.Invoke(e, s)
-                                                     : l;
-
-                                         return r.IsFaulted
-                                                    ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
-                                                    : r;
-                                     });
-
-        /// <summary>
-        /// Lift the pure value into the monadic space 
-        /// </summary>
-        public static IsotopeAsync<Env, A> Pure(A value) =>
-            new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(value, s)));
-
-        /// <summary>
-        /// Lift the error into the monadic space 
-        /// </summary>
-        public static IsotopeAsync<Env, A> Fail(Error error) =>
-            new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(default(A), s.AddError(error))));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
-            { 
-                var s = await self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
-            { 
-                var s = await self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = await self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<Env, B>> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
-                var s = await self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return await f(s.Value).Invoke(env, s.State);
-            });
-        }
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<Env, B>> f) =>
-            Bind(f);
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Monadic bind 
-        /// </summary>
-        public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
-            Bind(a => bind(a).Map(b => project(a, b)));
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public IsotopeAsync<Env, B> Map<B>(Func<A, B> f)
-        {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
-            {
-                var s = await self.Invoke(env, state);
-                if (s.IsFaulted) return s.CastError<B>();
-                return new IsotopeState<B>(f(s.Value), s.State);
-            });
-        }
-
-        /// <summary>
-        /// Functor map
-        /// </summary>
-        public IsotopeAsync<Env, B> Select<B>(Func<A, B> f) =>
-            Map(f);
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<Env, A> MapFail(Func<Seq<Error>, Seq<Error>> f)
-        {
-            var self = this;
-            return new IsotopeAsync<Env, A>(
-                async (e, s) => {
-                    var r = await self.Invoke(e, s);
-                    return r.IsFaulted
-                               ? new IsotopeState<A>(default, r.State.With(Error: f(r.State.Error)))
-                               : r;
-                });
-        }
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<Env, B> BiMap<B>(Func<A, B> Succ,  Func<Seq<Error>, Seq<Error>> Fail)
-        {
-            var self = this;
-            return new IsotopeAsync<Env, B>(
-                async (e, s) => {
-                    var r = await self.Invoke(e, s);
-                    return r.IsFaulted
-                               ? new IsotopeState<B>(default, r.State.With(Error: Fail(r.State.Error)))
-                               : new IsotopeState<B>(Succ(r.Value), r.State);
-                });
-        }
-        
-        /// <summary>
-        /// Map the alternative value (errors)
-        /// </summary>
-        /// <param name="f">Mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<Env, A> MapFail(Func<Seq<Error>, Error> f) =>
-            MapFail(s => Seq1(f(s)));
-
-        /// <summary>
-        /// Map both sides of the isotope (success and failure)
-        /// </summary>
-        /// <param name="Succ">Success mapping function</param>
-        /// <param name="Fail">Failure mapping function</param>
-        /// <returns>Mapped isotope computation</returns>
-        public IsotopeAsync<Env, B> BiMap<B>(Func<A, B> Succ, Func<Seq<Error>, Error> Fail) =>
-            BiMap(Succ, s => Seq1(Fail(s)));
-    }
-
     /// <summary>
     /// Isotope extensions
     /// </summary>
@@ -1281,14 +45,309 @@ namespace Isotope80
             from r in s.Configuration.Find(key).ToIsotope($"Configuration key not found: {key}")
             select r;
 
+        /// <summary>
+        /// Update the settings within the Isotope computation
+        /// </summary>
         public static Isotope<Unit> initSettings(IsotopeSettings settings) =>
             from s in get
             from _ in put(s.With(Settings: settings))
             select unit;
 
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static Isotope<B> use<A, B>(A resource, Func<A, Isotope<B>> f) where A : IDisposable =>
+            new Isotope<B>(s => 
+            {
+                try
+                {
+                    return f(resource).Invoke(s);
+                }
+                finally
+                {
+                    resource?.Dispose();
+                }
+            });
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static Isotope<Env, B> use<Env, A, B>(A resource, Func<A, Isotope<Env, B>> f) where A : IDisposable =>
+            new Isotope<Env, B>((e, s) => 
+            {
+                try
+                {
+                    return f(resource).Invoke(e, s);
+                }
+                finally
+                {
+                    resource?.Dispose();
+                }
+            });
+
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static IsotopeAsync<B> use<A, B>(A resource, Func<A, IsotopeAsync<B>> f) where A : IDisposable =>
+            new IsotopeAsync<B>(async s => 
+            {
+                try
+                {
+                    return await f(resource).Invoke(s).ConfigureAwait(false);
+                }
+                finally
+                {
+                    resource?.Dispose();
+                }
+            });
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static IsotopeAsync<Env, B> use<Env, A, B>(A resource, Func<A, IsotopeAsync<Env, B>> f) where A : IDisposable =>
+            new IsotopeAsync<Env, B>(async (e, s) => 
+            {
+                try
+                {
+                    return await f(resource).Invoke(e, s).ConfigureAwait(false);
+                }
+                finally
+                {
+                    resource?.Dispose();
+                }
+            });
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="dispose">Function to clean up the resource on completion</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static Isotope<B> use<A, B>(A resource, Func<A, Unit> dispose, Func<A, Isotope<B>> f) =>
+            new Isotope<B>(s => 
+            {
+                try
+                {
+                    return f(resource).Invoke(s);
+                }
+                finally
+                {
+                    dispose(resource);
+                }
+            });
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="dispose">Function to clean up the resource on completion</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static Isotope<Env, B> use<Env, A, B>(A resource, Func<A, Unit> dispose, Func<A, Isotope<Env, B>> f) =>
+            new Isotope<Env, B>((e, s) => 
+            {
+                try
+                {
+                    return f(resource).Invoke(e, s);
+                }
+                finally
+                {
+                    dispose(resource);
+                }
+            });
+
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="dispose">Function to clean up the resource on completion</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static IsotopeAsync<B> use<A, B>(A resource, Func<A, Unit> dispose, Func<A, IsotopeAsync<B>> f) =>
+            new IsotopeAsync<B>(async s => 
+            {
+                try
+                {
+                    return await f(resource).Invoke(s).ConfigureAwait(false);
+                }
+                finally
+                {
+                    dispose(resource);
+                }
+            });
+
+        /// <summary>
+        /// Use a disposable resource, and clean it up afterwards
+        /// </summary>
+        /// <param name="resource">Disposable resource</param>
+        /// <param name="dispose">Function to clean up the resource on completion</param>
+        /// <param name="f">Function to receive the resource and return an isotope run in that context</param>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Disposable resource type</typeparam>
+        /// <typeparam name="B">Resulting bound value type</typeparam>
+        public static IsotopeAsync<Env, B> use<Env, A, B>(A resource, Func<A, Unit> dispose, Func<A, IsotopeAsync<Env, B>> f) =>
+            new IsotopeAsync<Env, B>(async (e, s) => 
+            {
+                try
+                {
+                    return await f(resource).Invoke(e, s).ConfigureAwait(false);
+                }
+                finally
+                {
+                    dispose(resource);
+                }
+            });
+
+        /// <summary>
+        /// Clean up function for web-drivers
+        /// </summary>
+        static Unit disposeWebDriver(IWebDriver d)
+        {
+            d.Quit();
+            d.Dispose();
+            return unit;
+        }
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static Isotope<A> withWebDriver<A>(IWebDriver driver, Isotope<A> ma) =>
+            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
+                                               from r in ma
+                                               select r);
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static Isotope<Env, A> withWebDriver<Env, A>(IWebDriver driver, Isotope<Env, A> ma) =>
+            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
+                                               from r in ma
+                                               select r);
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static IsotopeAsync<A> withWebDriver<A>(IWebDriver driver, IsotopeAsync<A> ma) =>
+            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
+                                               from r in ma
+                                               select r);
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context
+        /// </summary>
+        public static IsotopeAsync<Env, A> withWebDriver<Env, A>(IWebDriver driver, IsotopeAsync<Env, A> ma) =>
+            use(driver, disposeWebDriver, d => from _ in setWebDriver(driver)  
+                                               from r in ma
+                                               select r);
+
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<A> withChromeDriver<A>(Isotope<A> ma) =>
+            withWebDriver(new ChromeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma) =>
+            withWebDriver(new EdgeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma) =>
+            withWebDriver(new FirefoxDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma) =>
+            withWebDriver(new ChromeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma) =>
+            withWebDriver(new EdgeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma) =>
+            withWebDriver(new FirefoxDriver(), ma);
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma) =>
+            withWebDriver(new ChromeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma) =>
+            withWebDriver(new EdgeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma) =>
+            withWebDriver(new FirefoxDriver(), ma);
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withWebDriver(new ChromeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withWebDriver(new EdgeDriver(), ma);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withWebDriver(new FirefoxDriver(), ma);
+        
+        /// <summary>
+        /// Set the window size of the browser
+        /// </summary>
+        /// <param name="width">Width in pixels</param>
+        /// <param name="height">Height in pixels</param>
         public static Isotope<Unit> setWindowSize(int width, int height) =>
             setWindowSize(new Size(width, height));
 
+        /// <summary>
+        /// Set the window size of the browser
+        /// </summary>
         public static Isotope<Unit> setWindowSize(Size size) =>
             from d in webDriver
             from _ in trya(() => d.Manage().Window.Size = size, $"Failed to change browser window size to {size.Width} by {size.Height}")
@@ -1619,14 +678,10 @@ namespace Isotope80
         /// <summary>
         /// Web driver setter
         /// </summary>
-        public static Isotope<Unit> setWebDriver(IWebDriver d) =>
+        static Isotope<Unit> setWebDriver(IWebDriver d) =>
             from s in get
             from _ in put(s.With(Driver: Some(d)))
             select unit;
-
-        public static Isotope<Unit> disposeWebDriver =>
-            from s in get
-            select s.DisposeWebDriver();
 
         /// <summary>
         /// Default wait accessor
@@ -1726,40 +781,40 @@ namespace Isotope80
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<A> isoAsync<A>(Func<ValueTask<A>> f) =>
-            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f(), s)); 
+            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f().ConfigureAwait(false), s)); 
 
         /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<A> isoAsync<A>(Func<ValueTask<Fin<A>>> f) =>
-            new IsotopeAsync<A>(async s => (await f()).Match(Succ: a => new IsotopeState<A>(a, s),
-                                                             Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+            new IsotopeAsync<A>(async s => (await f().ConfigureAwait(false)).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                                                   Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
 
         /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<A> isoAsync<A>(Func<IsotopeState, ValueTask<A>> f) =>
-            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f(s), s)); 
+            new IsotopeAsync<A>(async s => new IsotopeState<A>(await f(s).ConfigureAwait(false), s)); 
 
         /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<A> isoAsync<A>(Func<IsotopeState, ValueTask<Fin<A>>> f) =>
-            new IsotopeAsync<A>(async s => (await f(s)).Match(Succ: a => new IsotopeState<A>(a, s),
-                                                              Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
+            new IsotopeAsync<A>(async s => (await f(s).ConfigureAwait(false)).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                                                    Fail: e => new IsotopeState<A>(default, s.AddError(e)))); 
 
         /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<Env, A> isoAsync<Env, A>(Func<Env, IsotopeState, ValueTask<A>> f) =>
-            new IsotopeAsync<Env, A>(async (e, s) => new IsotopeState<A>(await f(e, s), s)); 
+            new IsotopeAsync<Env, A>(async (e, s) => new IsotopeState<A>(await f(e, s).ConfigureAwait(false), s)); 
 
         /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static IsotopeAsync<Env, A> isoAsync<Env, A>(Func<Env, IsotopeState, ValueTask<Fin<A>>> f) =>
-            new IsotopeAsync<Env, A>(async (e, s) => (await f(e, s)).Match(Succ: a => new IsotopeState<A>(a, s),
-                                                                           Fail: e => new IsotopeState<A>(default, s.AddError(e))));
+            new IsotopeAsync<Env, A>(async (e, s) => (await f(e, s).ConfigureAwait(false)).Match(Succ: a => new IsotopeState<A>(a, s),
+                                                                                                 Fail: e => new IsotopeState<A>(default, s.AddError(e))));
 
         /// <summary>
         /// Gets the environment from the Isotope monad
@@ -2024,7 +1079,7 @@ namespace Isotope80
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(state);
+                        var s = await ma.Invoke(state).ConfigureAwait(false);
                         if (s.State.IsFaulted)
                         {
                             return new IsotopeState<Seq<A>>(default, s.State);
@@ -2049,7 +1104,7 @@ namespace Isotope80
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(env, state);
+                        var s = await ma.Invoke(env, state).ConfigureAwait(false);
                         if (s.State.IsFaulted)
                         {
                             return new IsotopeState<Seq<A>>(default, s.State);
@@ -2182,7 +1237,7 @@ namespace Isotope80
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(state);
+                        var s = await ma.Invoke(state).ConfigureAwait(false);
 
                         // Collect error
                         hasFaulted = hasFaulted || s.State.IsFaulted;
@@ -2228,7 +1283,7 @@ namespace Isotope80
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(env, state);
+                        var s = await ma.Invoke(env, state).ConfigureAwait(false);
 
                         // Collect error
                         hasFaulted = hasFaulted || s.State.IsFaulted;

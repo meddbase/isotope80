@@ -3,6 +3,7 @@ using System;
 using LanguageExt;
 using LanguageExt.Common;
 using static System.Console;
+using static Isotope80.Isotope;
 
 namespace Isotope80.Samples.Console
 {
@@ -13,8 +14,7 @@ namespace Isotope80.Samples.Console
             Action<string, int> consoleLogger =
                 (x, y) => WriteLine(new string('\t', y) + x);
 
-            (var state, var value) = Meddbase.GoToPageAndOpenCareers.Run(
-                new ChromeDriver(), 
+            (var state, var value) = withChromeDriver(Meddbase.GoToPageAndOpenCareers).Run(
                     IsotopeSettings.Create(
                         loggingAction: consoleLogger));
             
