@@ -1,19 +1,37 @@
 ﻿using LanguageExt;
 using OpenQA.Selenium;
 using System;
+using System.Reactive.Subjects;
 using System.Runtime.ExceptionServices;
 using LanguageExt.Common;
 using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
+    /// <summary>
+    /// Untyped isotope state
+    /// Used to pass the state into a isotope computation
+    /// </summary>
     public partial class IsotopeState
     {
         internal readonly Option<IWebDriver> Driver;
         internal readonly IsotopeSettings Settings;
         internal readonly Map<string, string> Configuration;
+        
+        /// <summary>
+        /// Errors
+        /// </summary>
         public readonly Seq<Error> Error;
+        
+        /// <summary>
+        /// Log
+        /// </summary>
         public readonly Log Log;
+        
+        /// <summary>
+        /// Context stack
+        /// </summary>
+        public readonly Stck<string> Context;
 
         /// <summary>
         /// Creates a new instance of IsotopeState with the supplied settings.
@@ -26,29 +44,44 @@ namespace Isotope80
             IsotopeSettings Settings = null,
             Map<string, string>? Configuration = null,
             Seq<Error>? Error = null,
-            Log Log = null) =>
+            Log Log = null,
+            Stck<string>? Context = null) =>
             new IsotopeState(
                 Driver ?? this.Driver,
                 Settings ?? this.Settings,
                 Configuration ?? this.Configuration, 
                 Error ?? this.Error, 
-                Log ?? this.Log);
+                Log ?? this.Log,
+                Context ?? this.Context);
 
+        /// <summary>
+        /// Empty state
+        /// </summary>
         internal static IsotopeState Empty =
-            new IsotopeState(default, IsotopeSettings.Create(), default, default, Log.Empty);
+            new IsotopeState(
+                default,
+                IsotopeSettings.Create(
+                    new Subject<Error>(), 
+                    new Subject<LogOutput>()), 
+                default, 
+                default, 
+                Log.Empty,
+                default);
 
         private IsotopeState(
             Option<IWebDriver> driver,
             IsotopeSettings settings,
             Map<string, string> configuration,
             Seq<Error> error, 
-            Log log)
+            Log log,
+            Stck<string> context)
         {            
-            Driver = driver;
-            Settings = settings;
+            Driver        = driver;
+            Settings      = settings;
             Configuration = configuration;
-            Error = error;
-            Log = log;
+            Error         = error;
+            Log           = log;
+            Context       = context;
         }
 
         internal IsotopeState AddError(Error err) =>
@@ -63,20 +96,6 @@ namespace Isotope80
         internal IsotopeState AddErrors(Seq<string> err) =>
             AddErrors(err.Map(LanguageExt.Common.Error.New));
 
-        internal IsotopeState Write(string log, Action<string, int> action) =>
-            With(Log: Log.Append(log, action));
-
-        internal IsotopeState PushLog(string log, Action<string, int> action) =>
-            With(Log: Log.Push(log, action));
-
-        internal IsotopeState PopLog() =>
-            With(Log: Log.Pop());
-
-        internal Unit DisposeWebDriver() =>
-            Driver.Match(
-                Some: d => { d.Quit(); return unit; },
-                None: () => unit);
-
         /// <summary>
         /// Throw if the state is faulted
         /// </summary>
@@ -89,7 +108,7 @@ namespace Isotope80
             {
                 return unit;
             }
-            Error.Iter(err => Settings.FailureAction(err, Log));
+            Error.Iter(Settings.ErrorStream.OnNext);
             if (Error.Count == 1)
             {
                 ExceptionDispatchInfo.Capture(Error.Head).Throw(); 
@@ -108,19 +127,36 @@ namespace Isotope80
             !Error.IsEmpty;
     }
 
+    /// <summary>
+    /// Typed isotope state, contains an untyped state and a value of A
+    /// </summary>
+    /// <typeparam name="A">Bound value type</typeparam>
     public class IsotopeState<A>
     {
+        /// <summary>
+        /// Return value
+        /// </summary>
         public readonly A Value;
+        
+        /// <summary>
+        /// Resulting state
+        /// </summary>
         public readonly IsotopeState State;
 
+        /// <summary>
+        /// Ctor
+        /// </summary>
         public IsotopeState(A value, IsotopeState state)
         {
             Value = value;
             State = state;
         }
 
-        public IsotopeState<T> Map<T>(Func<A, T> mapper) =>
-            new IsotopeState<T>(mapper(Value), State);
+        /// <summary>
+        /// Functor map
+        /// </summary>
+        public IsotopeState<B> Map<B>(Func<A, B> f) =>
+            new IsotopeState<B>(f(Value), State);
 
         /// <summary>
         /// True if the state is faulted

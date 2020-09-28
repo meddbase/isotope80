@@ -3,6 +3,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -238,41 +239,53 @@ namespace Isotope80
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static Isotope<A> withWebDriver<A>(IWebDriver driver, Isotope<A> ma) =>
-            use(driver, disposeWebDriver, d => from od in webDriver
+            use(driver, disposeWebDriver, d => from st in get
                                                from _1 in setWebDriver(driver)  
                                                from rs in ma
-                                               from _2 in setWebDriver(od)  
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
                                                select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static Isotope<Env, A> withWebDriver<Env, A>(IWebDriver driver, Isotope<Env, A> ma) =>
-            use(driver, disposeWebDriver, d => from od in webDriver
+            use(driver, disposeWebDriver, d => from st in get
                                                from _1 in setWebDriver(driver)  
                                                from rs in ma
-                                               from _2 in setWebDriver(od)  
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
                                                select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static IsotopeAsync<A> withWebDriver<A>(IWebDriver driver, IsotopeAsync<A> ma) =>
-            use(driver, disposeWebDriver, d => from od in webDriver
+            use(driver, disposeWebDriver, d => from st in get
                                                from _1 in setWebDriver(driver)  
                                                from rs in ma
-                                               from _2 in setWebDriver(od)  
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
                                                select rs);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static IsotopeAsync<Env, A> withWebDriver<Env, A>(IWebDriver driver, IsotopeAsync<Env, A> ma) =>
-            use(driver, disposeWebDriver, d => from od in webDriver
+            use(driver, disposeWebDriver, d => from st in get
                                                from _1 in setWebDriver(driver)  
                                                from rs in ma
-                                               from _2 in setWebDriver(od)  
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
                                                select rs);
+
+        /// <summary>
+        /// Map a local environment
+        /// </summary>
+        public static Isotope<EnvA, A> local<EnvA, EnvB, A>(Func<EnvA, EnvB> f, Isotope<EnvB, A> ma) =>
+            new Isotope<EnvA, A>((ea, s) => ma.Invoke(f(ea), s));
+
+        /// <summary>
+        /// Map a local environment
+        /// </summary>
+        public static IsotopeAsync<EnvA, A> local<EnvA, EnvB, A>(Func<EnvA, EnvB> f, IsotopeAsync<EnvB, A> ma) =>
+            new IsotopeAsync<EnvA, A>((ea, s) => ma.Invoke(f(ea), s));
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
@@ -294,10 +307,10 @@ namespace Isotope80
                             };
 
                     // Run with the web-driver
-                    var r = withWebDriver(d, ma).Invoke(s);
+                    var r = context(nm, withWebDriver(d, ma)).Invoke(s);
 
                     // Collect the errors, prefix them with the name of the browser
-                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                    errors = errors + r.State.Error;
                 }
                 return new IsotopeState<Unit>(default, s.With(Error: errors));
             });
@@ -322,10 +335,10 @@ namespace Isotope80
                             };
 
                     // Run with the web-driver
-                    var r = withWebDriver(d, ma).Invoke(e, s);
+                    var r = context(nm, withWebDriver(d, ma)).Invoke(e, s);
 
                     // Collect the errors, prefix them with the name of the browser
-                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                    errors = errors + r.State.Error;
                 }
                 return new IsotopeState<Unit>(default, s.With(Error: errors));
             });
@@ -350,10 +363,10 @@ namespace Isotope80
                             };
 
                     // Run with the web-driver
-                    var r = await withWebDriver(d, ma).Invoke(s).ConfigureAwait(false);
+                    var r = await context(nm, withWebDriver(d, ma)).Invoke(s).ConfigureAwait(false);
 
                     // Collect the errors, prefix them with the name of the browser
-                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                    errors = errors + r.State.Error;
                 }
                 return new IsotopeState<Unit>(default, s.With(Error: errors));
             });
@@ -378,10 +391,10 @@ namespace Isotope80
                             };
 
                     // Run with the web-driver
-                    var r = await withWebDriver(d, ma).Invoke(e, s);
+                    var r = await context(nm, withWebDriver(d, ma)).Invoke(e, s);
 
                     // Collect the errors, prefix them with the name of the browser
-                    errors = errors + r.State.Error.Map(e => Error.New($"[{nm}] {e.Message}", e.Exception.IsSome ? (Exception) e : null));
+                    errors = errors + r.State.Error;
                 }
                 return new IsotopeState<Unit>(default, s.With(Error: errors));
             });
@@ -390,97 +403,97 @@ namespace Isotope80
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static Isotope<A> withChromeDriver<A>(Isotope<A> ma) =>
-            withWebDriver(new ChromeDriver(), ma);
+            context("Chrome", withWebDriver(new ChromeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
         public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma) =>
-            withWebDriver(new EdgeDriver(), ma);
+            context("Edge", withWebDriver(new EdgeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma) =>
-            withWebDriver(new FirefoxDriver(), ma);
+            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
         public static Isotope<A> withInternetExplorerDriver<A>(Isotope<A> ma) =>
-            withWebDriver(new InternetExplorerDriver(), ma);
+            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma) =>
-            withWebDriver(new ChromeDriver(), ma);
+            context("Chrome", withWebDriver(new ChromeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
         public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma) =>
-            withWebDriver(new EdgeDriver(), ma);
+            context("Edge", withWebDriver(new EdgeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma) =>
-            withWebDriver(new FirefoxDriver(), ma);
+            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
         
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
         public static Isotope<Env, A> withInternetExplorerDriver<Env, A>(Isotope<Env, A> ma) =>
-            withWebDriver(new InternetExplorerDriver(), ma);
+            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma) =>
-            withWebDriver(new ChromeDriver(), ma);
+            context("Chrome", withWebDriver(new ChromeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
         public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma) =>
-            withWebDriver(new EdgeDriver(), ma);
+            context("Edge", withWebDriver(new EdgeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma) =>
-            withWebDriver(new FirefoxDriver(), ma);
+            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
                 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
         public static IsotopeAsync<A> withInternetExplorerDriver<A>(IsotopeAsync<A> ma) =>
-            withWebDriver(new InternetExplorerDriver(), ma);
+            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
         
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withWebDriver(new ChromeDriver(), ma);
+            context("Chrome", withWebDriver(new ChromeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withWebDriver(new EdgeDriver(), ma);
+            context("Edge", withWebDriver(new EdgeDriver(), ma));
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withWebDriver(new FirefoxDriver(), ma);
+            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
                 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withInternetExplorerDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withWebDriver(new InternetExplorerDriver(), ma);
+            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
         
         /// <summary>
         /// Set the window size of the browser
@@ -540,12 +553,13 @@ namespace Isotope80
         /// <summary>
         /// Find an HTML element
         /// </summary>
+        /// <param name="element">Element to search</param>
         /// <param name="selector">CSS selector</param>
+        /// <param name="wait">Wait until the element exists</param>
         public static Isotope<IWebElement> findElement(
             IWebElement element, 
             By selector, 
-            bool wait = true, 
-            string errorMessage = null) =>
+            bool wait = true) =>
             from d in webDriver
             from e in wait 
                       ? waitUntilElementExists(element, selector)
@@ -829,6 +843,14 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Web driver clear
+        /// </summary>
+        static Isotope<Unit> clearWebDriver =>
+            from s in get
+            from _ in put(s.With(Driver: None))
+            select unit;
+
+        /// <summary>
         /// Default wait accessor
         /// </summary>
         public static Isotope<TimeSpan> defaultWait =>
@@ -862,26 +884,38 @@ namespace Isotope80
         public static Isotope<Unit> unitM =>
             pure(unit);
 
+        static string showContext(Stck<string> ctx) =>
+            String.Join(" → ", ctx.Rev());
+
+        /// <summary>
+        /// Failure - creates an Isotope monad that always fails
+        /// </summary>
+        /// <param name="err">Error</param>
+        public static Isotope<A> fail<A>(Error err) =>
+            from s in get
+            from _ in error(err.ToString())
+            from r in Isotope<A>.Fail(Error.New($"{err.Message} ({showContext(s.Context)})", err.Exception.IsSome ? (Exception)err : null))
+            select r;
+        
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
         /// <param name="message">Error message</param>
         public static Isotope<A> fail<A>(string message) =>
-            Isotope<A>.Fail(Error.New(message));
-
-        /// <summary>
-        /// Failure - creates an Isotope monad that always fails
-        /// </summary>
-        /// <param name="error">Error</param>
-        public static Isotope<A> fail<A>(Error error) =>
-            Isotope<A>.Fail(error);
+            from s in get
+            from _ in error(message)
+            from r in Isotope<A>.Fail(Error.New($"{message} ({showContext(s.Context)})"))
+            select r;
 
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
         /// <param name="ex">Exception</param>
         public static Isotope<A> fail<A>(Exception ex) =>
-            Isotope<A>.Fail(ex);
+            from s in get
+            from _ in error(ex.Message)
+            from r in Isotope<A>.Fail(Error.New($"{ex.Message} ({showContext(s.Context)})", ex))
+            select r;
 
         /// <summary>
         /// Lift the function into the isotope monadic space
@@ -987,6 +1021,12 @@ namespace Isotope80
             new Isotope<Unit>(_ => new IsotopeState<Unit>(default, state));
 
         /// <summary>
+        /// Modify the state from the Isotope monad
+        /// </summary>
+        public static Isotope<Unit> modify(Func<IsotopeState, IsotopeState> f) =>
+            get.Bind(s => put(f(s)));
+
+        /// <summary>
         /// Try and action
         /// </summary>
         /// <param name="action">Action to try</param>
@@ -1042,26 +1082,95 @@ namespace Isotope80
         /// <summary>
         /// Log some output
         /// </summary>
+        [Obsolete("Use `info` instead")]
         public static Isotope<Unit> log(string message) =>
-            from st in get
-            from _1 in put(st.Write(message, st.Settings.LoggingAction))
+            from x in modify(s => s.With(Log: s.Log.Info(message)))
+            from y in writeToLogStream(message, LogType.Info)
             select unit;
 
-        public static Isotope<Unit> pushLog(string message) =>
-            from st in get
-            from _1 in put(st.PushLog(message, st.Settings.LoggingAction))
+        /// <summary>
+        /// Log some output as info
+        /// </summary>
+        public static Isotope<Unit> info(string message) =>
+            from x in modify(s => s.With(Log: s.Log.Info(message)))
+            from y in writeToLogStream(message, LogType.Info)
             select unit;
 
-        public static Isotope<Unit> popLog =>
-            from st in get
-            from _1 in put(st.PopLog())
+        /// <summary>
+        /// Log some output as a warning
+        /// </summary>
+        public static Isotope<Unit> warn(string message) =>
+            from x in modify(s => s.With(Log: s.Log.Warning(message)))
+            from y in writeToLogStream(message, LogType.Warn)
             select unit;
 
+        /// <summary>
+        /// Log some output as an error
+        /// </summary>
+        /// <remarks>Note: This only logs the error, it doesn't stop the computation.  Use `fail` for computation
+        /// termination.  `fail` also logs to the output using this function.</remarks>
+        public static Isotope<Unit> error(string message) =>
+            from x in modify(s => s.With(Log: s.Log.Error(message)))
+            from y in writeToLogStream(message, LogType.Error)
+            select unit;
+        
+        /// <summary>
+        /// Create a logging context
+        /// </summary>
         public static Isotope<A> context<A>(string context, Isotope<A> iso) =>
-            from _1 in pushLog(context)
-            from re in iso
-            from _2 in popLog
-            select re;
+            from s in get
+            from x in put(s.With(Context: s.Context.Push(context), 
+                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
+            from o in writeToLogStream(context, LogType.Context)
+            from r in iso
+            from _ in modify(s2 => s2.With(Context: s.Context, 
+                                           Log: s.Log.Add(s2.Log)))   
+            select r;
+        
+        /// <summary>
+        /// Create a logging context
+        /// </summary>
+        public static Isotope<Env, A> context<Env, A>(string context, Isotope<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Context: s.Context.Push(context), 
+                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
+            from o in writeToLogStream(context, LogType.Context)
+            from r in iso
+            from _ in modify(s2 => s2.With(Context: s.Context,
+                                           Log: s.Log.Add(s2.Log)))   
+            select r;
+        
+        /// <summary>
+        /// Create a logging context
+        /// </summary>
+        public static IsotopeAsync<A> context<A>(string context, IsotopeAsync<A> iso) =>
+            from s in get
+            from x in put(s.With(Context: s.Context.Push(context), 
+                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
+            from o in writeToLogStream(context, LogType.Context)
+            from r in iso
+            from _ in modify(s2 => s2.With(Context: s.Context,
+                                           Log: s.Log.Add(s2.Log)))   
+            select r;
+        
+        /// <summary>
+        /// Create a logging context
+        /// </summary>
+        public static IsotopeAsync<Env, A> context<Env, A>(string context, IsotopeAsync<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Context: s.Context.Push(context), 
+                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
+            from o in writeToLogStream(context, LogType.Context)
+            from r in iso
+            from _ in modify(s2 => s2.With(Context: s.Context,
+                                           Log: s.Log.Add(s2.Log)))   
+            select r;
+
+        static Isotope<Unit> writeToLogStream(string message, LogType type) =>
+            new Isotope<Unit>(s => {
+                s.Settings.LogStream.OnNext(new LogOutput(message, type, s.Log.Indent));
+                return new IsotopeState<Unit>(default, s);
+            });
 
         public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
             By selector,
@@ -1448,7 +1557,6 @@ namespace Isotope80
                     return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
                 });              
         
-        
         /// <summary>
         /// Convert an option to a pure isotope
         /// </summary>
@@ -1458,6 +1566,16 @@ namespace Isotope80
         /// <returns>Pure isotope</returns>
         public static Isotope<A> ToIsotope<A>(this Option<A> maybe, string label) =>
             maybe.Match(Some: pure, None: fail<A>(label));
+        
+        /// <summary>
+        /// Convert an option to a pure isotope
+        /// </summary>
+        /// <param name="maybe">Optional value</param>
+        /// <param name="alternative">Alternative to use if None</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Pure isotope</returns>
+        public static Isotope<A> ToIsotope<A>(this Option<A> maybe, Isotope<A> alternative) =>
+            maybe.ToIsotope("") | alternative;
 
         /// <summary>
         /// Convert a try to an isotope computation
@@ -1474,7 +1592,7 @@ namespace Isotope80
         /// Convert a try to an isotope computation
         /// </summary>
         /// <param name="tried">Try value</param>
-        /// <param name="label">Failure value to use if None</param>
+        /// <param name="label">Failure value to use if Fail</param>
         /// <typeparam name="A">Bound value type</typeparam>
         /// <returns>Try computation wrapped in an isotope computation</returns>
         public static Isotope<A> ToIsotope<A>(this Try<A> tried, string label) =>
@@ -1484,11 +1602,21 @@ namespace Isotope80
         /// Convert a try to an isotope computation
         /// </summary>
         /// <param name="tried">Try value</param>
-        /// <param name="makeError">Failure value to use if None</param>
+        /// <param name="makeError">Failure value to use if Fail</param>
         /// <typeparam name="A">Bound value type</typeparam>
         /// <returns>Try computation wrapped in an isotope computation</returns>
         public static Isotope<A> ToIsotope<A>(this Try<A> tried, Func<Error, string> makeError) =>
             tried.ToIsotope().MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
+
+        /// <summary>
+        /// Convert a try to an isotope computation
+        /// </summary>
+        /// <param name="tried">Try value</param>
+        /// <param name="alternative">Alternative to use if Fail</param>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <returns>Try computation wrapped in an isotope computation</returns>
+        public static Isotope<A> ToIsotope<A>(this Try<A> tried, Isotope<A> alternative) =>
+            tried.ToIsotope() | alternative;
 
         /// <summary>
         /// Convert an Either to a pure isotope

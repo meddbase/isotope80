@@ -2,6 +2,7 @@
 using System;
 using LanguageExt;
 using LanguageExt.Common;
+using static LanguageExt.Prelude;
 using static System.Console;
 using static Isotope80.Isotope;
 
@@ -11,12 +12,9 @@ namespace Isotope80.Samples.Console
     {
         static void Main(string[] args)
         {
-            Action<string, int> consoleLogger =
-                (x, y) => WriteLine(new string('\t', y) + x);
-
-            (var state, var value) = withChromeDriver(Meddbase.GoToPageAndOpenCareers).Run(
-                    IsotopeSettings.Create(
-                        loggingAction: consoleLogger));
+            var stgs = IsotopeSettings.Create();
+            stgs.LogStream.Subscribe(x => WriteLine(x));
+            (var state, var value) = withChromeDriver(Meddbase.GoToPageAndOpenCareers).Run(stgs);
             
             Clear();
             

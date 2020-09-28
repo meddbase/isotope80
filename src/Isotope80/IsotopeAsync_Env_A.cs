@@ -55,11 +55,6 @@ namespace Isotope80
         public async ValueTask<(IsotopeState state, A value)> Run(Env env, IsotopeSettings settings = null)
         {
             var res = await Invoke(env, IsotopeState.Empty.With(Settings: settings)).ConfigureAwait(false);
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
             return (res.State, res.Value);
         }
 

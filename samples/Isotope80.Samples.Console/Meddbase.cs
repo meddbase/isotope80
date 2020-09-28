@@ -9,10 +9,10 @@ namespace Isotope80.Samples.Console
     {
         public static Isotope<Unit> GoToDesktopSite =>
             context("Go to Desktop Site",
-                    from _1 in log("Update Window Size")
-                    from _2 in setWindowSize(1280,960)
-                    from _3 in nav("https://www.meddbase.com")
-                    select unit);
+                from _1 in info("Update Window Size")
+                from _2 in setWindowSize(1280,960)
+                from _3 in nav("https://www.meddbase.com")
+                select unit);
 
         public static Isotope<Unit> WaitThenClick(By selector) =>
             from el in waitUntilClickable(selector)

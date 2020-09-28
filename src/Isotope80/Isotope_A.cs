@@ -47,10 +47,6 @@ namespace Isotope80
         public (IsotopeState state, A value) Run(IsotopeSettings settings = null)
         {
             var res = Invoke(IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
             return(res.State, res.Value);
         }
 

@@ -50,11 +50,6 @@ namespace Isotope80
         public (IsotopeState state, A value) Run(Env env, IsotopeSettings settings = null)
         {
             var res = Invoke(env, IsotopeState.Empty.With(Settings: settings));
-            if (res.State.Settings.DisposeOnCompletion)
-            {
-                res.State.DisposeWebDriver();
-            }
-
             return (res.State, res.Value);
         }
 
