@@ -16,7 +16,7 @@ namespace Isotope80.Samples.Console
 
         public static Isotope<Unit> WaitThenClick(By selector) =>
             from el in waitUntilClickable(selector)
-            from _2 in click(el)
+            from _2 in click(selector)
             select unit;
 
         public static Isotope<Unit> ClickMoreMenu =>
