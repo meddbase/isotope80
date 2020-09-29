@@ -38,7 +38,7 @@ namespace Isotope80
         /// <summary>
         /// Empty log
         /// </summary>
-        public static readonly Log Empty = new Log(-1, default, "", default);
+        public static readonly Log Empty = new Log(0, default, "", default);
         
         /// <summary>
         /// Number of tabs to indent
@@ -65,9 +65,9 @@ namespace Isotope80
         /// </summary>
         internal Log(int indent, LogType type, string message, Seq<Log> children)
         {
-            Indent   = indent;
+            Indent   = indent >= 0 ? indent : throw new ArgumentOutOfRangeException(nameof(indent));
             Type     = type;
-            Message  = message;
+            Message  = message ?? throw new ArgumentNullException(nameof(message));
             Children = children;
         }
 
@@ -131,7 +131,7 @@ namespace Isotope80
     /// <summary>
     /// Log output
     /// </summary>
-    public struct LogOutput
+    public readonly struct LogOutput
     {
         /// <summary>
         /// Log message
@@ -151,8 +151,12 @@ namespace Isotope80
         /// <summary>
         /// Ctor
         /// </summary>
-        public LogOutput(string message, LogType type, int index) =>
-            (Message, Type, Indent) = (message, type, Math.Max(0, index));
+        public LogOutput(string message, LogType type, int indent)
+        {
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+            Type    = type;
+            Indent  = indent >= 0 ? indent :  throw new ArgumentOutOfRangeException(nameof(indent));
+        }
 
         /// <summary>
         /// Tabbed format display 

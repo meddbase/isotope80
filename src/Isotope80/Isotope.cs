@@ -1246,18 +1246,18 @@ namespace Isotope80
             select unit;
 
         public static Isotope<IWebElement> waitUntilClickable(By selector, TimeSpan timeout) =>
-            from _1 in log($"Waiting until clickable: {selector}")
+            from _1 in info($"Waiting until clickable: {selector}")
             from el in waitUntilElementExists(selector)
             from _2 in waitUntilClickable(el, timeout)
             select el;
 
         public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
             from _ in waitUntil(
-                        from _1a in log($"Checking clickability " + el.PrettyPrint())
+                        from _1a in info($"Checking clickability " + el.PrettyPrint())
                         from d in displayed(el)
                         from e in enabled(el)
                         from o in obscured(el)
-                        from _2a in log($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
+                        from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
                         select d && e && (!o),
                         x => !x)
             select unit;
@@ -1694,9 +1694,9 @@ namespace Isotope80
             let coords = element.Location
             let x = coords.X + (int)Math.Floor((double)(element.Size.Width / 2))
             let y = coords.Y + (int)Math.Floor((double)(element.Size.Height / 2))
-            from _ in log($"X: {x}, Y: {y}")
+            from _ in info($"X: {x}, Y: {y}")
             from top in pure((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
-            from _1  in log($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
+            from _1  in info($"Target: {element.PrettyPrint()}, Top: {top.PrettyPrint()}")
             select !element.Equals(top);
 
         /// <summary>
