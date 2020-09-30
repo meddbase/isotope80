@@ -21,11 +21,11 @@ namespace Isotope80.Samples.Console
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                    WaitThenClick(css("#menu-item-39 > a")));
+                WaitThenClick(css("#menu-item-39 > a")));
 
         public static Isotope<Unit> ClickCareersMenu =>
             context("Click Careers menu",
-                    WaitThenClick(css("#menu-item-29 > a")));
+                WaitThenClick(css("#menu-item-29 > a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
             from links in findElements(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))

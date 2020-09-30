@@ -1636,22 +1636,21 @@ namespace Isotope80
                           : fail("Element text doesn't match.  \"{t}\" <> \"{comparison}\"")
             select r;
                 
-
         /// <summary>
-        /// Repeatedly runs an Isotope function and checks whether the condition is met.
+        /// Wait until the `condition` is `true`, or it times-out
         /// </summary>        
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
-            Func<A, bool> continueCondition,
+            Func<A, bool> condition,
             Option<TimeSpan> interval = default,
             Option<TimeSpan> wait = default) =>
             from w in wait.Match(Some: pure, None: defaultWait)
             from i in interval.Match(Some: pure, None: defaultInterval)
-            from r in IsotopeInternal.waitUntil(iso, continueCondition, i, w, DateTime.UtcNow)
+            from r in IsotopeInternal.waitUntil(iso, condition, i, w, DateTime.UtcNow)
             select r;
 
         /// <summary>
-        /// Repeatedly runs an Isotope function until it succeeds or times out
+        /// Wait until `iso` succeeds, or it times-out
         /// </summary>        
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
@@ -1660,53 +1659,60 @@ namespace Isotope80
             waitUntil<A>(iso, _ => true, interval, wait);
         
         /// <summary>
-        /// Repeatedly runs an Isotope function and checks whether the condition is met 
+        /// Do while the `condition` is `true`, or it times-out
         /// </summary>        
         public static Isotope<A> doWhile<A>(
             Isotope<A> iso,
-            Func<A, bool> continueCondition,
+            Func<A, bool> condition,
             int maxRepeats = 100) =>
             maxRepeats <= 0
                 ? pure(default(A))
                 : from x in iso
-                  from y in continueCondition(x)
-                              ? doWhile(iso, continueCondition, maxRepeats - 1)
-                              : pure(x)
+                  from y in condition(x)
+                                ? doWhile(iso, condition, maxRepeats - 1)
+                                : pure(x)
                   select y;
 
         /// <summary>
-        /// Repeatedly runs an Isotope function and checks whether the condition is met 
+        /// Run `iso` while the `condition` is `true`.
+        ///
+        ///     * If it turns `false` or the result of `iso` is returned
+        ///     * If the max-attempts are reached, then `fail`.
+        /// 
         /// </summary>        
         public static Isotope<A> doWhileOrFail<A>(
             Isotope<A> iso,
-            Func<A, bool> continueCondition,
-            string failureMessage,
-            int maxRepeats = 100) =>
-            maxRepeats <= 0
-                ? fail(failureMessage)
+            Func<A, bool> condition,
+            int maxAttempts = 100) =>
+            maxAttempts <= 0
+                ? fail("do while reached the max-attempts")
                 : from x in iso
-                  from y in continueCondition(x)
-                              ? doWhileOrFail(iso, continueCondition, failureMessage, maxRepeats - 1)
-                              : pure(x)
+                  from y in condition(x)
+                                ? doWhileOrFail(iso, condition, maxAttempts - 1)
+                                : pure(x)
                   select y;
 
         /// <summary>
-        /// Repeatedly runs an Isotope function and checks whether the condition is met 
+        /// Run `iso`  while the `condition` is `true`.  
+        ///
+        ///     * If it turns `false` or the result of `iso` is returned
+        ///     * If the max-attempts are reached, then `fail`.
+        ///     * `interval` specifies the delay between attempts
+        /// 
         /// </summary>        
         public static Isotope<A> doWhileOrFail<A>(
             Isotope<A> iso,
             Func<A, bool> continueCondition,
-            string failureMessage,
             TimeSpan interval,
-            int maxRepeats = 1000) =>
-            maxRepeats <= 0
-                ? fail(failureMessage)
+            int maxAttempts = 1000) =>
+            maxAttempts <= 0
+                ? fail("do while reached the max-attempts")
                 : from x in iso
                   from y in continueCondition(x)
-                              ? from _ in pause(interval)
-                                from z in doWhileOrFail(iso, continueCondition, failureMessage, interval, maxRepeats - 1)
-                                select z
-                              : pure(x)
+                                ? from _ in pause(interval)
+                                  from z in doWhileOrFail(iso, continueCondition, interval, maxAttempts - 1)
+                                  select z
+                                : pure(x)
                   select y;
 
         /// <summary>

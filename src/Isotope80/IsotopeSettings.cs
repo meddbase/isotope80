@@ -14,12 +14,12 @@ namespace Isotope80
         /// <summary>
         /// Default wait time
         /// </summary>
-        private static TimeSpan defaultWait = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan defaultWait = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Default interval
         /// </summary>
-        private static TimeSpan defaultInterval = TimeSpan.FromMilliseconds(500);
+        private static readonly TimeSpan defaultInterval = TimeSpan.FromMilliseconds(500);
  
         /// <summary>
         /// Errors

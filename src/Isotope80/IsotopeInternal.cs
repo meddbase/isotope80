@@ -152,7 +152,7 @@ namespace Isotope80
                 from o in obscured(el)
                 from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
                 select d && e && (!o),
-                x => !x)
+                identity)
             select unit;
         
         public static string prettyPrint(IWebElement x)
@@ -200,8 +200,9 @@ namespace Isotope80
         /// <summary>
         /// Repeatedly runs an Isotope function and checks whether the condition is met 
         /// </summary>        
-        public static Isotope<A> waitUntil<A>(Isotope<A> iso,
-            Func<A, bool> continueCondition,
+        public static Isotope<A> waitUntil<A>(
+            Isotope<A> iso,
+            Func<A, bool> condition,
             TimeSpan interval,
             TimeSpan wait,
             DateTime started)
@@ -213,7 +214,7 @@ namespace Isotope80
                 DateTime.UtcNow - started >= wait
                     ? pure<Option<A>>(None)
                     : (from x in iso
-                       from r in continueCondition(x)
+                       from r in condition(x)
                                      ? pure(x)
                                      : fail("Condition failed")
                        select Some(r)) |
