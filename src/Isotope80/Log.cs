@@ -4,93 +4,164 @@ using static LanguageExt.Prelude;
 
 namespace Isotope80
 {
-    public class Log
+    /// <summary>
+    /// Log entry type
+    /// </summary>
+    public enum LogType
     {
-        private readonly Seq<Node> Nodes;
-        private readonly Option<Node> Current;
-
-        public Log(Seq<Node> nodes, Option<Node> current)
-        {
-            Nodes = nodes;
-            Current = current;
-        }
-
-        public Log With(Seq<Node>? nodes = null, Option<Node>? current = null) =>
-            new Log(nodes ?? Nodes, current ?? Current);
-
-        public Log Append(string message, Action<string, int> action, int depth = 0) =>
-            Current.Match(
-                Some: x => With(current: x.Append(message, action, depth)),
-                None: () => {
-                    action(message, depth);
-                    return With(nodes: Nodes.Add(Node.New(message)));
-                });
-
-        public Log Push(string message, Action<string, int> action, int depth = 0) =>
-            Current.Match(
-                Some: x => With(current: x.Push(message, action, depth)),
-                None: () => {
-                    action(message, depth);
-                    return With(current: Node.New(message));
-                });
-
-        public Log Pop() =>
-            Current.Match(
-                Some: x => x.Children.Current.IsSome
-                           ? With(current: x.Pop())
-                           : With(nodes: Nodes.Add(x), current: None),
-                None: () => this);
-
-        public static Log Empty => new Log(new Seq<Node>(), None);
-
-        public override string ToString() =>
-            string.Join(Environment.NewLine, ToString(0));
-
-        public Seq<string> ToString(int indent) =>
-            Nodes
-                .Append(Current.ToSeq())
-                .Bind(x => x.ToString(indent));
-
-        public string Trace() =>
-            string.Join(Environment.NewLine, Trace(0));
-
-        public Seq<string> Trace(int indent) =>
-            Nodes.Map(x => new string('\t', indent) + x.Message)
-                 .Append(Current.Bind(x => x.Trace(indent)))
-                 .ToSeq();
+        /// <summary>
+        /// Contextual header
+        /// </summary>
+        Context,
+        
+        /// <summary>
+        /// Information message
+        /// </summary>
+        Info,
+        
+        /// <summary>
+        /// Warning message
+        /// </summary>
+        Warn,
+        
+        /// <summary>
+        /// Error message
+        /// </summary>
+        Error
     }
 
-    public class Node
+    /// <summary>
+    /// Nested log
+    /// </summary>
+    public class Log
     {
-        public readonly string Message;
-        public readonly Log Children;
+        /// <summary>
+        /// Empty log
+        /// </summary>
+        public static readonly Log Empty = new Log(0, default, "", default);
+        
+        /// <summary>
+        /// Number of tabs to indent
+        /// </summary>
+        public readonly int Indent;
 
-        private Node(string message, Log children)
+        /// <summary>
+        /// Log type
+        /// </summary>
+        public readonly LogType Type;
+        
+        /// <summary>
+        /// Node message
+        /// </summary>
+        public readonly string Message;
+        
+        /// <summary>
+        /// Child messages
+        /// </summary>
+        public readonly Seq<Log> Children;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        internal Log(int indent, LogType type, string message, Seq<Log> children)
         {
-            Message = message;
+            Indent   = indent >= 0 ? indent : throw new ArgumentOutOfRangeException(nameof(indent));
+            Type     = type;
+            Message  = message ?? throw new ArgumentNullException(nameof(message));
             Children = children;
         }
 
-        public Node With(string message = null, Log children = null) =>
-            new Node(message ?? Message, children ?? Children);
+        /// <summary>
+        /// Add a message to the log
+        /// </summary>
+        /// <param name="ctx">Context</param>
+        public (Log Parent, Log Child) Context(string ctx)
+        {
+            var child = new Log(Indent + 1, LogType.Info, ctx, default);
+            return (new Log(Indent, Type, Message, Children.Add(child)), child);
+        }
 
-        public Node Append(string message, Action<string, int> action, int depth) => 
-            With(children: Children.Append(message, action, depth+1));
+        /// <summary>
+        /// Add a log entry
+        /// </summary>
+        public Log Add(Log log) =>
+            new Log(Indent, Type, Message, Children.Add(log));
 
-        public Node Push(string message, Action<string, int> action, int depth) => 
-            With(children: Children.Push(message, action, depth+1));
+        /// <summary>
+        /// Add a message to the log
+        /// </summary>
+        /// <param name="message">Message to log</param>
+        public Log Info(string message) =>
+            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Info, $"INFO: {message}", default))); 
 
-        public Node Pop() => With(children: Children.Pop());
+        /// <summary>
+        /// Add a message to the log
+        /// </summary>
+        /// <param name="message">Message to log</param>
+        public Log Warning(string message) =>
+            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Warn, $"WARN: {message}", default)));
 
-        public static Node New(string message) => new Node(message, Log.Empty);
+        /// <summary>
+        /// Add a message to the log
+        /// </summary>
+        /// <param name="message">Message to log</param>
+        public Log Error(string message) =>
+            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Error, $"ERRO: {message}", default)));
 
-        public Seq<string> ToString(int indent) =>
-            Seq1(new string('\t', indent) + Message)
-                .Append(Children.ToString(++indent));
+        /// <summary>
+        /// Create a new Node
+        /// </summary>
+        public static Log New(string message) => 
+            new Log(0, LogType.Info, message, default);
 
-        public Seq<string> Trace(int indent) =>
-            Seq1(new string('\t', indent) + Message)
-               .Append(Children.Trace(++indent));
+        /// <summary>
+        /// ToString
+        /// </summary>
+        public override string ToString() =>
+            String.Join(Environment.NewLine, ToSeq());
 
+        /// <summary>
+        /// ToSeq
+        /// </summary>
+        public Seq<string> ToSeq() =>
+            Seq1(new string('\t', Indent) + Message)
+                .Append(Children.Map(c => c.ToSeq()));
+    }
+
+    /// <summary>
+    /// Log output
+    /// </summary>
+    public readonly struct LogOutput
+    {
+        /// <summary>
+        /// Log message
+        /// </summary>
+        public readonly string Message;
+        
+        /// <summary>
+        /// Severity type
+        /// </summary>
+        public readonly LogType Type;
+        
+        /// <summary>
+        /// Indentation
+        /// </summary>
+        public readonly int Indent;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        public LogOutput(string message, LogType type, int indent)
+        {
+            Message = message ?? throw new ArgumentNullException(nameof(message));
+            Type    = type;
+            Indent  = indent >= 0 ? indent :  throw new ArgumentOutOfRangeException(nameof(indent));
+        }
+
+        /// <summary>
+        /// Tabbed format display 
+        /// </summary>
+        public override string ToString() =>
+            new string('\t', Indent) + Message;
     }
 }

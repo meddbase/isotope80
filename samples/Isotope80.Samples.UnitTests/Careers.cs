@@ -4,6 +4,7 @@ using Xunit;
 using static Isotope80.Isotope;
 using static Isotope80.Assertions;
 using LanguageExt;
+using LanguageExt.Common;
 using static LanguageExt.Prelude;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -22,10 +23,10 @@ namespace Isotope80.Samples.UnitTests
 
         public static Isotope<Unit> GoToDesktopSite =>
             context("Go to Desktop Site",
-                    from _1 in log("Update Window Size")
-                    from _2 in setWindowSize(1280, 960)
-                    from _3 in nav("https://www.meddbase.com")
-                    select unit);
+                from _1 in info("Update Window Size")
+                from _2 in setWindowSize(1280, 960)
+                from _3 in nav("https://www.meddbase.com")
+                select unit);
 
         public static Isotope<Unit> WaitThenClick(By selector) =>
             from el in waitUntilClickable(selector)
@@ -61,10 +62,11 @@ namespace Isotope80.Samples.UnitTests
                       from _2  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
                       select unit;
            
-            Action<string, Log> xunitOutput = 
-                (x,y) => output.WriteLine(y.ToString());
-
-            (var state, var value) = iso.RunAndThrowOnError(new ChromeDriver(), settings: IsotopeSettings.Create(failureAction: xunitOutput));
+            var stgs = IsotopeSettings.Create();
+            stgs.LogStream.Subscribe(x => output.WriteLine(x.ToString()));
+            stgs.ErrorStream.Subscribe(x => output.WriteLine(x.ToString()));
+ 
+            (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: IsotopeSettings.Create());
         }
     }
 }

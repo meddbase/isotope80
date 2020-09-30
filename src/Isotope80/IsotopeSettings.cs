@@ -1,47 +1,85 @@
 ﻿using LanguageExt;
 using System;
+using System.Reactive.Subjects;
+using LanguageExt.Common;
 
 namespace Isotope80
 {
+    /// <summary>
+    /// Common settings environment that is threaded through every Isotope computation
+    /// </summary>
     [With]
     public partial class IsotopeSettings
     {
-        public readonly bool DisposeOnCompletion;
-        private const bool defaultDisposeOnCompletion = true;
-        public readonly Action<string, int> LoggingAction;
-        private static Action<string, int> defaultLoggingAction = (x,y) => { };
-        public readonly Action<string, Log> FailureAction;
-        private static Action<string, Log> defaultFailureAction = (x, y) => { };
-        public readonly TimeSpan Wait;
+        /// <summary>
+        /// Default wait time
+        /// </summary>
         private static TimeSpan defaultWait = TimeSpan.FromSeconds(10);
-        public readonly TimeSpan Interval;
-        private static TimeSpan defaultInterval = TimeSpan.FromMilliseconds(500);
 
+        /// <summary>
+        /// Default interval
+        /// </summary>
+        private static TimeSpan defaultInterval = TimeSpan.FromMilliseconds(500);
+ 
+        /// <summary>
+        /// Errors
+        /// </summary>
+        public readonly Subject<Error> ErrorStream; 
+
+        /// <summary>
+        /// Errors
+        /// </summary>
+        public readonly Subject<LogOutput> LogStream;
+
+        /// <summary>
+        /// Wait time
+        /// </summary>
+        public readonly TimeSpan Wait;
+        
+        /// <summary>
+        /// Interval time
+        /// </summary>
+        public readonly TimeSpan Interval;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
         private IsotopeSettings(
-            bool disposeOnCompletion,
-            Action<string, int> loggingAction,
-            Action<string, Log> failureAction,
+            Subject<Error> errorStream,
+            Subject<LogOutput> logStream,
             TimeSpan wait,
-            TimeSpan interval)
+            TimeSpan interval
+            )
         {
-            DisposeOnCompletion = disposeOnCompletion;
-            LoggingAction = loggingAction;
-            FailureAction = failureAction;
-            Wait = wait;
-            Interval = interval;
+            ErrorStream = errorStream;
+            LogStream   = logStream;
+            Wait        = wait;
+            Interval    = interval;
         }
 
+        /// <summary>
+        /// Create an IsotopeSettings
+        /// </summary>
         public static IsotopeSettings Create(
-            bool? disposeOnCompletion = null,
-            Action<string, int> loggingAction = null,
-            Action<string, Log> failureAction = null,
+            Subject<Error> errorStream,
+            Subject<LogOutput> logStream,
             TimeSpan? wait = null,
             TimeSpan? interval = null) =>
             new IsotopeSettings(
-                disposeOnCompletion ?? defaultDisposeOnCompletion,
-                loggingAction ?? defaultLoggingAction,
-                failureAction ?? defaultFailureAction,
+                errorStream,
+                logStream,
                 wait ?? defaultWait,
                 interval ?? defaultInterval);
-    }
+ 
+        /// <summary>
+        /// Create an IsotopeSettings
+        /// </summary>
+        public static IsotopeSettings Create(
+            TimeSpan? wait = null,
+            TimeSpan? interval = null) =>
+            new IsotopeSettings(
+                new Subject<Error>(),
+                new Subject<LogOutput>(),
+                wait ?? defaultWait,
+                interval ?? defaultInterval);   }
 }
