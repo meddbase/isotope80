@@ -181,7 +181,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="id">Identifier of the element</param>
         /// <returns>Query</returns>
-        public Query WhereId(string id) =>
+        public Query Id(string id) =>
             this + byId(id);
 
         /// <summary>
@@ -191,6 +191,14 @@ namespace Isotope80
         /// <returns>Query</returns>
         public Query LinkText(string linkTextToFind) =>
             this + byLinkText(linkTextToFind);
+        
+        /// <summary>
+        /// Query elements by the text within a link
+        /// </summary>
+        /// <param name="linkTextToFind">Link text to find</param>
+        /// <returns>Query</returns>
+        public Query PartialLinkText(string linkTextToFind) =>
+            this + byPartialLinkText(linkTextToFind);
 
         /// <summary>
         /// Query elements by name attribute
@@ -223,6 +231,14 @@ namespace Isotope80
         /// <returns>Query</returns>
         public Query XPath(string xpath) =>
             this + byXPath(xpath);
+
+        /// <summary>
+        /// Query elements by class
+        /// </summary>
+        /// <param name="className">Class selector</param>
+        /// <returns>Query</returns>
+        public Query Class(string className) =>
+            this + byClass(className);
 
         /// <summary>
         /// Query must have at least one matching element

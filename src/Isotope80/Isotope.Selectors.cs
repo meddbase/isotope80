@@ -61,6 +61,16 @@ namespace Isotope80
         /// </summary>
         /// <param name="linktext">Selector</param>
         /// <returns>Web element selector</returns>
-        public static Query partialLinkText(string linktext) => By.PartialLinkText(linktext);
+        public static Query partialLinkText(string linktext) => Query.byPartialLinkText(linktext);
+        
+        /// <summary>
+        /// When composed with another query, it enforces at least one result
+        /// </summary>
+        public static readonly Query whenAtLeastOne = Query.whenAtLeastOne;
+        
+        /// <summary>
+        /// When composed with another query, it enforces only one result or fails
+        /// </summary>
+        public static readonly Query whenSingle = Query.whenSingle;
     }
 }
