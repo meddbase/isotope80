@@ -124,7 +124,7 @@ namespace Isotope80
         /// </summary>
         /// <returns>Query</returns>
         public static readonly Query waitUntilExists =
-            waitUntilExistsFor(default);
+            waitUntilExistsFor();
         
         /// <summary>
         /// Wait until element exists query
@@ -347,7 +347,7 @@ namespace Isotope80
                              
                              // If we haven't selected anything yet, start by selecting via the web-driver using the `by`
                              None: () => from dr in webDriver
-                                         from es in iso(() => dr.FindElements(byStep.Value).ToSeq().Strict()) | fail("No elements found")
+                                         from es in iso(() => dr.FindElements(byStep.Value).ToSeq().Strict())
                                          select Some(es),
                              
                              // If we have selected something, let's use that as a filter going forward
@@ -361,7 +361,7 @@ namespace Isotope80
                                                    pure(Seq<IWebElement>()), 
                                                    (s, w) =>
                                                         from os in s
-                                                        from ns in iso(() => w.FindElements(byStep.Value).ToSeq().Strict()) | fail("No elements found")
+                                                        from ns in iso(() => w.FindElements(byStep.Value).ToSeq().Strict())
                                                         select os + ns)
                                                select Some(r))
                          select rs;
@@ -371,7 +371,7 @@ namespace Isotope80
                     ma = Isotope.waitUntil(
                         from a in ma
                         from r in a.Match(
-                            None: fail("`waitUntil` must follow a something that queries elements.  It can't run alone"),
+                            None: fail("`waitUntil` must follow something that queries elements.  It can't run alone"),
                             Some: waitM.Ma)
                         select a);
                 }
@@ -379,7 +379,7 @@ namespace Isotope80
                 {
                     ma = from a in ma
                          from r in a.Match(
-                            None: fail("filtering must follow a something that queries elements.  It can't run alone"),
+                            None: fail("filtering must follow something that queries elements.  It can't run alone"),
                             Some: filterM.Ma)
                          select a;
                 }
@@ -387,7 +387,7 @@ namespace Isotope80
                 {
                     ma = from a in ma
                          from r in a.Match(
-                             None: fail("index selection must follow a something that queries elements.  It can't run alone"),
+                             None: fail("index selection must follow something that queries elements.  It can't run alone"),
                              Some: es => ix.Index < es.Count
                                              ? pure(Seq1(es[ix.Index]))
                                              : fail($"Index is out of range of the matching elements.  Only {es.Count} elements found, element at index {ix} requested;"))

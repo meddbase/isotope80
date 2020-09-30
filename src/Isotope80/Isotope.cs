@@ -1095,65 +1095,6 @@ namespace Isotope80
                 return new IsotopeState<Unit>(default, s);
             });
 
-        /*
-        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
-            By selector,
-            Option<TimeSpan> interval = default,
-            Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(selector), x => x.IsEmpty, interval: interval, wait: wait)
-            select el;
-
-        public static Isotope<Seq<IWebElement>> waitUntilElementsExists(
-            IWebElement parent,
-            By selector,
-            Option<TimeSpan> interval = default,
-            Option<TimeSpan> wait = default) =>
-            from el in waitUntil(findElementsOrEmpty(parent, selector), x => x.IsEmpty, interval: interval, wait: wait)
-            select el;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="selector"></param>
-        /// <param name="interval"></param>
-        /// <param name="wait"></param>
-        /// <returns></returns>
-        public static Isotope<IWebElement> waitUntilElementExists(
-            By selector, 
-            Option<TimeSpan> interval = default,
-            Option<TimeSpan> wait = default) =>
-            from x in waitUntil(
-                            findOptionalElement(selector),
-                            el => el.IsNone,
-                            interval,
-                            wait)
-            from y in x.Match(
-                            Some: s => pure(s),
-                            None: () => fail<IWebElement>("Element not found within timeout period"))
-            select y;
-
-        /// <summary>
-        /// Attempts to find a child element within an existing element and if not present retries for a period.
-        /// </summary>
-        /// <param name="element">Parent element</param>
-        /// <param name="selector">Selector within element</param>
-        /// <param name="interval">The time period between attempts to check, if not provided the default value from Settings is used.</param>
-        /// <param name="wait">The overall time period to attempt for, if not provided the default value from Settings is used.</param>
-        /// <returns></returns>
-        public static Isotope<IWebElement> waitUntilElementExists(
-            IWebElement element, 
-            By selector, 
-            Option<TimeSpan> interval = default,
-            Option<TimeSpan> wait = default) =>
-            from x in waitUntil(
-                            findOptionalElement(element, selector),
-                            el => el.IsNone,
-                            interval,
-                            wait)
-            from y in x.ToIsotope("Element not found within timeout period")
-            select y;
-            */
-
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
