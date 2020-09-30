@@ -100,7 +100,7 @@ namespace Isotope80
         /// <returns>Query</returns>
         internal static Query waitUntilElementExists(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             waitUntil(es => es.IsEmpty
-                                ? fail<Unit>("No elements")
+                                ? fail("No elements")
                                 : pure(unit),
                       "waitUntilElementExists",
                       interval,
@@ -112,7 +112,7 @@ namespace Isotope80
         /// <returns>Query</returns>
         public static Query byHead =
             filter(es => es.IsEmpty
-                             ? fail<Unit>("No elements: expected a head element")
+                             ? fail("No elements: expected a head element")
                              : pure(unit),
                    "head");
 
@@ -122,10 +122,10 @@ namespace Isotope80
         /// <returns>Query</returns>
         public static Query bySingle =
             filter(es => es.IsEmpty
-                             ? fail<Unit>("No elements: expected one element")
+                             ? fail("No elements: expected one element")
                              : es.Tail.IsEmpty
                                  ? pure(unit)
-                                 : fail<Unit>("Too many elements: expected only one"),
+                                 : fail("Too many elements: expected only one"),
                   "single");
         
         /// <summary>
@@ -239,9 +239,9 @@ namespace Isotope80
         internal Isotope<IWebElement> ToIsotope1() =>
             ToIsotope().Bind(es => es.Count switch
                                    {
-                                       0 => fail<IWebElement>("Element not found"),
+                                       0 => fail("Element not found"),
                                        1 => pure(es.Head),
-                                       _ => fail<IWebElement>("More than one element found that matches the selector")
+                                       _ => fail("More than one element found that matches the selector")
                                    });
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Isotope80
         internal Isotope<IWebElement> ToIsotopeHead() =>
             ToIsotope().Bind(es => es.Count switch
                                    {
-                                       0 => fail<IWebElement>("Element not found"),
+                                       0 => fail("Element not found"),
                                        _ => pure(es.Head)
                                    });
 
@@ -283,7 +283,7 @@ namespace Isotope80
                              
                              // If we haven't selected anything yet, start by selecting via the web-driver using the `by`
                              None: () => from dr in webDriver
-                                         from es in iso(() => dr.FindElements(byStep.Value).ToSeq().Strict()) | fail<Seq<IWebElement>>("No elements found")
+                                         from es in iso(() => dr.FindElements(byStep.Value).ToSeq().Strict()) | fail("No elements found")
                                          select Some(es),
                              
                              // If we have selected something, let's use that as a filter going forward
@@ -297,7 +297,7 @@ namespace Isotope80
                                                    pure(Seq<IWebElement>()), 
                                                    (s, w) =>
                                                         from os in s
-                                                        from ns in iso(() => w.FindElements(byStep.Value).ToSeq().Strict()) | fail<Seq<IWebElement>>("No elements found")
+                                                        from ns in iso(() => w.FindElements(byStep.Value).ToSeq().Strict()) | fail("No elements found")
                                                         select os + ns)
                                                select Some(r))
                          select rs;
@@ -307,7 +307,7 @@ namespace Isotope80
                     ma = Isotope.waitUntil(
                         from a in ma
                         from r in a.Match(
-                            None: fail<Unit>("WaitM until must follow a something that queries elements.  It can't run alone"),
+                            None: fail("WaitM until must follow a something that queries elements.  It can't run alone"),
                             Some: waitM.Ma)
                         select a);
                 }
@@ -315,7 +315,7 @@ namespace Isotope80
                 {
                     ma = from a in ma
                          from r in a.Match(
-                            None: fail<Unit>("FilterM until must follow a something that queries elements.  It can't run alone"),
+                            None: fail("FilterM until must follow a something that queries elements.  It can't run alone"),
                             Some: filterM.Ma)
                          select a;
                 }

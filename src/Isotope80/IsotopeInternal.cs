@@ -206,7 +206,7 @@ namespace Isotope80
             TimeSpan wait,
             DateTime started)
         {
-            return go().Bind(o => o.Match(Some: pure, None: fail<A>("Timed out"))); 
+            return go().Bind(o => o.Match(Some: pure, None: fail("Timed out"))); 
 
             // NOTE: This will probably have to stop being recursive 
             Isotope<Option<A>> go() =>
@@ -215,7 +215,7 @@ namespace Isotope80
                     : (from x in iso
                        from r in continueCondition(x)
                                      ? pure(x)
-                                     : fail<A>("Condition failed")
+                                     : fail("Condition failed")
                        select Some(r)) |
                       (from _ in pause(interval)
                        from r in go()

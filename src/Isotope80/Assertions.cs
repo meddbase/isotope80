@@ -35,7 +35,7 @@ namespace Isotope80
         /// <param name="fact">Fact to assert</param>
         /// <param name="label">Label on failure</param>
         public static Isotope<Unit> assert(bool fact, string label) =>
-            fact ? pure(unit) : fail<Unit>(label);
+            fact ? pure(unit) : fail(label);
 
         /// <summary>
         /// Assert that an element has text that matches `expected`

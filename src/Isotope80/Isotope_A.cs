@@ -78,6 +78,13 @@ namespace Isotope80
                            ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
                            : r;
             });
+        
+        /// <summary>
+        /// Implicit conversion from Error
+        /// </summary>
+        /// <returns></returns>
+        public static implicit operator Isotope<A>(Error err) =>
+            Fail(err);
 
         /// <summary>
         /// Lift the pure value into the monadic space 

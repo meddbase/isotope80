@@ -567,7 +567,7 @@ namespace Isotope80
         public static Isotope<Seq<WebElement>> findElements(Query selector) =>
             from es in selector.ToSeq()
             from rs in es.IsEmpty
-                           ? fail<Seq<WebElement>>($"Can't find any elements that match selector: {selector}")
+                           ? fail($"Can't find any elements that match selector: {selector}")
                            : pure(es)
             select rs;
 
@@ -805,6 +805,36 @@ namespace Isotope80
 
         static string showContext(Stck<string> ctx) =>
             String.Join(" → ", ctx.Rev());
+
+        /// <summary>
+        /// Failure
+        /// </summary>
+        /// <param name="err">Error</param>
+        public static Error fail(Error err) =>
+            err;
+
+        /// <summary>
+        /// Failure
+        /// </summary>
+        /// <param name="err">Error</param>
+        public static Error fail(string err) =>
+            Error.New(err);
+
+        /// <summary>
+        /// Failure
+        /// </summary>
+        /// <param name="msg">Error message</param>
+        /// <param name="ex">Exception</param>
+        public static Error fail(string msg, Exception ex) =>
+            Error.New(msg, ex);
+
+        /// <summary>
+        /// Failure
+        /// </summary>
+        /// <param name="err">Error</param>
+        public static Error fail(Exception err) =>
+            Error.New(err);
+
 
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
@@ -1461,7 +1491,7 @@ namespace Isotope80
         /// <typeparam name="A">Bound value type</typeparam>
         /// <returns>Pure isotope</returns>
         public static Isotope<A> ToIsotope<A>(this Option<A> maybe, string label) =>
-            maybe.Match(Some: pure, None: fail<A>(label));
+            maybe.Match(Some: pure, None: fail(label));
         
         /// <summary>
         /// Convert an option to a pure isotope
@@ -1482,7 +1512,7 @@ namespace Isotope80
         public static Isotope<A> ToIsotope<A>(this Try<A> tried) =>
             tried.Match(
                 Succ: pure,
-                Fail: x => fail<A>(Error.New(x)));
+                Fail: x => fail(Error.New(x)));
 
         /// <summary>
         /// Convert a try to an isotope computation
@@ -1521,7 +1551,7 @@ namespace Isotope80
         /// <typeparam name="R">Right param</typeparam>
         /// <returns>Pure isotope</returns>
         public static Isotope<R> ToIsotope<R>(this Either<Error, R> either) =>
-            either.Match(Left: fail<R>, Right: pure);
+            either.Match(Right: pure, Left: fail<R>);
 
         /// <summary>
         /// Convert an Either to a pure isotope
@@ -1531,7 +1561,7 @@ namespace Isotope80
         /// <returns>Pure isotope</returns>
         public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, string label) =>
             either.Match(
-                Left: _ => fail<B>(Error.New(label)),
+                Left: _ => fail(Error.New(label)),
                 Right: pure);
 
         /// <summary>
@@ -1542,7 +1572,7 @@ namespace Isotope80
         /// <returns>Pure isotope</returns>
         public static Isotope<B> ToIsotope<A, B>(this Either<A, B> either, Func<A, string> makeError) =>
             either.Match(
-                Left: e => fail<B>(Error.New(makeError(e))),
+                Left: e => fail(Error.New(makeError(e))),
                 Right: pure);
 
         /// <summary>
@@ -1603,7 +1633,7 @@ namespace Isotope80
             from t in text(element)
             from r in t == comparison
                           ? unitM
-                          : fail<Unit>("Element text doesn't match.  \"{t}\" <> \"{comparison}\"")
+                          : fail("Element text doesn't match.  \"{t}\" <> \"{comparison}\"")
             select r;
                 
 
@@ -1653,7 +1683,7 @@ namespace Isotope80
             string failureMessage,
             int maxRepeats = 100) =>
             maxRepeats <= 0
-                ? fail<A>(failureMessage)
+                ? fail(failureMessage)
                 : from x in iso
                   from y in continueCondition(x)
                               ? doWhileOrFail(iso, continueCondition, failureMessage, maxRepeats - 1)
@@ -1670,7 +1700,7 @@ namespace Isotope80
             TimeSpan interval,
             int maxRepeats = 1000) =>
             maxRepeats <= 0
-                ? fail<A>(failureMessage)
+                ? fail(failureMessage)
                 : from x in iso
                   from y in continueCondition(x)
                               ? from _ in pause(interval)

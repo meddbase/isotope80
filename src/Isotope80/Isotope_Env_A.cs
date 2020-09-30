@@ -72,6 +72,13 @@ namespace Isotope80
         /// </summary>
         public static implicit operator Isotope<Env, A>(Isotope<A> ma) =>
             new Isotope<Env, A>((_, state) => ma.Invoke(state));
+        
+        /// <summary>
+        /// Implicit conversion from Error
+        /// </summary>
+        /// <returns></returns>
+        public static implicit operator Isotope<Env, A>(Error err) =>
+            Fail(err);
 
         /// <summary>
         /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side

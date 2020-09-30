@@ -49,7 +49,6 @@ namespace Isotope80
         /// <summary>
         /// Gets a <see cref="P:OpenQA.Selenium.IWebElement.Size" /> object containing the height and width of this element.
         /// </summary>
-        /// <exception cref="T:OpenQA.Selenium.StaleElementReferenceException">Thrown when the target element is no longer valid in the document DOM.</exception>
         public readonly Size Size;
 
         /// <summary>
