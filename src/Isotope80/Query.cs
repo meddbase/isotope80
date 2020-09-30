@@ -61,6 +61,14 @@ namespace Isotope80
             By.LinkText(linkTextToFind);
 
         /// <summary>
+        /// Query elements by the text within a link
+        /// </summary>
+        /// <param name="linkTextToFind">Link text to find</param>
+        /// <returns>Query</returns>
+        public static Query byPartialLinkText(string linkTextToFind) =>
+            By.PartialLinkText(linkTextToFind);
+
+        /// <summary>
         /// Query elements by name attribute
         /// </summary>
         /// <param name="name">Name o</param>
@@ -93,6 +101,14 @@ namespace Isotope80
             By.XPath(xpath);
 
         /// <summary>
+        /// Query elements by class
+        /// </summary>
+        /// <param name="className">Class selector</param>
+        /// <returns>Query</returns>
+        public static Query byClass(string className) =>
+            By.ClassName(className);
+        
+        /// <summary>
         /// Wait until element exists query
         /// </summary>
         /// <param name="interval">Optional interval between checks</param>
@@ -107,12 +123,12 @@ namespace Isotope80
                       wait);
 
         /// <summary>
-        /// Query the first element
+        /// Query must have at least one element
         /// </summary>
         /// <returns>Query</returns>
-        public static Query byHead =
+        public static Query whenAtLeastOne =
             filter(es => es.IsEmpty
-                             ? fail("No elements: expected a head element")
+                             ? fail("No elements: expected at least one element")
                              : pure(unit),
                    "head");
 
@@ -120,7 +136,7 @@ namespace Isotope80
         /// Query the first element and only the first.  Multiple elements is failure 
         /// </summary>
         /// <returns>Query</returns>
-        public static Query bySingle =
+        public static Query whenSingle =
             filter(es => es.IsEmpty
                              ? fail("No elements: expected one element")
                              : es.Tail.IsEmpty
@@ -173,7 +189,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="linkTextToFind">Link text to find</param>
         /// <returns>Query</returns>
-        public Query WhereLinkText(string linkTextToFind) =>
+        public Query LinkText(string linkTextToFind) =>
             this + byLinkText(linkTextToFind);
 
         /// <summary>
@@ -181,7 +197,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="name">Name o</param>
         /// <returns>Query</returns>
-        public Query WhereName(string name) =>
+        public Query Name(string name) =>
             this + byName(name);
 
         /// <summary>
@@ -189,7 +205,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">CSS selector</param>
         /// <returns>Query</returns>
-        public Query WhereCss(string selector) =>
+        public Query Css(string selector) =>
             this + byCss(selector);
 
         /// <summary>
@@ -197,7 +213,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="tagName">Tag name</param>
         /// <returns>Query</returns>
-        public Query WhereTag(string tagName) =>
+        public Query Tag(string tagName) =>
             this + byTag(tagName);
 
         /// <summary>
@@ -205,22 +221,22 @@ namespace Isotope80
         /// </summary>
         /// <param name="xpath">XPath selector</param>
         /// <returns>Query</returns>
-        public Query WhereXPath(string xpath) =>
+        public Query XPath(string xpath) =>
             this + byXPath(xpath);
 
         /// <summary>
-        /// Query the first element
+        /// Query must have at least one matching element
         /// </summary>
         /// <returns>Query</returns>
-        public Query Head =>
-            this + byHead;
+        public Query AtLeastOne =>
+            this + whenAtLeastOne;
 
         /// <summary>
-        /// Query the first element
+        /// Query must have only one matching element
         /// </summary>
         /// <returns>Query</returns>
         public Query Single =>
-            this + bySingle;
+            this + whenSingle;
 
         /// <summary>
         /// Wait until element exists query
