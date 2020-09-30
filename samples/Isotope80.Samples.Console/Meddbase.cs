@@ -14,7 +14,7 @@ namespace Isotope80.Samples.Console
                 from _3 in nav("https://www.meddbase.com")
                 select unit);
 
-        public static Isotope<Unit> WaitThenClick(By selector) =>
+        public static Isotope<Unit> WaitThenClick(Query selector) =>
             from el in waitUntilClickable(selector)
             from _2 in click(selector)
             select unit;
