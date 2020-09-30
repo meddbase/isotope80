@@ -9,6 +9,10 @@ using OpenQA.Selenium;
 using System.Linq;
 using LanguageExt;
 using System;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.Serialization;
+using OpenQA.Selenium.Remote;
 
 namespace Isotope80
 {
@@ -399,21 +403,25 @@ namespace Isotope80
         /// </summary>
         /// <returns></returns>
         public Isotope<Seq<WebElement>> ToSeq() =>
-            ToIsotope().Map(es => 
-                 es.Map<IWebElement, WebElement>((ix, e) => 
-                           WebElement.New(
-                               this + atIndex(ix), 
-                               ix, 
-                               e.TagName, 
-                               e.Text, 
-                               e.Enabled, 
-                               e.Selected, 
-                               e.Location, 
-                               e.Size, 
-                               e.Displayed))
-                     .ToSeq()
-                     .Strict());
-
+            from es in ToIsotope()
+            from ie in es.Map(e => iso(() => (e.GetAttribute("id"), e)) | pure(("", e))).Sequence()
+            from pe in pure(ie.Map(e => e.Add(GetElementIdField<RemoteWebElement>.Invoke(e.Item2))))  
+            select pe.Map<(string Id, IWebElement El, string ElId), WebElement>((ix, e) => 
+                       WebElement.New(
+                           this, 
+                           ix, 
+                           e.ElId,
+                           e.Id,
+                           e.El.TagName, 
+                           e.El.Text, 
+                           e.El.Enabled, 
+                           e.El.Selected, 
+                           e.El.Location, 
+                           e.El.Size, 
+                           e.El.Displayed))
+                   .ToSeq()
+                   .Strict();
+        
         /// <summary>
         /// Migration of the IWebElement.PrettyPrint
         /// TODO: Make this a bit more elegant
@@ -427,6 +435,27 @@ namespace Isotope80
         /// </summary>
         public override string ToString() =>
             String.Join(" → ", arrows.Map(arrow => arrow.Show()));
+    }
+
+    internal static class GetElementIdField<A> where A : IWebElement
+    {
+        readonly static Func<A, string> InvokeA;
+            
+        static GetElementIdField()
+        {
+            var dynamic = new DynamicMethod("GetElementIdField", typeof(string), new[] { typeof(A) }, true);
+            var field   = typeof(A).GetTypeInfo().DeclaredFields.Filter(f => f.Name == "elementId").Head();
+            var il      = dynamic.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, field);
+            il.Emit(OpCodes.Ret);
+ 
+            InvokeA = (Func<A, string>)dynamic.CreateDelegate(typeof(Func<A, string>));            
+        }
+
+        public static string Invoke(IWebElement element) =>
+            InvokeA((A)element);
     }
 
     /// <summary>
@@ -505,5 +534,14 @@ namespace Isotope80
         /// <returns>Unit query</returns>
         public Query Empty() =>
             Query.Identity;
+    }
+
+    internal class ByElementId : By
+    {
+        public ByElementId(IWebDriver wd, string eid) : base(
+            context => new RemoteWebElement((RemoteWebDriver)wd, eid),
+            context => new ReadOnlyCollection<IWebElement>(new List<IWebElement>() { new RemoteWebElement((RemoteWebDriver)wd, eid) }))
+        {
+        }
     }
 }

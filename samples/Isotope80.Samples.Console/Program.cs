@@ -12,27 +12,27 @@ namespace Isotope80.Samples.Console
     {
         static void Main(string[] args)
         {
+            ForegroundColor = ConsoleColor.Yellow;
+            
             var stgs = IsotopeSettings.Create();
             stgs.LogStream.Subscribe(x => WriteLine(x));
             (var state, var value) = withChromeDriver(Meddbase.GoToPageAndOpenCareers).Run(stgs);
             
             Clear();
             
-            WriteLine("Current Vacancies:\n");
-
             if (state.Error.IsEmpty)
             {
+                ForegroundColor = ConsoleColor.Green;
+                WriteLine("Current Vacancies:\n");
                 value.Iter(x => WriteLine(x));
             }
             else
             {
+                ForegroundColor = ConsoleColor.Red;
                 WriteLine($"ERROR: {state.Error.Head}");
             }
             
-            WriteLine("\n\nLogs:\n");
-            WriteLine(state.Log.ToString());
-            WriteLine();
+            ForegroundColor = ConsoleColor.White;
         }
-      
     }
 }

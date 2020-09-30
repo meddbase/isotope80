@@ -3,6 +3,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
@@ -12,6 +13,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
+using OpenQA.Selenium.Remote;
 using static LanguageExt.Prelude;
 using static Isotope80.IsotopeInternal;
 
@@ -532,69 +534,41 @@ namespace Isotope80
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">Element selector</param>
-        public static Isotope<WebElement> findElement(Query selector) =>
-            findElements(selector).Map(es => es.Head);
+        public static Isotope<WebElement> find1(Query selector) =>
+            find(selector + whenAtLeastOne).Map(es => es.Head);
 
         /// <summary>
         /// Find an HTML element within another
         /// </summary>
         /// <param name="element">Element to search</param>
         /// <param name="selector">Child element selector</param>
-        public static Isotope<WebElement> findElement(WebElement element, Query selector) =>
-            findElement(element.Selector + selector);
-        
-        /// <summary>
-        /// Find an HTML element
-        /// </summary>
-        /// <param name="selector">Element selector</param>
-        [Obsolete("Use findElement(...) | ... ")]
-        public static Isotope<Option<WebElement>> findOptionalElement(Query selector) =>
-            findElement(selector).Map(Some) | pure(Option<WebElement>.None); 
-
-        /// <summary>
-        /// Find an HTML element within another
-        /// </summary>
-        /// <param name="element">Element to search</param>
-        /// <param name="selector">Element selector</param>
-        [Obsolete("Use findElement(...) | ... ")]
-        public static Isotope<Option<WebElement>> findOptionalElement(WebElement element, Query selector) =>
-            findOptionalElement(element.Selector + selector); 
+        public static Isotope<WebElement> find1(WebElement element, Query selector) =>
+            from dr in webDriver
+            from rs in (element.Id == ""
+                          ? find1(new ByElementId(dr, element.ElementId) + selector)
+                          : find1(Query.byId(element.Id) + selector)) |
+                       find1(element.Selector + atIndex(element.SelectionIndex) + selector)
+            select rs; 
         
         /// <summary>
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Element selector</param>
-        public static Isotope<Seq<WebElement>> findElements(Query selector) =>
-            from es in selector.ToSeq()
-            from rs in es.IsEmpty
-                           ? fail($"Can't find any elements that match selector: {selector}")
-                           : pure(es)
-            select rs;
+        public static Isotope<Seq<WebElement>> find(Query selector) =>
+            selector.ToSeq();
 
         /// <summary>
         /// Find HTML elements within another
         /// </summary>
         /// <param name="element">Element to search</param>
         /// <param name="selector">Element selector</param>
-        public static Isotope<Seq<WebElement>> findElements(WebElement element, Query selector) =>
-            findElements(element.Selector + selector);
-
-        /// <summary>
-        /// Find a sequence of elements matching a selector
-        /// </summary>
-        /// <param name="selector">Element selector</param>
-        /// <returns>Sequence of matching elements</returns>
-        public static Isotope<Seq<WebElement>> findElementsOrEmpty(Query selector) =>
-            findElements(selector) | pure(Seq<WebElement>());
-
-        /// <summary>
-        /// Find a sequence of elements matching a selector
-        /// </summary>
-        /// <param name="element">Element to search</param>
-        /// <param name="selector">Element selector</param>
-        /// <returns>Sequence of matching elements</returns>
-        public static Isotope<Seq<WebElement>> findElementsOrEmpty(WebElement element, Query selector) =>
-            findElementsOrEmpty(element.Selector + selector);
+        public static Isotope<Seq<WebElement>> find(WebElement element, Query selector) =>
+            from dr in webDriver
+            from rs in (element.Id == ""
+                            ? find(new ByElementId(dr, element.ElementId) + selector)
+                            : find(Query.byId(element.Id) + selector)) |
+                       find(element.Selector + atIndex(element.SelectionIndex) + selector)
+            select rs; 
 
         /// <summary>
         /// Select a &lt;select&gt; option by text

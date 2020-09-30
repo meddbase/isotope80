@@ -21,6 +21,16 @@ namespace Isotope80
         public readonly int SelectionIndex;
         
         /// <summary>
+        /// Internal web-driver element ID (don't confuse with the attribute ID stored in the Id field) 
+        /// </summary>
+        public readonly string ElementId;
+        
+        /// <summary>
+        /// Element id attribute
+        /// </summary>
+        public readonly string Id;
+        
+        /// <summary>
         /// Element tag name
         /// </summary>
         public readonly string TagName;
