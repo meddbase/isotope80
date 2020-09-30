@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using LanguageExt;
 
 namespace Isotope80
 {
@@ -72,5 +73,27 @@ namespace Isotope80
         /// When composed with another query, it enforces only one result or fails
         /// </summary>
         public static readonly Query whenSingle = Query.whenSingle;
+        
+        /// <summary>
+        /// Wait until element exists query
+        /// </summary>
+        /// <returns>Query</returns>
+        public static readonly Query waitUntilExists = Query.waitUntilExists;
+
+        /// <summary>
+        /// Wait until element exists query
+        /// </summary>
+        /// <param name="interval">Optional interval between checks</param>
+        /// <param name="wait">Optional total wait time</param>
+        /// <returns>Query</returns>
+        public static Query waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
+            Query.waitUntilExistsFor(wait, interval);
+
+        /// <summary>
+        /// Select an item at a specific index
+        /// </summary>
+        /// <param name="ix">Index to select</param>
+        public static Query atIndex(int ix) =>
+            Query.atIndex(ix);
     }
 }

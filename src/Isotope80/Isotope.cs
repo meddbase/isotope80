@@ -1193,7 +1193,7 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Query selector, TimeSpan timeout) =>
             from _1 in info($"Waiting until clickable: {selector}")
-            from el in selector.WaitUntilElementExists().ToIsotopeHead()
+            from el in selector.WaitUntilExists.ToIsotopeHead()
             from _2 in IsotopeInternal.waitUntilClickable(el, timeout)
             select unit;
         

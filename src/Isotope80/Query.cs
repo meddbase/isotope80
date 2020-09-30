@@ -107,6 +107,20 @@ namespace Isotope80
         /// <returns>Query</returns>
         public static Query byClass(string className) =>
             By.ClassName(className);
+
+        /// <summary>
+        /// Select an item at a specific index
+        /// </summary>
+        /// <param name="ix"></param>
+        public static Query atIndex(int ix) =>
+            new Query(Seq1(QueryStepCon.IndexSelect(ix, $"[{ix}]")));
+        
+        /// <summary>
+        /// Wait until element exists query
+        /// </summary>
+        /// <returns>Query</returns>
+        public static readonly Query waitUntilExists =
+            waitUntilExistsFor(default);
         
         /// <summary>
         /// Wait until element exists query
@@ -114,14 +128,14 @@ namespace Isotope80
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
         /// <returns>Query</returns>
-        internal static Query waitUntilElementExists(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+        public static Query waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
             waitUntil(es => es.IsEmpty
                                 ? fail("No elements")
                                 : pure(unit),
                       "waitUntilElementExists",
                       interval,
                       wait);
-
+        
         /// <summary>
         /// Query must have at least one element
         /// </summary>
@@ -255,13 +269,27 @@ namespace Isotope80
             this + whenSingle;
 
         /// <summary>
+        /// Select an item at a specific index
+        /// </summary>
+        /// <returns>Query</returns>
+        public Query Index(int ix) =>
+            this + atIndex(ix);
+        
+        /// <summary>
+        /// Wait until element exists query
+        /// </summary>
+        /// <returns>Query</returns>
+        public Query WaitUntilExists =>
+            this + waitUntilExistsFor();
+
+        /// <summary>
         /// Wait until element exists query
         /// </summary>
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
         /// <returns>Query</returns>
-        public Query WaitUntilElementExists(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
-            this + waitUntilElementExists(interval, wait);
+        public Query WaitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+            this + waitUntilExistsFor(interval, wait);
 
         /// <summary>
         /// Maps the query to a runnable Isotope computation that returns the first item.  If there's 0 or more than 1
@@ -339,7 +367,7 @@ namespace Isotope80
                     ma = Isotope.waitUntil(
                         from a in ma
                         from r in a.Match(
-                            None: fail("WaitM until must follow a something that queries elements.  It can't run alone"),
+                            None: fail("`waitUntil` must follow a something that queries elements.  It can't run alone"),
                             Some: waitM.Ma)
                         select a);
                 }
@@ -347,9 +375,19 @@ namespace Isotope80
                 {
                     ma = from a in ma
                          from r in a.Match(
-                            None: fail("FilterM until must follow a something that queries elements.  It can't run alone"),
+                            None: fail("filtering must follow a something that queries elements.  It can't run alone"),
                             Some: filterM.Ma)
                          select a;
+                }
+                else if (arr is IndexSelect ix)
+                {
+                    ma = from a in ma
+                         from r in a.Match(
+                             None: fail("index selection must follow a something that queries elements.  It can't run alone"),
+                             Some: es => ix.Index < es.Count
+                                             ? pure(Seq1(es[ix.Index]))
+                                             : fail($"Index is out of range of the matching elements.  Only {es.Count} elements found, element at index {ix} requested;"))
+                         select Some(r);
                 }
             }
 
@@ -361,9 +399,20 @@ namespace Isotope80
         /// </summary>
         /// <returns></returns>
         public Isotope<Seq<WebElement>> ToSeq() =>
-            ToIsotope().Map(es => es.Map<IWebElement, WebElement>((ix, e) => WebElement.New(this, ix, e.TagName, e.Text, e.Enabled, e.Selected, e.Location, e.Size, e.Displayed))
-                                    .ToSeq()
-                                    .Strict());
+            ToIsotope().Map(es => 
+                 es.Map<IWebElement, WebElement>((ix, e) => 
+                           WebElement.New(
+                               this + atIndex(ix), 
+                               ix, 
+                               e.TagName, 
+                               e.Text, 
+                               e.Enabled, 
+                               e.Selected, 
+                               e.Location, 
+                               e.Size, 
+                               e.Displayed))
+                     .ToSeq()
+                     .Strict());
 
         /// <summary>
         /// Migration of the IWebElement.PrettyPrint
@@ -377,7 +426,7 @@ namespace Isotope80
         /// To string
         /// </summary>
         public override string ToString() =>
-            String.Join(" → ", arrows);
+            String.Join(" → ", arrows.Map(arrow => arrow.Show()));
     }
 
     /// <summary>
@@ -401,17 +450,23 @@ namespace Isotope80
         /// It differs from FilterM in that it waits for a period of time, retrying, until a timeout 
         /// </summary>
         QueryStep WaitM(Func<Seq<IWebElement>, Isotope<Unit>> ma, string desc,  Option<TimeSpan> interval = default, Option<TimeSpan> wait = default);
+        
+        /// <summary>
+        /// Pick an item at an index within the result set.  If out of range `fail` is thrown
+        /// </summary>
+        QueryStep IndexSelect(int index, string desc);
     }
     
     internal static class QueryStepExt
     {
-        internal static string Show(QueryStep step) =>
+        internal static string Show(this QueryStep step) =>
             step switch
             {
-                ByStep  (var value)                   => value.ToString(),
-                FilterM (var _, var d)                => d,
-                WaitM   (var _, var d, var _, var _)  => d,
-                _                                     => throw new NotSupportedException()
+                ByStep      (var value)                   => value.ToString(),
+                FilterM     (var _, var d)                => d,
+                WaitM       (var _, var d, var _, var _)  => d,
+                IndexSelect (var _, var d)                => d,
+                _                                         => throw new NotSupportedException()
             };
     }
 

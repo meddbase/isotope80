@@ -55,5 +55,11 @@ namespace Isotope80
         /// Indicates whether or not this element is displayed.
         /// </summary>
         public readonly bool Displayed;
+
+        /// <summary>
+        /// Compose the selector of the element and the query
+        /// </summary>
+        public static Query operator +(WebElement element, Query query) =>
+            element.Selector + query;
     }
 }
