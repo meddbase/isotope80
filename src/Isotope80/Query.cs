@@ -419,24 +419,4 @@ namespace Isotope80
         public Query Empty() =>
             Query.Identity;
     }
-
-    /// <summary>
-    /// Head
-    /// </summary>
-    internal class ByHead : By
-    {
-        public ByHead() : base(
-            context => ((IFindsByClassName) context).FindElementByClassName("*"),
-            context => Head(((IFindsByClassName) context).FindElementsByClassName("*")))
-        {
-        }
-
-        static ReadOnlyCollection<A> Head<A>(ReadOnlyCollection<A> many)
-        {
-            if (many.Count == 0) return many;
-            var list = new List<A>();
-            list.Add(many.First());
-            return new ReadOnlyCollection<A>(list);
-        }
-    }
 }
