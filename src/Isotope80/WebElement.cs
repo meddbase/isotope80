@@ -35,9 +35,9 @@ namespace Isotope80
         /// </summary>
         public readonly string TagName;
         
-        // <summary>
-        // Element inner text
-        // </summary>
+        /// <summary>
+        /// Element inner text
+        /// </summary>
         public readonly string Text;
 
         /// <summary>

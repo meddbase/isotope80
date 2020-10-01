@@ -29,13 +29,20 @@ namespace Isotope80
         /// </summary>
         /// <param name="config">Map of config items</param>
         public static Isotope<Unit> initConfig(params (string, string)[] config) =>
-            initConfig(toMap(config));
+            initConfig(toHashMap(config));
 
         /// <summary>
         /// Simple configuration setup
         /// </summary>
         /// <param name="config">Map of config items</param>
         public static Isotope<Unit> initConfig(Map<string, string> config) =>
+            initConfig(toHashMap(config));
+
+        /// <summary>
+        /// Simple configuration setup
+        /// </summary>
+        /// <param name="config">Map of config items</param>
+        public static Isotope<Unit> initConfig(HashMap<string, string> config) =>
             from s in get
             from _ in put(s.With(Configuration: config))
             select unit;
@@ -1005,26 +1012,32 @@ namespace Isotope80
         /// <summary>
         /// Log some output
         /// </summary>
-        [Obsolete("Use `info` instead")]
+        [Obsolete("Use `info | warn | error` instead")]
         public static Isotope<Unit> log(string message) =>
-            from x in modify(s => s.With(Log: s.Log.Info(message)))
-            from y in writeToLogStream(message, LogType.Info)
+            from s in get
+            let p = s.Log.Add(Log.Info(message))
+            from x in put(s.With(Log: p.Log))
+            from y in writeToLogStream(p.Added)
             select unit;
 
         /// <summary>
         /// Log some output as info
         /// </summary>
         public static Isotope<Unit> info(string message) =>
-            from x in modify(s => s.With(Log: s.Log.Info(message)))
-            from y in writeToLogStream(message, LogType.Info)
+            from s in get
+            let p = s.Log.Add(Log.Info(message))
+            from x in put(s.With(Log: p.Log))
+            from y in writeToLogStream(p.Added)
             select unit;
 
         /// <summary>
         /// Log some output as a warning
         /// </summary>
         public static Isotope<Unit> warn(string message) =>
-            from x in modify(s => s.With(Log: s.Log.Warning(message)))
-            from y in writeToLogStream(message, LogType.Warn)
+            from s in get
+            let p = s.Log.Add(Log.Warning(message))
+            from x in put(s.With(Log: p.Log))
+            from y in writeToLogStream(p.Added)
             select unit;
 
         /// <summary>
@@ -1033,8 +1046,10 @@ namespace Isotope80
         /// <remarks>Note: This only logs the error, it doesn't stop the computation.  Use `fail` for computation
         /// termination.  `fail` also logs to the output using this function.</remarks>
         public static Isotope<Unit> error(string message) =>
-            from x in modify(s => s.With(Log: s.Log.Error(message)))
-            from y in writeToLogStream(message, LogType.Error)
+            from s in get
+            let p = s.Log.Add(Log.Error(message))
+            from x in put(s.With(Log: p.Log))
+            from y in writeToLogStream(p.Added)
             select unit;
         
         /// <summary>
@@ -1042,12 +1057,12 @@ namespace Isotope80
         /// </summary>
         public static Isotope<A> context<A>(string context, Isotope<A> iso) =>
             from s in get
-            from x in put(s.With(Context: s.Context.Push(context), 
-                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
-            from o in writeToLogStream(context, LogType.Context)
+            let p = Log.Context(context).Rebase(s.Log.Indent)
+            from y in writeToLogStream(p)
+            from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
             from _ in modify(s2 => s2.With(Context: s.Context, 
-                                           Log: s.Log.Add(s2.Log)))   
+                                           Log: s.Log.Add(s2.Log).Log))   
             select r;
         
         /// <summary>
@@ -1055,12 +1070,12 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Env, A> context<Env, A>(string context, Isotope<Env, A> iso) =>
             from s in get
-            from x in put(s.With(Context: s.Context.Push(context), 
-                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
-            from o in writeToLogStream(context, LogType.Context)
+            let p = Log.Context(context).Rebase(s.Log.Indent)
+            from y in writeToLogStream(p)
+            from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
-            from _ in modify(s2 => s2.With(Context: s.Context,
-                                           Log: s.Log.Add(s2.Log)))   
+            from _ in modify(s2 => s2.With(Context: s.Context, 
+                                           Log: s.Log.Add(s2.Log).Log))   
             select r;
         
         /// <summary>
@@ -1068,12 +1083,12 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<A> context<A>(string context, IsotopeAsync<A> iso) =>
             from s in get
-            from x in put(s.With(Context: s.Context.Push(context), 
-                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
-            from o in writeToLogStream(context, LogType.Context)
+            let p = Log.Context(context).Rebase(s.Log.Indent)
+            from y in writeToLogStream(p)
+            from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
-            from _ in modify(s2 => s2.With(Context: s.Context,
-                                           Log: s.Log.Add(s2.Log)))   
+            from _ in modify(s2 => s2.With(Context: s.Context, 
+                                           Log: s.Log.Add(s2.Log).Log))   
             select r;
         
         /// <summary>
@@ -1081,19 +1096,22 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<Env, A> context<Env, A>(string context, IsotopeAsync<Env, A> iso) =>
             from s in get
-            from x in put(s.With(Context: s.Context.Push(context), 
-                                 Log: new Log(s.Log.Indent + 1, LogType.Context, context, default)))
-            from o in writeToLogStream(context, LogType.Context)
+            let p = Log.Context(context).Rebase(s.Log.Indent)
+            from y in writeToLogStream(p)
+            from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
-            from _ in modify(s2 => s2.With(Context: s.Context,
-                                           Log: s.Log.Add(s2.Log)))   
+            from _ in modify(s2 => s2.With(Context: s.Context, 
+                                           Log: s.Log.Add(s2.Log).Log))   
             select r;
 
-        static Isotope<Unit> writeToLogStream(string message, LogType type) =>
+        static Isotope<Unit> writeToLogStream(Log entry) =>
             new Isotope<Unit>(s => {
-                s.Settings.LogStream.OnNext(new LogOutput(message, type, s.Log.Indent));
-                return new IsotopeState<Unit>(default, s);
-            });
+                  if (!String.IsNullOrWhiteSpace(entry.Message))
+                  {
+                      s.Settings.LogStream.OnNext(new LogOutput(Text.Tabs(s.Context.Count, entry.Message), entry.Type, entry.Indent));
+                  }
+                  return new IsotopeState<Unit>(default, s);
+              });
 
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
@@ -1113,289 +1131,343 @@ namespace Isotope80
             select unit;
         
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way, then the computation ends immediately.  Therefore the items in the
+        /// sequence after that point are not evaluated.
+        ///
+        /// The resulting state will contain the log of all items evaluated or the first error encountered.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static Isotope<Seq<A>> Sequence<A>(this Seq<Isotope<A>> mas) =>
             new Isotope<Seq<A>>(
                 state => {
-                    var rs    = new A[mas.Count];
+                    var vals  = new A[mas.Count];
+                    var log   = state.Log;
                     int index = 0;
+
+                    var nstate = state;
 
                     foreach (var ma in mas)
                     {
-                        var s = ma.Invoke(state);
-                        if (s.State.IsFaulted)
+                        var rstate = context($"[{index}]", ma).Invoke(nstate);
+                        if (rstate.IsFaulted)
                         {
-                            return new IsotopeState<Seq<A>>(default, s.State);
+                            return new IsotopeState<Seq<A>>(
+                                vals.ToSeq(),
+                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
-                        state     = s.State;
-                        rs[index] = s.Value;
+                        nstate      = rstate.State;
+                        vals[index] = rstate.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
                 });
 
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way, then the computation ends immediately.  Therefore the items in the
+        /// sequence after that point are not evaluated.
+        ///
+        /// The resulting state will contain the log of all items evaluated or the first error encountered.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static Isotope<Env, Seq<A>> Sequence<Env, A>(this Seq<Isotope<Env, A>> mas) =>
             new Isotope<Env, Seq<A>>(
                 (env, state) => {
-                    var rs    = new A[mas.Count];
+                    var vals  = new A[mas.Count];
+                    var log   = state.Log;
                     int index = 0;
+
+                    var nstate = state;
 
                     foreach (var ma in mas)
                     {
-                        var s = ma.Invoke(env, state);
-                        if (s.State.IsFaulted)
+                        var rstate = context($"[{index}]", ma).Invoke(env, nstate);
+                        if (rstate.IsFaulted)
                         {
-                            return new IsotopeState<Seq<A>>(default, s.State);
+                            return new IsotopeState<Seq<A>>(
+                                vals.ToSeq(),
+                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
-                        state     = s.State;
-                        rs[index] = s.Value;
+                        nstate      = rstate.State;
+                        vals[index] = rstate.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
                 });
 
-
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way, then the computation ends immediately.  Therefore the items in the
+        /// sequence after that point are not evaluated.
+        ///
+        /// The resulting state will contain the log of all items evaluated or the first error encountered.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static IsotopeAsync<Seq<A>> Sequence<A>(this Seq<IsotopeAsync<A>> mas) =>
             new IsotopeAsync<Seq<A>>(
                 async state => {
-                    var rs    = new A[mas.Count];
+                    var vals  = new A[mas.Count];
+                    var log   = state.Log;
                     int index = 0;
+
+                    var nstate = state;
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(state).ConfigureAwait(false);
-                        if (s.State.IsFaulted)
+                        var rstate = await context($"[{index}]", ma).Invoke(nstate).ConfigureAwait(false);
+                        if (rstate.IsFaulted)
                         {
-                            return new IsotopeState<Seq<A>>(default, s.State);
+                            return new IsotopeState<Seq<A>>(
+                                vals.ToSeq(),
+                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
-                        state     = s.State;
-                        rs[index] = s.Value;
+                        nstate      = rstate.State;
+                        vals[index] = rstate.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
                 });
 
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way, then the computation ends immediately.  Therefore the items in the
+        /// sequence after that point are not evaluated.
+        ///
+        /// The resulting state will contain the log of all items evaluated or the first error encountered.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static IsotopeAsync<Env, Seq<A>> Sequence<Env, A>(this Seq<IsotopeAsync<Env, A>> mas) =>
             new IsotopeAsync<Env, Seq<A>>(
                 async (env, state) => {
-                    var rs    = new A[mas.Count];
+                    var vals  = new A[mas.Count];
+                    var log   = state.Log;
                     int index = 0;
+
+                    var nstate = state;
 
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(env, state).ConfigureAwait(false);
-                        if (s.State.IsFaulted)
+                        var rstate = await context($"[{index}]", ma).Invoke(env, nstate).ConfigureAwait(false);
+                        if (rstate.IsFaulted)
                         {
-                            return new IsotopeState<Seq<A>>(default, s.State);
+                            return new IsotopeState<Seq<A>>(
+                                vals.ToSeq(),
+                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
-                        state     = s.State;
-                        rs[index] = s.Value;
+                        nstate      = rstate.State;
+                        vals[index] = rstate.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state);
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
                 });
 
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way then it is collected.  The process then continues to evaluate the
+        /// subsequent items.  The resulting resulting state will contain the log of all items evaluated.  If there was
+        /// an error, the resulting state will have an aggregated list of errors.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static Isotope<Seq<A>> Collect<A>(this Seq<Isotope<A>> mas) =>
             new Isotope<Seq<A>>(
                 state => {
-                    if (state.IsFaulted)
-                    {
-                        return new IsotopeState<Seq<A>>(default, state);
-                    }
-
-                    var rs    = new A[mas.Count];
-                    int index = 0;
-
-                    // Create an empty log TODO
-                    //var logs = state.Log.Cons(Seq<Seq<string>>());
-
-                    // Clear log from the state
-                    state = state.With(Log: Log.Empty);
-
-                    bool hasFaulted = false;
-                    var  errors     = new Seq<Error>();
-
+                    var vals   = new A[mas.Count];
+                    var errs   = new Seq<Error>[mas.Count];
+                    int index  = 0;
+                    var nstate = state;
+                    
                     foreach (var ma in mas)
                     {
-                        var s = ma.Invoke(state);
+                        var rstate = context($"[{index}]", ma).Invoke(nstate);
 
-                        // Collect error
-                        hasFaulted = hasFaulted || s.State.IsFaulted;
-                        if (s.State.IsFaulted)
-                        {
-                            errors = errors + s.State.Error;
-                        }
+                        vals[index] = rstate.Value;
+                        errs[index] = rstate.State.Error;
+                        nstate = state.With(Error: Empty, Log: rstate.State.Log);                        
 
-                        // Collect logs TODO
-                        //logs = logs.Add(s.State.Log);
-
-                        // Record value
-                        rs[index] = s.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                    // Aggregate all the errors
+                    var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
+                    
+                    return nerr.IsEmpty
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
                 });
 
-
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way then it is collected.  The process then continues to evaluate the
+        /// subsequent items.  The resulting resulting state will contain the log of all items evaluated.  If there was
+        /// an error, the resulting state will have an aggregated list of errors.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static Isotope<Env,  Seq<A>> Collect<Env, A>(this Seq<Isotope<Env,  A>> mas) =>
             new Isotope<Env,  Seq<A>>(
                 (env, state) => {
-                    if (state.IsFaulted)
-                    {
-                        return new IsotopeState<Seq<A>>(default, state);
-                    }
-
-                    var rs    = new A[mas.Count];
-                    int index = 0;
-
-                    // Create an empty log TODO
-                    //var logs = state.Log.Cons(Seq<Seq<string>>());
-
-                    // Clear log from the state
-                    state = state.With(Log: Log.Empty);
-
-                    bool hasFaulted = false;
-                    var  errors     = new Seq<Error>();
-
+                    var vals   = new A[mas.Count];
+                    var errs   = new Seq<Error>[mas.Count];
+                    int index  = 0;
+                    var nstate = state;
+                    
                     foreach (var ma in mas)
                     {
-                        var s = ma.Invoke(env, state);
+                        var rstate = context($"[{index}]", ma).Invoke(env, nstate);
 
-                        // Collect error
-                        hasFaulted = hasFaulted || s.State.IsFaulted;
-                        if (s.State.IsFaulted)
-                        {
-                            errors = errors + s.State.Error;
-                        }
+                        vals[index] = rstate.Value;
+                        errs[index] = rstate.State.Error;
+                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);                        
 
-                        // Collect logs TODO
-                        //logs = logs.Add(s.State.Log);
-
-                        // Record value
-                        rs[index] = s.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                    // Aggregate all the errors
+                    var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
+                    
+                    return nerr.IsEmpty
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
                 });        
-        
-        
-        
 
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way then it is collected.  The process then continues to evaluate the
+        /// subsequent items.  The resulting resulting state will contain the log of all items evaluated.  If there was
+        /// an error, the resulting state will have an aggregated list of errors.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static IsotopeAsync<Seq<A>> Collect<A>(this Seq<IsotopeAsync<A>> mas) =>
             new IsotopeAsync<Seq<A>>(
                 async state => {
-                    if (state.IsFaulted)
-                    {
-                        return new IsotopeState<Seq<A>>(default, state);
-                    }
-
-                    var rs    = new A[mas.Count];
-                    int index = 0;
-
-                    // Create an empty log TODO
-                    //var logs = state.Log.Cons(Seq<Seq<string>>());
-
-                    // Clear log from the state
-                    state = state.With(Log: Log.Empty);
-
-                    bool hasFaulted = false;
-                    var  errors     = new Seq<Error>();
-
+                    var vals   = new A[mas.Count];
+                    var errs   = new Seq<Error>[mas.Count];
+                    int index  = 0;
+                    var nstate = state;
+                    
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(state).ConfigureAwait(false);
+                        var rstate = await context($"[{index}]", ma).Invoke(nstate).ConfigureAwait(false);
 
-                        // Collect error
-                        hasFaulted = hasFaulted || s.State.IsFaulted;
-                        if (s.State.IsFaulted)
-                        {
-                            errors = errors + s.State.Error;
-                        }
+                        vals[index] = rstate.Value;
+                        errs[index] = rstate.State.Error;
+                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);                        
 
-                        // Collect logs TODO
-                        //logs = logs.Add(s.State.Log);
-
-                        // Record value
-                        rs[index] = s.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                    // Aggregate all the errors
+                    var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
+                    
+                    return nerr.IsEmpty
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
                 });
 
-
         /// <summary>
-        /// Flips the sequence of Isotopes to be a Isotope of Sequences
+        /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
+        /// the Seq and collects the results into a single Seq and then re-wraps within an Isotope.   
         /// </summary>
+        /// <remarks>
+        /// If an error is encountered along the way then it is collected.  The process then continues to evaluate the
+        /// subsequent items.  The resulting resulting state will contain the log of all items evaluated.  If there was
+        /// an error, the resulting state will have an aggregated list of errors.
+        ///
+        /// Each item runs in an indexed `context`. i.e. 
+        ///
+        ///     [0], [1], [2] ...
+        ///
+        /// Which makes it easier to know which index a log entry is for.
+        /// </remarks>
         public static IsotopeAsync<Env,  Seq<A>> Collect<Env, A>(this Seq<IsotopeAsync<Env,  A>> mas) =>
             new IsotopeAsync<Env,  Seq<A>>(
                 async (env, state) => {
-                    if (state.IsFaulted)
-                    {
-                        return new IsotopeState<Seq<A>>(default, state);
-                    }
-
-                    var rs    = new A[mas.Count];
-                    int index = 0;
-
-                    // Create an empty log TODO
-                    //var logs = state.Log.Cons(Seq<Seq<string>>());
-
-                    // Clear log from the state
-                    state = state.With(Log: Log.Empty);
-
-                    bool hasFaulted = false;
-                    var  errors     = new Seq<Error>();
-
+                    var vals   = new A[mas.Count];
+                    var errs   = new Seq<Error>[mas.Count];
+                    int index  = 0;
+                    var nstate = state;
+                    
                     foreach (var ma in mas)
                     {
-                        var s = await ma.Invoke(env, state).ConfigureAwait(false);
+                        var rstate = await context($"[{index}]", ma).Invoke(env, nstate).ConfigureAwait(false);
 
-                        // Collect error
-                        hasFaulted = hasFaulted || s.State.IsFaulted;
-                        if (s.State.IsFaulted)
-                        {
-                            errors = errors + s.State.Error;
-                        }
+                        vals[index] = rstate.Value;
+                        errs[index] = rstate.State.Error;
+                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);                        
 
-                        // Collect logs TODO
-                        //logs = logs.Add(s.State.Log);
-
-                        // Record value
-                        rs[index] = s.Value;
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(rs.ToSeq(), state.With(Error: errors, Log: Log.Empty));
+                    // Aggregate all the errors
+                    var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
+                    
+                    return nerr.IsEmpty
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
                 });              
         
         /// <summary>

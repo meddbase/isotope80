@@ -12,6 +12,19 @@ namespace Isotope80.Samples.Console
     {
         static void Main(string[] args)
         {
+            var settings = IsotopeSettings.Create();
+            settings.LogStream.Subscribe(x => WriteLine(x));
+
+            var ma = info("item").Map(_ => 1);
+            var mb = info("item").Map(_ => 2);
+            var mc = info("item").Map(_ => 3);
+
+            var ms = context("items", Seq(ma, mb, mc).Sequence());
+
+            var (nstate, nvalue) = ms.Run(settings);
+
+            WriteLine(nstate.Log.ToString());
+            
             ForegroundColor = ConsoleColor.Yellow;
             
             var stgs = IsotopeSettings.Create();
