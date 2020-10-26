@@ -75,6 +75,13 @@ namespace Isotope80
             new IsotopeAsync<A>(state => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
         
         /// <summary>
+        /// Implicit conversion from Error
+        /// </summary>
+        /// <returns></returns>
+        public static implicit operator IsotopeAsync<A>(Error err) =>
+            Fail(err);
+        
+        /// <summary>
         /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
         /// </summary>
         public static IsotopeAsync<A> operator |(IsotopeAsync<A> lhs, IsotopeAsync<A> rhs) => 

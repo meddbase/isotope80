@@ -32,30 +32,27 @@ When the complexity and volume of automation code increases you start to encount
 Isotope provides a domain specific language which addresses the problems previously outlined and results in composable code that wraps up the complexity of logging, error handling, driver instance management and passing config behind the scenes allowing you to focus on automation code. The equivalent of the Twitter example in Isotope would be:
 
 ```cs
-//Create the driver for Chrome
-var driver = new ChromeDriver();
-
 var logic =  from _1 in nav("https://twitter.com/login")
-             from _2 in sendKeys(By.ClassName("js-username-field"), "Your Email Address")
-             from _3 in sendKeys(By.ClassName("js-password-field"), "Your Password")
-             from _4 in sendKeys(By.CssSelector("button.submit"), Keys.Enter)
+             from _2 in sendKeys(className("js-username-field"), "Your Email Address")
+             from _3 in sendKeys(className("js-password-field"), "Your Password")
+             from _4 in sendKeys(cssSelector("button.submit"), Keys.Enter)
              select unit;
              
-var result = logic.Run(driver);
+var result = chromeDriver(logic).Run();
 ```
 ## Using Linq
 Isotope allows statements to be composed together, you can do this using the Bind function, for example:
 
 ```cs
 var logic =  nav("https://twitter.com/login")
-              .Bind(x => sendKeys(By.ClassName("js-username-field"), "Your Email Address"));
+              .Bind(x => className("js-username-field"), "Your Email Address"));
 ```
 
 However the recommended method is to use C#'s LINQ syntax:
 
 ```cs
 var logic =  from _1 in nav("https://twitter.com/login")
-             from _2 in sendKeys(By.ClassName("js-username-field"), "Your Email Address")
+             from _2 in sendKeys(className("js-username-field"), "Your Email Address")
              select unit;
 ```
 
@@ -122,12 +119,8 @@ Go to Desktop Site
 It is also possible via the settings to provide an additional action to the logging mechanism to be performed on each log entry, the following writes all logs to the console as they occur with the relevant level of indentation:
 
 ```cs
-Action<string, int> consoleLogger =
-  (x, y) => WriteLine(new string('\t', y) + x);
+var settings = IsotopeSettings.Create();
+settings.LogStream.Subscribe(x => WriteLine(x));
 
-
-var result = Meddbase.GoToPageAndOpenCareers.Run(
-              new ChromeDriver(), 
-                IsotopeSettings.Create(
-                  loggingAction: consoleLogger));
+var result = chromeDriver(Meddbase.GoToPageAndOpenCareers).Run(settings);
 ```

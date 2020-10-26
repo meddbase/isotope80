@@ -35,14 +35,14 @@ namespace Isotope80.Samples.UnitTests
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                    WaitThenClick(By.CssSelector("#menu-item-39 > a")));
+                WaitThenClick(By.CssSelector("#menu-item-39 > a")));
 
         public static Isotope<Unit> ClickCareersMenu =>
             context("Click Careers menu",
-                    WaitThenClick(By.CssSelector("#menu-item-29 > a")));
+                WaitThenClick(By.CssSelector("#menu-item-29 > a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in findElements(By.XPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))
+            from links in find(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a") + whenAtLeastOne)
             let title = links.Map(x => x.Text)
             select title;
 
@@ -55,7 +55,7 @@ namespace Isotope80.Samples.UnitTests
         [Fact]
         public void CareersMenuItemLoadsCareersPage() 
         {
-            var expected = "https://www.meddbase.com/careers/";
+            var expected = "https://www.meddbase.com/jobs-at-meddbase/";
 
             var iso = from _1  in GoToPageAndOpenCareers
                       from url in url

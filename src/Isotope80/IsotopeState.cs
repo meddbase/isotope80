@@ -16,7 +16,7 @@ namespace Isotope80
     {
         internal readonly Option<IWebDriver> Driver;
         internal readonly IsotopeSettings Settings;
-        internal readonly Map<string, string> Configuration;
+        internal readonly HashMap<string, string> Configuration;
         
         /// <summary>
         /// Errors
@@ -39,10 +39,13 @@ namespace Isotope80
         public static IsotopeState Create(IsotopeSettings settings) =>
             Empty.With(Settings: settings);
 
+        /// <summary>
+        /// Immutable transformation
+        /// </summary>
         internal IsotopeState With(
             Option<IWebDriver>? Driver = null,
             IsotopeSettings Settings = null,
-            Map<string, string>? Configuration = null,
+            HashMap<string, string>? Configuration = null,
             Seq<Error>? Error = null,
             Log Log = null,
             Stck<string>? Context = null) =>
@@ -71,7 +74,7 @@ namespace Isotope80
         private IsotopeState(
             Option<IWebDriver> driver,
             IsotopeSettings settings,
-            Map<string, string> configuration,
+            HashMap<string, string> configuration,
             Seq<Error> error, 
             Log log,
             Stck<string> context)

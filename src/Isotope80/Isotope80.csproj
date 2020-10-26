@@ -34,4 +34,10 @@
     <PackageReference Include="System.Reactive" Version="4.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Internal\IsotopeInternal.cs">
+      <Generator>MSBuild:GenerateCodeFromAttributes</Generator>
+    </Compile>
+  </ItemGroup>
+
 </Project>

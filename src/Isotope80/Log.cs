@@ -72,47 +72,49 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Add a message to the log
+        /// Add a log entry
         /// </summary>
-        /// <param name="ctx">Context</param>
-        public (Log Parent, Log Child) Context(string ctx)
+        public (Log Log, Log Added) Add(Log log)
         {
-            var child = new Log(Indent + 1, LogType.Info, ctx, default);
-            return (new Log(Indent, Type, Message, Children.Add(child)), child);
+            var nlog = log.Type == LogType.Context ? log.Rebase(Indent + 1) : log.Rebase(Indent);
+            return (new Log(Indent, Type, Message, Children.Add(nlog)), nlog);
         }
 
         /// <summary>
-        /// Add a log entry
+        /// Set the new base indent for the log
         /// </summary>
-        public Log Add(Log log) =>
-            new Log(Indent, Type, Message, Children.Add(log));
+        /// <param name="indent">Base indent</param>
+        /// <returns>Rebased log</returns>
+        public Log Rebase(int indent) =>
+            new Log(indent, Type, Message, Children.Map(c => c.Rebase(indent + 1)));
+
+        /// <summary>
+        /// Add a message to the log
+        /// </summary>
+        /// <param name="ctx">Context</param>
+        public static Log Context(string ctx) =>
+            new Log(0, LogType.Info, ctx, default);
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public Log Info(string message) =>
-            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Info, $"INFO: {message}", default))); 
+        public static Log Info(string message) =>
+            new Log(0, LogType.Info, $"INFO: {message}", default); 
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public Log Warning(string message) =>
-            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Warn, $"WARN: {message}", default)));
+        public static Log Warning(string message) =>
+            new Log(0, LogType.Warn, $"WARN: {message}", default);
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public Log Error(string message) =>
-            new Log(Indent, Type, Message, Children.Add(new Log(Indent + 1, LogType.Error, $"ERRO: {message}", default)));
-
-        /// <summary>
-        /// Create a new Node
-        /// </summary>
-        public static Log New(string message) => 
-            new Log(0, LogType.Info, message, default);
+        public static Log Error(string message) =>
+            new Log(0, LogType.Error, $"ERRO: {message}", default);
 
         /// <summary>
         /// ToString
@@ -124,8 +126,15 @@ namespace Isotope80
         /// ToSeq
         /// </summary>
         public Seq<string> ToSeq() =>
-            Seq1(new string('\t', Indent) + Message)
+            Seq1(Text.Tabs(Indent, Message))
+                .Filter(s => !String.IsNullOrWhiteSpace(s))
                 .Append(Children.Map(c => c.ToSeq()));
+
+        /// <summary>
+        /// Add a log entry
+        /// </summary>
+        public static Log operator +(Log lhs, Log rhs) =>
+            lhs.Add(rhs).Log;
     }
 
     /// <summary>
@@ -162,6 +171,6 @@ namespace Isotope80
         /// Tabbed format display 
         /// </summary>
         public override string ToString() =>
-            new string('\t', Indent) + Message;
+            Text.Tabs(Indent, Message);
     }
 }

@@ -14,21 +14,21 @@ namespace Isotope80.Samples.Console
                 from _3 in nav("https://www.meddbase.com")
                 select unit);
 
-        public static Isotope<Unit> WaitThenClick(By selector) =>
+        public static Isotope<Unit> WaitThenClick(Query selector) =>
             from el in waitUntilClickable(selector)
-            from _2 in click(el)
+            from _2 in click(selector)
             select unit;
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                    WaitThenClick(css("#menu-item-39 > a")));
+                WaitThenClick(css("#menu-item-39 > a")));
 
         public static Isotope<Unit> ClickCareersMenu =>
             context("Click Careers menu",
-                    WaitThenClick(css("#menu-item-29 > a")));
+                WaitThenClick(css("#menu-item-29 > a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in findElements(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a"))
+            from links in find(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a") + whenAtLeastOne)
             let title = links.Map(x => x.Text)
             select title;
 

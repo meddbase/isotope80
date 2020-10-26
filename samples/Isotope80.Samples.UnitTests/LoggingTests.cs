@@ -15,16 +15,16 @@ namespace Isotope80.Samples.UnitTests
         public void TestNestedContextualLogs()
         {
             Seq<string> expected = Seq(
-                "Info log",
-                "\tTest 1",
-                "\tInfo for test 1",
-                "\tMore info for test 1",
-                "\t\tTest 1.SubTest 1",
-                "\t\tInfo for test Test 1.SubTest 1",
-                "\t\tMore info for test Test 1.SubTest 1",
-                "\t\tTest 1.SubTest 2",
-                "\t\tInfo for test Test 1.SubTest 2",
-                "\t\tMore info for test Test 1.SubTest 2");
+                "INFO: Info log",
+                "Test 1",
+                "    INFO: Info for test 1",
+                "    INFO: More info for test 1",
+                "    Test 1.SubTest 1",
+                "        INFO: Info for test Test 1.SubTest 1",
+                "        INFO: More info for test Test 1.SubTest 1",
+                "    Test 1.SubTest 2",
+                "        WARN: Info for test Test 1.SubTest 2",
+                "        WARN: More info for test Test 1.SubTest 2");
             
             Seq<string> logs = default;
             
@@ -47,9 +47,10 @@ namespace Isotope80.Samples.UnitTests
                        select r;
                                               
                                 
-            (var state2, var value2) = iso2.Run(stgs);
-
+            (var state, var value) = iso2.Run(stgs);
+            
             Assert.True(logs == expected);
+            Assert.True(state.Log.ToSeq() == expected);
         }
         
         [Fact]
