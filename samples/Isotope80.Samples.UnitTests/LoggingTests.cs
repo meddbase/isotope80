@@ -3,6 +3,7 @@ using System;
 using LanguageExt;
 using LanguageExt.Common;
 using Xunit;
+using Xunit.Abstractions;
 using static LanguageExt.Prelude;
 using static System.Console;
 using static Isotope80.Isotope;
@@ -11,6 +12,13 @@ namespace Isotope80.Samples.UnitTests
 {
     public class LoggingTests
     {
+        protected readonly ITestOutputHelper Output;
+
+        public LoggingTests(ITestOutputHelper output)
+        {
+            Output = output;
+        }
+        
         [Fact]
         public void TestNestedContextualLogs()
         {
@@ -30,6 +38,7 @@ namespace Isotope80.Samples.UnitTests
             
             var stgs = IsotopeSettings.Create();
             stgs.LogStream.Subscribe(x => logs = logs.Add(x.ToString()));
+            stgs.LogStream.Subscribe(x => Output.WriteLine(x.ToStringWithPath()));
 
             var iso2 = from _ in info("Info log")
                        from r in context("Test 1",
