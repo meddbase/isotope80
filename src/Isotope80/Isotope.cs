@@ -1746,5 +1746,14 @@ namespace Isotope80
             from dvr in webDriver
             let ts = dvr as ITakesScreenshot
             select ts == null ? None : Some(ts.GetScreenshot());
+
+        /// <summary>
+        /// Runs the javascript and returns a value
+        /// </summary>
+        public static Isotope<T> eval<T>(string javascript) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from res in pure((T)jsExec.ExecuteScript(javascript))
+            select res;
     }
 }
