@@ -38,7 +38,7 @@ namespace Isotope80
         /// <summary>
         /// Empty log
         /// </summary>
-        public static readonly Log Empty = new Log(0, default, "", default);
+        public static readonly Log Empty = new Log(0, default, "", default, DateTime.MinValue, "", "", 0);
         
         /// <summary>
         /// Number of tabs to indent
@@ -61,14 +61,38 @@ namespace Isotope80
         public readonly Seq<Log> Children;
 
         /// <summary>
+        /// The time the log was captured.
+        /// </summary>
+        public readonly DateTime Time;
+        
+        /// <summary>
+        /// The name of the method the log was called from.
+        /// </summary>
+        public readonly string CallerMemberName;
+        
+        /// <summary>
+        /// The full path of the file the log was called from.
+        /// </summary>
+        public readonly string CallerFilePath;
+        
+        /// <summary>
+        /// The line number of the line the log was called from.
+        /// </summary>
+        public readonly int CallerLineNumber;
+
+        /// <summary>
         /// Ctor
         /// </summary>
-        internal Log(int indent, LogType type, string message, Seq<Log> children)
+        internal Log(int indent, LogType type, string message, Seq<Log> children, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber)
         {
-            Indent   = indent >= 0 ? indent : throw new ArgumentOutOfRangeException(nameof(indent));
-            Type     = type;
-            Message  = message ?? throw new ArgumentNullException(nameof(message));
-            Children = children;
+            Indent           = indent >= 0 ? indent : throw new ArgumentOutOfRangeException(nameof(indent));
+            Type             = type;
+            Message          = message ?? throw new ArgumentNullException(nameof(message));
+            Children         = children;
+            Time             = time;
+            CallerMemberName = callerMemberName;
+            CallerFilePath   = callerFilePath;
+            CallerLineNumber = callerLineNumber;
         }
 
         /// <summary>
@@ -77,7 +101,7 @@ namespace Isotope80
         public (Log Log, Log Added) Add(Log log)
         {
             var nlog = log.Type == LogType.Context ? log.Rebase(Indent + 1) : log.Rebase(Indent);
-            return (new Log(Indent, Type, Message, Children.Add(nlog)), nlog);
+            return (new Log(Indent, Type, Message, Children.Add(nlog), Time, CallerMemberName, CallerFilePath, CallerLineNumber), nlog);
         }
 
         /// <summary>
@@ -86,35 +110,35 @@ namespace Isotope80
         /// <param name="indent">Base indent</param>
         /// <returns>Rebased log</returns>
         public Log Rebase(int indent) =>
-            new Log(indent, Type, Message, Children.Map(c => c.Rebase(indent + 1)));
+            new Log(indent, Type, Message, Children.Map(c => c.Rebase(indent + 1)), Time, CallerMemberName, CallerFilePath, CallerLineNumber);
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="ctx">Context</param>
-        public static Log Context(string ctx) =>
-            new Log(0, LogType.Info, ctx, default);
+        public static Log Context(string ctx, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber) =>
+            new Log(0, LogType.Info, ctx, default, time, callerMemberName, callerFilePath, callerLineNumber);
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public static Log Info(string message) =>
-            new Log(0, LogType.Info, $"INFO: {message}", default); 
+        public static Log Info(string message, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber) =>
+            new Log(0, LogType.Info, $"INFO: {message}", default, time, callerMemberName, callerFilePath, callerLineNumber); 
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public static Log Warning(string message) =>
-            new Log(0, LogType.Warn, $"WARN: {message}", default);
+        public static Log Warning(string message, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber) =>
+            new Log(0, LogType.Warn, $"WARN: {message}", default, time, callerMemberName, callerFilePath, callerLineNumber);
 
         /// <summary>
         /// Add a message to the log
         /// </summary>
         /// <param name="message">Message to log</param>
-        public static Log Error(string message) =>
-            new Log(0, LogType.Error, $"ERRO: {message}", default);
+        public static Log Error(string message, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber) =>
+            new Log(0, LogType.Error, $"ERRO: {message}", default, time, callerMemberName, callerFilePath, callerLineNumber);
 
         /// <summary>
         /// ToString
@@ -158,13 +182,37 @@ namespace Isotope80
         public readonly int Indent;
 
         /// <summary>
+        /// The time the log was captured.
+        /// </summary>
+        public readonly DateTime Time;
+        
+        /// <summary>
+        /// The name of the method the log was called from.
+        /// </summary>
+        public readonly string CallerMemberName;
+        
+        /// <summary>
+        /// The full path of the file the log was called from.
+        /// </summary>
+        public readonly string CallerFilePath;
+        
+        /// <summary>
+        /// The line number of the line the log was called from.
+        /// </summary>
+        public readonly int CallerLineNumber;
+
+        /// <summary>
         /// Ctor
         /// </summary>
-        public LogOutput(string message, LogType type, int indent)
+        public LogOutput(string message, LogType type, int indent, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber)
         {
-            Message = message ?? throw new ArgumentNullException(nameof(message));
-            Type    = type;
-            Indent  = indent >= 0 ? indent :  throw new ArgumentOutOfRangeException(nameof(indent));
+            Message          = message ?? throw new ArgumentNullException(nameof(message));
+            Type             = type;
+            Indent           = indent >= 0 ? indent : throw new ArgumentOutOfRangeException(nameof(indent));
+            Time             = time;
+            CallerMemberName = callerMemberName;
+            CallerFilePath   = callerFilePath;
+            CallerLineNumber = callerLineNumber;
         }
 
         /// <summary>
@@ -172,5 +220,16 @@ namespace Isotope80
         /// </summary>
         public override string ToString() =>
             Text.Tabs(Indent, Message);
+
+        /// <summary>
+        /// Tabbed format display including the file path, line number and time.
+        /// </summary>
+        /// <param name="expectedMaxMessageLength">Number of characters reserved for the message so the output looks lined up.</param>
+        /// <remarks>
+        /// Message format: [TIME]: [INDENT][MESSAGE][GAP][FILE]:line [LINE] 
+        /// </remarks>
+        public string ToVerboseString(int expectedMaxMessageLength = 60) =>
+            Time.ToString("HH:mm:ss.fff: ") +
+            Text.Tabs(Indent, $"{Message}        {"".PadRight(Math.Max(0, expectedMaxMessageLength - Message.Length - Text.Tabs(Indent).Length), ' ')}{CallerFilePath}:line {CallerLineNumber}");
     }
 }
