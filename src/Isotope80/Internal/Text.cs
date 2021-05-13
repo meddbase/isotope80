@@ -11,10 +11,16 @@ namespace Isotope80
         /// <summary>
         /// Build a new string with `indent` tabs before
         /// </summary>
-        public static string Tabs(int indent, string str) =>
+        public static string Tabs(int indent) =>
             indent < tabs.Length
-                ? $"{tabs[indent]}{str}"
-                : $"{String.Concat(Range(0, indent).Map(_ => "    "))}{str}";
+                ? $"{tabs[indent]}"
+                : $"{String.Concat(Range(0, indent).Map(_ => "    "))}";
+
+        /// <summary>
+        /// Build a new string with `indent` tabs before
+        /// </summary>
+        public static string Tabs(int indent, string str) =>
+            $"{Tabs(indent)}{str}";
 
         /// <summary>
         /// Lookup table of tabs

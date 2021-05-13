@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using LanguageExt.Common;
@@ -1013,9 +1014,13 @@ namespace Isotope80
         /// Log some output
         /// </summary>
         [Obsolete("Use `info | warn | error` instead")]
-        public static Isotope<Unit> log(string message) =>
+        public static Isotope<Unit> log(
+            string message,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = s.Log.Add(Log.Info(message))
+            let p = s.Log.Add(Log.Info(message, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber))
             from x in put(s.With(Log: p.Log))
             from y in writeToLogStream(p.Added)
             select unit;
@@ -1023,9 +1028,13 @@ namespace Isotope80
         /// <summary>
         /// Log some output as info
         /// </summary>
-        public static Isotope<Unit> info(string message) =>
+        public static Isotope<Unit> info(
+            string message,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = s.Log.Add(Log.Info(message))
+            let p = s.Log.Add(Log.Info(message, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber))
             from x in put(s.With(Log: p.Log))
             from y in writeToLogStream(p.Added)
             select unit;
@@ -1033,9 +1042,13 @@ namespace Isotope80
         /// <summary>
         /// Log some output as a warning
         /// </summary>
-        public static Isotope<Unit> warn(string message) =>
+        public static Isotope<Unit> warn(
+            string message,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = s.Log.Add(Log.Warning(message))
+            let p = s.Log.Add(Log.Warning(message, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber))
             from x in put(s.With(Log: p.Log))
             from y in writeToLogStream(p.Added)
             select unit;
@@ -1045,9 +1058,13 @@ namespace Isotope80
         /// </summary>
         /// <remarks>Note: This only logs the error, it doesn't stop the computation.  Use `fail` for computation
         /// termination.  `fail` also logs to the output using this function.</remarks>
-        public static Isotope<Unit> error(string message) =>
+        public static Isotope<Unit> error(
+            string message,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = s.Log.Add(Log.Error(message))
+            let p = s.Log.Add(Log.Error(message, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber))
             from x in put(s.With(Log: p.Log))
             from y in writeToLogStream(p.Added)
             select unit;
@@ -1055,9 +1072,14 @@ namespace Isotope80
         /// <summary>
         /// Create a logging context
         /// </summary>
-        public static Isotope<A> context<A>(string context, Isotope<A> iso) =>
+        public static Isotope<A> context<A>(
+            string context,
+            Isotope<A> iso,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = Log.Context(context).Rebase(s.Log.Indent)
+            let p = Log.Context(context, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber).Rebase(s.Log.Indent)
             from y in writeToLogStream(p)
             from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
@@ -1068,9 +1090,14 @@ namespace Isotope80
         /// <summary>
         /// Create a logging context
         /// </summary>
-        public static Isotope<Env, A> context<Env, A>(string context, Isotope<Env, A> iso) =>
+        public static Isotope<Env, A> context<Env, A>(
+            string context,
+            Isotope<Env, A> iso,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = Log.Context(context).Rebase(s.Log.Indent)
+            let p = Log.Context(context, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber).Rebase(s.Log.Indent)
             from y in writeToLogStream(p)
             from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
@@ -1081,9 +1108,14 @@ namespace Isotope80
         /// <summary>
         /// Create a logging context
         /// </summary>
-        public static IsotopeAsync<A> context<A>(string context, IsotopeAsync<A> iso) =>
+        public static IsotopeAsync<A> context<A>(
+            string context,
+            IsotopeAsync<A> iso,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = Log.Context(context).Rebase(s.Log.Indent)
+            let p = Log.Context(context, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber).Rebase(s.Log.Indent)
             from y in writeToLogStream(p)
             from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
@@ -1094,9 +1126,14 @@ namespace Isotope80
         /// <summary>
         /// Create a logging context
         /// </summary>
-        public static IsotopeAsync<Env, A> context<Env, A>(string context, IsotopeAsync<Env, A> iso) =>
+        public static IsotopeAsync<Env, A> context<Env, A>(
+            string context, 
+            IsotopeAsync<Env, A> iso,
+            [CallerMemberName] string callerMemberName = "", 
+            [CallerFilePath] string callerFilePath = "", 
+            [CallerLineNumber] int callerLineNumber = 0) =>
             from s in get
-            let p = Log.Context(context).Rebase(s.Log.Indent)
+            let p = Log.Context(context, DateTime.UtcNow, callerMemberName, callerFilePath, callerLineNumber).Rebase(s.Log.Indent)
             from y in writeToLogStream(p)
             from x in put(s.With(Log: p, Context: s.Context.Push(context)))
             from r in iso
@@ -1108,7 +1145,7 @@ namespace Isotope80
             new Isotope<Unit>(s => {
                   if (!String.IsNullOrWhiteSpace(entry.Message))
                   {
-                      s.Settings.LogStream.OnNext(new LogOutput(Text.Tabs(s.Context.Count, entry.Message), entry.Type, entry.Indent));
+                      s.Settings.LogStream.OnNext(new LogOutput(entry.Message, entry.Type, s.Context.Count, entry.Time, entry.CallerMemberName, entry.CallerFilePath, entry.CallerLineNumber));
                   }
                   return new IsotopeState<Unit>(default, s);
               });
