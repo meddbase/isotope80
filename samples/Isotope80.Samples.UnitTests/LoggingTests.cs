@@ -38,7 +38,7 @@ namespace Isotope80.Samples.UnitTests
             
             var stgs = IsotopeSettings.Create();
             stgs.LogStream.Subscribe(x => logs = logs.Add(x.ToString()));
-            stgs.LogStream.Subscribe(x => Output.WriteLine(x.ToStringWithPath()));
+            stgs.LogStream.Subscribe(x => Output.WriteLine(x.ToVerboseString()));
 
             var iso2 = from _ in info("Info log")
                        from r in context("Test 1",
