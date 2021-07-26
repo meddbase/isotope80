@@ -523,6 +523,22 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Set the window position of the browser
+        /// </summary>
+        /// <param name="x">Horizontal offset coordinate from left screen bound</param>
+        /// <param name="y">Vertical offset coordinate from upper screen bount</param>
+        public static Isotope<Unit> setWindowPosition(int x, int y) =>
+            setWindowPosition(new Location(x, y));
+
+        /// <summary>
+        /// Set the window position of the browser
+        /// </summary>
+        public static Isotope<Unit> setWindowPosition(Location point) =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.Position = point, $"Failed to move browser window to {point.X}, {point.Y}")
+            select unit;
+
+        /// <summary>
         /// Navigate to a URL
         /// </summary>
         /// <param name="url">URL to navigate to</param>
