@@ -545,6 +545,22 @@ namespace Isotope80
             from d in webDriver
             from _ in trya(() => d.Manage().Window.Maximize(), "Failed to maximize browser window")
             select unit;
+        
+        /// <summary>
+        /// Minimize browser window
+        /// </summary>
+        public static Isotope<Unit> minimiseBrowser =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.Minimize(), "Failed to minimize browser window")
+            select unit;
+        
+        /// <summary>
+        /// Set browser window to full screen
+        /// </summary>
+        public static Isotope<Unit> fullscreenBrowser =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.FullScreen(), "Failed to change browser to fullscreen")
+            select unit;
 
         /// <summary>
         /// Navigate to a URL
