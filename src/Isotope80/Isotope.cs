@@ -528,12 +528,12 @@ namespace Isotope80
         /// <param name="x">Horizontal offset coordinate from left screen bound</param>
         /// <param name="y">Vertical offset coordinate from upper screen bount</param>
         public static Isotope<Unit> setWindowPosition(int x, int y) =>
-            setWindowPosition(new Location(x, y));
+            setWindowPosition(new Point(x, y));
 
         /// <summary>
         /// Set the window position of the browser
         /// </summary>
-        public static Isotope<Unit> setWindowPosition(Location point) =>
+        public static Isotope<Unit> setWindowPosition(Point point) =>
             from d in webDriver
             from _ in trya(() => d.Manage().Window.Position = point, $"Failed to move browser window to {point.X}, {point.Y}")
             select unit;
