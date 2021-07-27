@@ -539,19 +539,19 @@ namespace Isotope80
             select unit;
 
         /// <summary>
-        /// Maximize browser window
+        /// Maximise browser window
         /// </summary>
         public static Isotope<Unit> maximiseBrowser =>
             from d in webDriver
-            from _ in trya(() => d.Manage().Window.Maximize(), "Failed to maximize browser window")
+            from _ in trya(() => d.Manage().Window.Maximize(), "Failed to maximise browser window")
             select unit;
         
         /// <summary>
-        /// Minimize browser window
+        /// Minimise browser window
         /// </summary>
         public static Isotope<Unit> minimiseBrowser =>
             from d in webDriver
-            from _ in trya(() => d.Manage().Window.Minimize(), "Failed to minimize browser window")
+            from _ in trya(() => d.Manage().Window.Minimize(), "Failed to minimise browser window")
             select unit;
         
         /// <summary>
