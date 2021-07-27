@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="90.0.4430.2400" />
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="92.0.4515.4300" />
     <PackageReference Include="XUnit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <PrivateAssets>all</PrivateAssets>
