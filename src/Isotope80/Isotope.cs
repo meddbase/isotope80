@@ -523,6 +523,46 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Set the window position of the browser
+        /// </summary>
+        /// <param name="x">Horizontal offset coordinate from left screen bound</param>
+        /// <param name="y">Vertical offset coordinate from upper screen bount</param>
+        public static Isotope<Unit> setWindowPosition(int x, int y) =>
+            setWindowPosition(new Point(x, y));
+
+        /// <summary>
+        /// Set the window position of the browser
+        /// </summary>
+        public static Isotope<Unit> setWindowPosition(Point point) =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.Position = point, $"Failed to move browser window to {point.X}, {point.Y}")
+            select unit;
+
+        /// <summary>
+        /// Maximise browser window
+        /// </summary>
+        public static Isotope<Unit> maximiseWindow =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.Maximize(), "Failed to maximise browser window")
+            select unit;
+        
+        /// <summary>
+        /// Minimise browser window
+        /// </summary>
+        public static Isotope<Unit> minimiseWindow =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.Minimize(), "Failed to minimise browser window")
+            select unit;
+        
+        /// <summary>
+        /// Set browser window to full screen
+        /// </summary>
+        public static Isotope<Unit> fullscreenWindow =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Window.FullScreen(), "Failed to change browser to fullscreen")
+            select unit;
+
+        /// <summary>
         /// Navigate to a URL
         /// </summary>
         /// <param name="url">URL to navigate to</param>
