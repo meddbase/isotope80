@@ -541,7 +541,7 @@ namespace Isotope80
         /// <summary>
         /// Maximize browser window
         /// </summary>
-        public static Isotope<Unit> setWindowMax =>
+        public static Isotope<Unit> maximiseBrowser =>
             from d in webDriver
             from _ in trya(() => d.Manage().Window.Maximize(), "Failed to maximize browser window")
             select unit;
