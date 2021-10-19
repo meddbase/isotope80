@@ -6,11 +6,12 @@ using LanguageExt;
 using LanguageExt.Common;
 using Xunit;
 using Xunit.Abstractions;
+using Isotope80;
 using static LanguageExt.Prelude;
 using static System.Console;
 using static Isotope80.Isotope;
 
-namespace Isotope80.Samples.UnitTests
+namespace Samples.UnitTests
 {
     public class EvalTests
     {

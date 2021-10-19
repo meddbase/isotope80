@@ -1,14 +1,15 @@
-using Xunit;
 using System;
 using LanguageExt;
 using LanguageExt.Common;
-using static System.Console;
 using OpenQA.Selenium.Chrome;
-using static Isotope80.Isotope;
+using Xunit;
+using Isotope80;
+using static System.Console;
 using static LanguageExt.Prelude;
+using static Isotope80.Isotope;
 using Error = LanguageExt.Common.Error;
 
-namespace Isotope80.Samples.UnitTests
+namespace Samples.UnitTests
 {
     public class SequenceTests
     {

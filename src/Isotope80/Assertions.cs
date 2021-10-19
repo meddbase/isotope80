@@ -43,14 +43,14 @@ namespace Isotope80
         /// <param name="cssSelector">CSS selector</param>
         /// <param name="expected">Label on failure</param>
         public static Isotope<Unit> assertElementHasText(string cssSelector, string expected) =>
-            assertElementHasText(Query.byCss(cssSelector), expected);
+            assertElementHasText(Select.byCss(cssSelector), expected);
 
         /// <summary>
         /// Assert that an element has text that matches `expected`
         /// </summary>
         /// <param name="selector">Element selector</param>
         /// <param name="expected">Label on failure</param>
-        public static Isotope<Unit> assertElementHasText(Query selector, string expected) =>
+        public static Isotope<Unit> assertElementHasText(Select selector, string expected) =>
             from el in selector.ToIsotopeHead()
             from __ in assertElementIsDisplayed(selector)
             from ht in hasText(selector, expected) 
@@ -61,13 +61,13 @@ namespace Isotope80
         /// </summary>
         /// <param name="cssSelector">CSS selector</param>
         public static Isotope<Unit> assertElementIsDisplayed(string cssSelector) =>
-            assertElementIsDisplayed(Query.byCss(cssSelector));
+            assertElementIsDisplayed(Select.byCss(cssSelector));
 
         /// <summary>
         /// Assert element is displayed
         /// </summary>
         /// <param name="selector">Element selector</param>
-        public static Isotope<Unit> assertElementIsDisplayed(Query selector) =>
+        public static Isotope<Unit> assertElementIsDisplayed(Select selector) =>
             assert(displayed(selector), $@"Expected selector ""{selector}"" to be displayed.");
     }
 }

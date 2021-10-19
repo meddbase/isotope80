@@ -582,7 +582,7 @@ namespace Isotope80
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">Element selector</param>
-        public static Isotope<WebElement> find1(Query selector) =>
+        public static Isotope<WebElement> find1(Select selector) =>
             find(selector + whenAtLeastOne).Map(es => es.Head);
 
         /// <summary>
@@ -590,11 +590,11 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Element to search</param>
         /// <param name="selector">Child element selector</param>
-        public static Isotope<WebElement> find1(WebElement element, Query selector) =>
+        public static Isotope<WebElement> find1(WebElement element, Select selector) =>
             from dr in webDriver
             from rs in (element.Id == ""
                           ? find1(new ByElementId(dr, element.ElementId) + selector)
-                          : find1(Query.byId(element.Id) + selector)) |
+                          : find1(Select.byId(element.Id) + selector)) |
                        find1(element.Selector + atIndex(element.SelectionIndex) + selector)
             select rs; 
         
@@ -602,7 +602,7 @@ namespace Isotope80
         /// Find HTML elements
         /// </summary>
         /// <param name="selector">Element selector</param>
-        public static Isotope<Seq<WebElement>> find(Query selector) =>
+        public static Isotope<Seq<WebElement>> find(Select selector) =>
             selector.ToSeq();
 
         /// <summary>
@@ -610,18 +610,18 @@ namespace Isotope80
         /// </summary>
         /// <param name="element">Element to search</param>
         /// <param name="selector">Element selector</param>
-        public static Isotope<Seq<WebElement>> find(WebElement element, Query selector) =>
+        public static Isotope<Seq<WebElement>> find(WebElement element, Select selector) =>
             from dr in webDriver
             from rs in (element.Id == ""
                             ? find(new ByElementId(dr, element.ElementId) + selector)
-                            : find(Query.byId(element.Id) + selector)) |
+                            : find(Select.byId(element.Id) + selector)) |
                        find(element.Selector + atIndex(element.SelectionIndex) + selector)
             select rs; 
 
         /// <summary>
         /// Select a &lt;select&gt; option by text
         /// </summary>     
-        public static Isotope<Unit> selectByText(Query selector, string text) =>
+        public static Isotope<Unit> selectByText(Select selector, string text) =>
             from el in selector.ToIsotopeHead()
             from se in IsotopeInternal.toSelectElement(el)
             from _  in IsotopeInternal.selectByText(se, text)
@@ -630,7 +630,7 @@ namespace Isotope80
         /// <summary>
         /// Select a &lt;select&gt; option by value
         /// </summary>     
-        public static Isotope<Unit> selectByValue(Query selector, string value) =>
+        public static Isotope<Unit> selectByValue(Select selector, string value) =>
             from el in selector.ToIsotopeHead()
             from se in IsotopeInternal.toSelectElement(el)
             from _  in IsotopeInternal.selectByValue(se, value)
@@ -641,7 +641,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Element selector</param>
         /// <returns>The selected Option text</returns>
-        public static Isotope<string> getSelectedOptionText(Query selector) =>
+        public static Isotope<string> getSelectedOptionText(Select selector) =>
             from ele in selector.ToIsotopeHead()
             from sel in IsotopeInternal.toSelectElement(ele)
             from opt in IsotopeInternal.getSelectedOption(sel)
@@ -653,7 +653,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Element selector</param>
         /// <returns>The selected Option value</returns>
-        public static Isotope<string> getSelectedOptionValue(Query selector) =>
+        public static Isotope<string> getSelectedOptionValue(Select selector) =>
             from ele in selector.ToIsotopeHead()
             from sel in IsotopeInternal.toSelectElement(ele)
             from opt in IsotopeInternal.getSelectedOption(sel)
@@ -665,7 +665,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>Is checked\s</returns>
-        public static Isotope<bool> isCheckboxChecked(Query selector) =>
+        public static Isotope<bool> isCheckboxChecked(Select selector) =>
             from ele in selector.ToIsotopeHead()
             from res in IsotopeInternal.isCheckboxChecked(ele)
             select res;
@@ -675,7 +675,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <param name="ticked">Check the box or not</param>
-        public static Isotope<Unit> setCheckbox(Query selector, bool ticked) =>
+        public static Isotope<Unit> setCheckbox(Select selector, bool ticked) =>
             from ele in selector.ToIsotopeHead()
             from val in IsotopeInternal.isCheckboxChecked(ele)
             from _   in val == ticked
@@ -689,7 +689,7 @@ namespace Isotope80
         /// <param name="selector">Web element selector</param>
         /// <param name="style">Style attribute to look up</param>
         /// <returns>A string representing the style value</returns>
-        public static Isotope<string> getStyle(Query selector, string style) =>
+        public static Isotope<string> getStyle(Select selector, string style) =>
             selector.ToIsotopeHead()
                     .Bind(el => IsotopeInternal.getStyle(el, style));
 
@@ -698,7 +698,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>The Z Index value</returns>
-        public static Isotope<int> getZIndex(Query selector) =>
+        public static Isotope<int> getZIndex(Select selector) =>
             from ele in selector.ToIsotopeHead()
             from zis in IsotopeInternal.getStyle(ele, "zIndex")
             from zii in parseInt(zis).ToIsotope($"z-Index was not valid integer: {zis}.")
@@ -710,7 +710,7 @@ namespace Isotope80
         /// <param name="selector">Web element selector</param>
         /// <param name="att">Attribute to look up</param>
         /// <returns>A string representing the attribute value</returns>
-        public static Isotope<string> attribute(Query selector, string att) =>
+        public static Isotope<string> attribute(Select selector, string att) =>
             selector.ToIsotopeHead()
                     .Bind(el => IsotopeInternal.attribute(el, att));
 
@@ -719,7 +719,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <param name="keys">String of characters that are typed</param>
-        public static Isotope<Unit> sendKeys(Query selector, string keys) =>
+        public static Isotope<Unit> sendKeys(Select selector, string keys) =>
             selector.ToIsotopeHead()
                     .Bind(el => IsotopeInternal.sendKeys(el, keys));
 
@@ -727,7 +727,7 @@ namespace Isotope80
         /// Simulates the mouse-click
         /// </summary>
         /// <param name="selector">Web element selector</param>
-        public static Isotope<Unit> click(Query selector) =>
+        public static Isotope<Unit> click(Select selector) =>
             selector.ToIsotopeHead()
                     .Bind(IsotopeInternal.click);
         
@@ -735,7 +735,7 @@ namespace Isotope80
         /// Clears the content of an element
         /// </summary>
         /// <param name="selector">Web element selector</param>
-        public static Isotope<Unit> clear(Query selector) =>
+        public static Isotope<Unit> clear(Select selector) =>
             selector.ToIsotopeHead()
                     .Bind(IsotopeInternal.clear);
 
@@ -753,7 +753,7 @@ namespace Isotope80
         /// Gets the text inside an element
         /// </summary>
         /// <param name="selector">Element containing txt</param>
-        public static Isotope<string> text(Query selector) =>
+        public static Isotope<string> text(Select selector) =>
             from el in selector.ToIsotopeHead()
             from rs in tryf(() => el.Text, $@"Error getting text from element: {prettyPrint(el)}")
             select rs;
@@ -762,7 +762,7 @@ namespace Isotope80
         /// Gets the value attribute of an element
         /// </summary>
         /// <param name="selector">Element containing value</param>
-        public static Isotope<string> value(Query selector) =>
+        public static Isotope<string> value(Select selector) =>
             from el in selector.ToIsotopeHead()
             from rs in tryf(() => el.GetAttribute("Value"), $@"Error getting value from element: {prettyPrint(el)}")
             select rs;
@@ -1193,7 +1193,7 @@ namespace Isotope80
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
-        public static Isotope<Unit> waitUntilClickable(Query selector) =>
+        public static Isotope<Unit> waitUntilClickable(Select selector) =>
             from w  in defaultWait
             from el in waitUntilClickable(selector, w)
             select unit;
@@ -1201,7 +1201,7 @@ namespace Isotope80
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds timeout specified
         /// </summary>
-        public static Isotope<Unit> waitUntilClickable(Query selector, TimeSpan timeout) =>
+        public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
             from _1 in info($"Waiting until clickable: {selector}")
             from el in selector.WaitUntilExists.ToIsotopeHead()
             from _2 in IsotopeInternal.waitUntilClickable(el, timeout)
@@ -1644,7 +1644,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>True if the element is currently displayed</returns>
-        public static Isotope<bool> displayed(Query selector) =>
+        public static Isotope<bool> displayed(Select selector) =>
             selector.ToIsotopeHead()
                     .Bind(IsotopeInternal.displayed);
 
@@ -1653,7 +1653,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>True if the element is currently enabled</returns>
-        public static Isotope<bool> enabled(Query selector) =>
+        public static Isotope<bool> enabled(Select selector) =>
              selector.ToIsotopeHead()
                      .Bind(IsotopeInternal.enabled);
 
@@ -1662,7 +1662,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>True if a matching element exists</returns>
-        public static Isotope<bool> exists(Query selector) =>
+        public static Isotope<bool> exists(Select selector) =>
             from es in selector.ToIsotope()
             select !es.IsEmpty;
 
@@ -1672,7 +1672,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <returns>true if the element is foremost</returns>
-        public static Isotope<bool> obscured(Query selector) =>
+        public static Isotope<bool> obscured(Select selector) =>
             selector.ToIsotopeHead()
                     .Bind(IsotopeInternal.obscured);
 
@@ -1693,7 +1693,7 @@ namespace Isotope80
         ///     success operation.
         /// 
         /// </remarks>
-        public static Isotope<Unit> hasText(Query element, string comparison) =>
+        public static Isotope<Unit> hasText(Select element, string comparison) =>
             from t in text(element)
             from r in t == comparison
                           ? unitM

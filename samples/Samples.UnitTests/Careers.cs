@@ -1,16 +1,16 @@
-﻿using Isotope80;
-using System;
-using Xunit;
-using static Isotope80.Isotope;
-using static Isotope80.Assertions;
+﻿using System;
 using LanguageExt;
 using LanguageExt.Common;
-using static LanguageExt.Prelude;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using Xunit;
 using Xunit.Abstractions;
+using Isotope80;
+using static LanguageExt.Prelude;
+using static Isotope80.Isotope;
+using static Isotope80.Assertions;
 
-namespace Isotope80.Samples.UnitTests
+namespace Samples.UnitTests
 {
     public class Careers
     {
