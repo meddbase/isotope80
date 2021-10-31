@@ -1,14 +1,14 @@
-using OpenQA.Selenium.Chrome;
 using System;
 using LanguageExt;
 using LanguageExt.Common;
+using OpenQA.Selenium.Chrome;
 using Xunit;
 using Xunit.Abstractions;
+using Isotope80;
 using static LanguageExt.Prelude;
-using static System.Console;
 using static Isotope80.Isotope;
 
-namespace Isotope80.Samples.UnitTests
+namespace Samples.UnitTests
 {
     public class LoggingTests
     {

@@ -11,12 +11,12 @@ namespace Isotope80
     public partial class WebElement
     {
         /// <summary>
-        /// Query selector that found this element
+        /// SelectQuery selector that found this element
         /// </summary>
-        public readonly Query Selector;
+        public readonly Select Selector;
         
         /// <summary>
-        /// This structure was made from a query.  This is the index into the query results
+        /// This structure was made from a @select.  This is the index into the @select results
         /// </summary>
         public readonly int SelectionIndex;
         
@@ -67,9 +67,9 @@ namespace Isotope80
         public readonly bool Displayed;
 
         /// <summary>
-        /// Compose the selector of the element and the query
+        /// Compose the selector of the element and the @select
         /// </summary>
-        public static Query operator +(WebElement element, Query query) =>
-            element.Selector + query;
+        public static Select operator +(WebElement element, Select @select) =>
+            element.Selector + @select;
     }
 }

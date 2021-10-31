@@ -1,9 +1,10 @@
-﻿using LanguageExt;
+﻿using Isotope80;
+using LanguageExt;
 using OpenQA.Selenium;
 using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 
-namespace Isotope80.Samples.Console
+namespace Samples.Console
 {
     public static class Meddbase
     {
@@ -14,7 +15,7 @@ namespace Isotope80.Samples.Console
                 from _3 in nav("https://www.meddbase.com")
                 select unit);
 
-        public static Isotope<Unit> WaitThenClick(Query selector) =>
+        public static Isotope<Unit> WaitThenClick(Select selector) =>
             from el in waitUntilClickable(selector)
             from _2 in click(selector)
             select unit;

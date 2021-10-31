@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Isotope80", "src\Isotope80\Isotope80.csproj", "{105C2048-CBC1-442C-A462-5BB3F7AB29C0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Isotope80.Samples.Console", "samples\Isotope80.Samples.Console\Isotope80.Samples.Console.csproj", "{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Console", "samples\Samples.Console\Samples.Console.csproj", "{A0381035-9D2D-4DE0-A6D0-D74080D0B8BF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Isotope80.Samples.UnitTests", "samples\Isotope80.Samples.UnitTests\Isotope80.Samples.UnitTests.csproj", "{FB8D352E-CE79-4E7C-81A9-7AE4ADA0B404}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.UnitTests", "samples\Samples.UnitTests\Samples.UnitTests.csproj", "{FB8D352E-CE79-4E7C-81A9-7AE4ADA0B404}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

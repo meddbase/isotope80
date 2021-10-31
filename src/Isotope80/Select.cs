@@ -17,122 +17,122 @@ using OpenQA.Selenium.Remote;
 namespace Isotope80
 {
     /// <summary>
-    /// Query selector
+    /// Select selector
     /// </summary>
     /// <remarks>
-    /// Queries can be composed associatively. The left-hand-side query gets refined by the right-hand-side.
+    /// Selects can be composed associatively. The left-hand-side select gets refined by the right-hand-side.
     /// Identity selects all.
     /// </remarks>
-    public class Query
+    public class Select
     {
-        readonly Seq<QueryStep> arrows;
+        readonly Seq<SelectStep> arrows;
 
         /// <summary>
-        /// Query
+        /// Select
         /// </summary>
-        Query(Seq<QueryStep> arrows) =>
+        Select(Seq<SelectStep> arrows) =>
             this.arrows = arrows;
 
         /// <summary>
-        /// Identity query
+        /// Identity select
         /// </summary>
-        /// <remarks>By supporting identity and `+` Query becomes a monoid</remarks>
-        public static readonly Query Identity =
+        /// <remarks>By supporting identity and `+` Select becomes a monoid</remarks>
+        public static readonly Select Identity =
             byCss("*");
 
         /// <summary>
-        /// Create a Query from a By
+        /// Create a Select from a By
         /// </summary>
         /// <param name="by">Selector arrows</param>
-        /// <returns>Query</returns>
-        public static Query fromBy(params By[] by) =>
-            new Query(by.ToSeq().Map(QueryStepCon.ByStep).Strict());
+        /// <returns>Select</returns>
+        public static Select fromBy(params By[] by) =>
+            new Select(by.ToSeq().Map(SelectStepCon.ByStep).Strict());
 
         /// <summary>
-        /// Query an element by identifier
+        /// Select an element by identifier
         /// </summary>
         /// <param name="id">Identifier of the element</param>
-        /// <returns>Query</returns>
-        public static Query byId(string id) =>
+        /// <returns>Select</returns>
+        public static Select byId(string id) =>
             By.Id(id);
 
         /// <summary>
-        /// Query elements by the text within a link
+        /// Select elements by the text within a link
         /// </summary>
         /// <param name="linkTextToFind">Link text to find</param>
-        /// <returns>Query</returns>
-        public static Query byLinkText(string linkTextToFind) =>
+        /// <returns>Select</returns>
+        public static Select byLinkText(string linkTextToFind) =>
             By.LinkText(linkTextToFind);
 
         /// <summary>
-        /// Query elements by the text within a link
+        /// Select elements by the text within a link
         /// </summary>
         /// <param name="linkTextToFind">Link text to find</param>
-        /// <returns>Query</returns>
-        public static Query byPartialLinkText(string linkTextToFind) =>
+        /// <returns>Select</returns>
+        public static Select byPartialLinkText(string linkTextToFind) =>
             By.PartialLinkText(linkTextToFind);
 
         /// <summary>
-        /// Query elements by name attribute
+        /// Select elements by name attribute
         /// </summary>
         /// <param name="name">Name o</param>
-        /// <returns>Query</returns>
-        public static Query byName(string name) =>
+        /// <returns>Select</returns>
+        public static Select byName(string name) =>
             By.Name(name);
 
         /// <summary>
-        /// Query elements using a CSS selector
+        /// Select elements using a CSS selector
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        /// <returns>Query</returns>
-        public static Query byCss(string selector) =>
+        /// <returns>Select</returns>
+        public static Select byCss(string selector) =>
             By.CssSelector(selector);
 
         /// <summary>
-        /// Query elements by tag-name
+        /// Select elements by tag-name
         /// </summary>
         /// <param name="tagName">Tag name</param>
-        /// <returns>Query</returns>
-        public static Query byTag(string tagName) =>
+        /// <returns>Select</returns>
+        public static Select byTag(string tagName) =>
             By.TagName(tagName);
 
         /// <summary>
-        /// Query elements by XPath
+        /// Select elements by XPath
         /// </summary>
         /// <param name="xpath">XPath selector</param>
-        /// <returns>Query</returns>
-        public static Query byXPath(string xpath) =>
+        /// <returns>Select</returns>
+        public static Select byXPath(string xpath) =>
             By.XPath(xpath);
 
         /// <summary>
-        /// Query elements by class
+        /// Select elements by class
         /// </summary>
         /// <param name="className">Class selector</param>
-        /// <returns>Query</returns>
-        public static Query byClass(string className) =>
+        /// <returns>Select</returns>
+        public static Select byClass(string className) =>
             By.ClassName(className);
 
         /// <summary>
         /// Select an item at a specific index
         /// </summary>
         /// <param name="ix"></param>
-        public static Query atIndex(int ix) =>
-            new Query(Seq1(QueryStepCon.IndexSelect(ix, $"[{ix}]")));
+        public static Select atIndex(int ix) =>
+            new Select(Seq1(SelectStepCon.IndexSelect(ix, $"[{ix}]")));
         
         /// <summary>
-        /// Wait until element exists query
+        /// Wait until element exists select
         /// </summary>
-        /// <returns>Query</returns>
-        public static readonly Query waitUntilExists =
+        /// <returns>Select</returns>
+        public static readonly Select waitUntilExists =
             waitUntilExistsFor();
         
         /// <summary>
-        /// Wait until element exists query
+        /// Wait until element exists select
         /// </summary>
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
-        /// <returns>Query</returns>
-        public static Query waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
+        /// <returns>Select</returns>
+        public static Select waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
             waitUntil(es => es.IsEmpty
                                 ? fail("No elements")
                                 : pure(unit),
@@ -141,20 +141,20 @@ namespace Isotope80
                       wait);
         
         /// <summary>
-        /// Query must have at least one element
+        /// Select must have at least one element
         /// </summary>
-        /// <returns>Query</returns>
-        public static Query whenAtLeastOne =
+        /// <returns>Select</returns>
+        public static Select whenAtLeastOne =
             filter(es => es.IsEmpty
                              ? fail("No elements: expected at least one element")
                              : pure(unit),
                    "head");
 
         /// <summary>
-        /// Query the first element and only the first.  Multiple elements is failure 
+        /// Select the first element and only the first.  Multiple elements is failure 
         /// </summary>
-        /// <returns>Query</returns>
-        public static Query whenSingle =
+        /// <returns>Select</returns>
+        public static Select whenSingle =
             filter(es => es.IsEmpty
                              ? fail("No elements: expected one element")
                              : es.Tail.IsEmpty
@@ -166,8 +166,8 @@ namespace Isotope80
         /// Filter with an Isotope: fail means filtered out, success means let through
         /// The error reported by the Isotope is used as the final error 
         /// </summary>
-        static Query filter(Func<Seq<IWebElement>, Isotope<Unit>> f, string desc) => 
-            new Query(Seq1(QueryStepCon.FilterM(f, desc)));
+        static Select filter(Func<Seq<IWebElement>, Isotope<Unit>> f, string desc) => 
+            new Select(Seq1(SelectStepCon.FilterM(f, desc)));
         
         /// <summary>
         /// Filter with an Isotope: fail means filtered out, success means let through
@@ -175,128 +175,128 @@ namespace Isotope80
         ///
         /// Differs from filter in that it retries until timeout 
         /// </summary>
-        static Query waitUntil(Func<Seq<IWebElement>, Isotope<Unit>> f, string desc, Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) => 
-            new Query(Seq1(QueryStepCon.WaitM(f, desc, interval, wait)));
+        static Select waitUntil(Func<Seq<IWebElement>, Isotope<Unit>> f, string desc, Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) => 
+            new Select(Seq1(SelectStepCon.WaitM(f, desc, interval, wait)));
         
         /// <summary>
         /// Conversion operator 
         /// </summary>
-        public static implicit operator Query(By by) =>
-            new Query(Seq1(QueryStepCon.ByStep(by)));
+        public static implicit operator Select(By by) =>
+            new Select(Seq1(SelectStepCon.ByStep(by)));
 
         /// <summary>
-        /// Associative query composition
+        /// Associative select composition
         /// </summary>
-        /// <remarks>Queries can be composed associatively. The left-hand-side query gets refined by the right-hand-side.</remarks>
+        /// <remarks>Selects can be composed associatively. The left-hand-side select gets refined by the right-hand-side.</remarks>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Query operator +(Query lhs, Query rhs) =>
-            new Query(lhs.arrows + rhs.arrows);
+        public static Select operator +(Select lhs, Select rhs) =>
+            new Select(lhs.arrows + rhs.arrows);
 
         /// <summary>
-        /// Query an element by identifier
+        /// Select an element by identifier
         /// </summary>
         /// <param name="id">Identifier of the element</param>
-        /// <returns>Query</returns>
-        public Query Id(string id) =>
+        /// <returns>Select</returns>
+        public Select Id(string id) =>
             this + byId(id);
 
         /// <summary>
-        /// Query elements by the text within a link
+        /// Select elements by the text within a link
         /// </summary>
         /// <param name="linkTextToFind">Link text to find</param>
-        /// <returns>Query</returns>
-        public Query LinkText(string linkTextToFind) =>
+        /// <returns>Select</returns>
+        public Select LinkText(string linkTextToFind) =>
             this + byLinkText(linkTextToFind);
         
         /// <summary>
-        /// Query elements by the text within a link
+        /// Select elements by the text within a link
         /// </summary>
         /// <param name="linkTextToFind">Link text to find</param>
-        /// <returns>Query</returns>
-        public Query PartialLinkText(string linkTextToFind) =>
+        /// <returns>Select</returns>
+        public Select PartialLinkText(string linkTextToFind) =>
             this + byPartialLinkText(linkTextToFind);
 
         /// <summary>
-        /// Query elements by name attribute
+        /// Select elements by name attribute
         /// </summary>
         /// <param name="name">Name o</param>
-        /// <returns>Query</returns>
-        public Query Name(string name) =>
+        /// <returns>Select</returns>
+        public Select Name(string name) =>
             this + byName(name);
 
         /// <summary>
-        /// Query elements using a CSS selector
+        /// Select elements using a CSS selector
         /// </summary>
         /// <param name="selector">CSS selector</param>
-        /// <returns>Query</returns>
-        public Query Css(string selector) =>
+        /// <returns>Select</returns>
+        public Select Css(string selector) =>
             this + byCss(selector);
 
         /// <summary>
-        /// Query elements by tag-name
+        /// Select elements by tag-name
         /// </summary>
         /// <param name="tagName">Tag name</param>
-        /// <returns>Query</returns>
-        public Query Tag(string tagName) =>
+        /// <returns>Select</returns>
+        public Select Tag(string tagName) =>
             this + byTag(tagName);
 
         /// <summary>
-        /// Query elements by XPath
+        /// Select elements by XPath
         /// </summary>
         /// <param name="xpath">XPath selector</param>
-        /// <returns>Query</returns>
-        public Query XPath(string xpath) =>
+        /// <returns>Select</returns>
+        public Select XPath(string xpath) =>
             this + byXPath(xpath);
 
         /// <summary>
-        /// Query elements by class
+        /// Select elements by class
         /// </summary>
         /// <param name="className">Class selector</param>
-        /// <returns>Query</returns>
-        public Query Class(string className) =>
+        /// <returns>Select</returns>
+        public Select Class(string className) =>
             this + byClass(className);
 
         /// <summary>
-        /// Query must have at least one matching element
+        /// Select must have at least one matching element
         /// </summary>
-        /// <returns>Query</returns>
-        public Query AtLeastOne =>
+        /// <returns>Select</returns>
+        public Select AtLeastOne =>
             this + whenAtLeastOne;
 
         /// <summary>
-        /// Query must have only one matching element
+        /// Select must have only one matching element
         /// </summary>
-        /// <returns>Query</returns>
-        public Query Single =>
+        /// <returns>Select</returns>
+        public Select Single =>
             this + whenSingle;
 
         /// <summary>
         /// Select an item at a specific index
         /// </summary>
-        /// <returns>Query</returns>
-        public Query Index(int ix) =>
+        /// <returns>Select</returns>
+        public Select Index(int ix) =>
             this + atIndex(ix);
         
         /// <summary>
-        /// Wait until element exists query
+        /// Wait until element exists select
         /// </summary>
-        /// <returns>Query</returns>
-        public Query WaitUntilExists =>
+        /// <returns>Select</returns>
+        public Select WaitUntilExists =>
             this + waitUntilExistsFor();
 
         /// <summary>
-        /// Wait until element exists query
+        /// Wait until element exists select
         /// </summary>
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
-        /// <returns>Query</returns>
-        public Query WaitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+        /// <returns>Select</returns>
+        public Select WaitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             this + waitUntilExistsFor(interval, wait);
 
         /// <summary>
-        /// Maps the query to a runnable Isotope computation that returns the first item.  If there's 0 or more than 1
+        /// Maps the select to a runnable Isotope computation that returns the first item.  If there's 0 or more than 1
         /// item then it fails.
         /// </summary>
         /// <returns></returns>
@@ -309,7 +309,7 @@ namespace Isotope80
                                    });
 
         /// <summary>
-        /// Maps the query to a runnable Isotope computation that returns the first item or fails
+        /// Maps the select to a runnable Isotope computation that returns the first item or fails
         /// </summary>
         /// <returns></returns>
         internal Isotope<IWebElement> ToIsotopeHead() =>
@@ -320,7 +320,7 @@ namespace Isotope80
                                    });
 
         /// <summary>
-        /// Maps the query to a runnable Isotope computation that returns the first item or fails
+        /// Maps the select to a runnable Isotope computation that returns the first item or fails
         /// </summary>
         /// <returns></returns>
         internal Isotope<Option<IWebElement>> ToIsotopeHeadOrNone() =>
@@ -331,7 +331,7 @@ namespace Isotope80
                                    });
 
         /// <summary>
-        /// Maps the query to a runnable Isotope computation
+        /// Maps the select to a runnable Isotope computation
         /// </summary>
         /// <returns></returns>
         internal Isotope<Seq<IWebElement>> ToIsotope()
@@ -399,7 +399,7 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Maps the query to a runnable Isotope computation
+        /// Maps the select to a runnable Isotope computation
         /// </summary>
         /// <returns></returns>
         public Isotope<Seq<WebElement>> ToSeq() =>
@@ -459,36 +459,36 @@ namespace Isotope80
     }
 
     /// <summary>
-    /// Step in a query
+    /// Step in a select
     /// </summary>
     [Union]
-    internal interface QueryStep
+    internal interface SelectStep
     {
         /// <summary>
         /// Selector step - filters by `value`
         /// </summary>
-        QueryStep ByStep(By value);
+        SelectStep ByStep(By value);
         
         /// <summary>
         /// Like a LINQ Where, but instead of bool return it returns an Isotope, which means we can propagate errors
         /// </summary>
-        QueryStep FilterM(Func<Seq<IWebElement>, Isotope<Unit>> ma, string desc);
+        SelectStep FilterM(Func<Seq<IWebElement>, Isotope<Unit>> ma, string desc);
         
         /// <summary>
         /// Like a LINQ Where, but instead of bool return it returns an Isotope, which means we can propagate errors
         /// It differs from FilterM in that it waits for a period of time, retrying, until a timeout 
         /// </summary>
-        QueryStep WaitM(Func<Seq<IWebElement>, Isotope<Unit>> ma, string desc,  Option<TimeSpan> interval = default, Option<TimeSpan> wait = default);
+        SelectStep WaitM(Func<Seq<IWebElement>, Isotope<Unit>> ma, string desc,  Option<TimeSpan> interval = default, Option<TimeSpan> wait = default);
         
         /// <summary>
         /// Pick an item at an index within the result set.  If out of range `fail` is thrown
         /// </summary>
-        QueryStep IndexSelect(int index, string desc);
+        SelectStep IndexSelect(int index, string desc);
     }
     
-    internal static class QueryStepExt
+    internal static class SelectStepExt
     {
-        internal static string Show(this QueryStep step) =>
+        internal static string Show(this SelectStep step) =>
             step switch
             {
                 ByStep      (var value)                   => value.ToString(),
@@ -500,40 +500,40 @@ namespace Isotope80
     }
 
     /// <summary>
-    /// Query semigroup instance
+    /// Select semigroup instance
     /// </summary>
-    public struct SemiQuery : Semigroup<Query>
+    public struct SemiSelect : Semigroup<Select>
     {
         /// <summary>
-        /// Associative binary operator for query composition
+        /// Associative binary operator for select composition
         /// </summary>
-        /// <param name="x">Left query</param>
-        /// <param name="y">Right query</param>
-        /// <returns>Composed query</returns>
-        public Query Append(Query x, Query y) =>
+        /// <param name="x">Left select</param>
+        /// <param name="y">Right select</param>
+        /// <returns>Composed select</returns>
+        public Select Append(Select x, Select y) =>
             x + y;
     }
 
     /// <summary>
-    /// Query monoid instance
+    /// Select monoid instance
     /// </summary>
-    public struct MQuery : Monoid<Query>
+    public struct MSelect : Monoid<Select>
     {
         /// <summary>
-        /// Associative binary operator for query composition
+        /// Associative binary operator for select composition
         /// </summary>
-        /// <param name="x">Left query</param>
-        /// <param name="y">Right query</param>
-        /// <returns>Composed query</returns>
-        public Query Append(Query x, Query y) =>
+        /// <param name="x">Left select</param>
+        /// <param name="y">Right select</param>
+        /// <returns>Composed select</returns>
+        public Select Append(Select x, Select y) =>
             x + y;
 
         /// <summary>
-        /// Monoidal unit.  For Query this selects all.
+        /// Monoidal unit.  For Select this selects all.
         /// </summary>
-        /// <returns>Unit query</returns>
-        public Query Empty() =>
-            Query.Identity;
+        /// <returns>Unit select</returns>
+        public Select Empty() =>
+            Select.Identity;
     }
 
     internal class ByElementId : By
