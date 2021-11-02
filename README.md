@@ -45,7 +45,7 @@ Isotope allows statements to be composed together, you can do this using the Bin
 
 ```cs
 var logic =  nav("https://twitter.com/login")
-              .Bind(x => className("js-username-field"), "Your Email Address"));
+              .Bind(x => sendKeys(className("js-username-field"), "Your Email Address"));
 ```
 
 However the recommended method is to use C#'s LINQ syntax:
