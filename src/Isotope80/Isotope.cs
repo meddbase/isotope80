@@ -595,14 +595,6 @@ namespace Isotope80
             select unit;
 
         /// <summary>
-        /// Opens and switches to new tab, then executes Isotope
-        /// </summary>
-        public static Isotope<T> NewTab<T>(this Isotope<T> iso) =>
-            from _1 in newTab
-            from i in iso
-            select i;
-
-        /// <summary>
         /// Change browser tab by position, determined by the order opened <para/>
         /// Tabs in separate window also switchable to in the same order
         /// </summary>
@@ -611,7 +603,7 @@ namespace Isotope80
         public static Isotope<Unit> switchTabs(int position) =>
             from d in webDriver
             let tabs = d.WindowHandles
-            from _ in trya(() => d.SwitchTo().Window(tabs[position]), "Failed to switch tabs")
+            from _ in trya(() => d.SwitchTo().Window(tabs[position]), $"Failed to switch to tab {position}")
             select unit;
 
         /// <summary>
@@ -621,14 +613,6 @@ namespace Isotope80
             from d in webDriver
             from _ in trya(() => d.SwitchTo().NewWindow(WindowType.Window), "Failed to open new window")
             select unit;
-
-        /// <summary>
-        /// Opens and switched to new window, then executes Isotope
-        /// </summary>
-        public static Isotope<T> NewWindow<T>(this Isotope<T> iso) =>
-            from _1 in newWindow
-            from i in iso
-            select i;
 
         /// <summary>
         /// Navigate to a URL
