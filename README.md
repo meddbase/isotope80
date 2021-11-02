@@ -86,10 +86,10 @@ Isotope depends on the [Selenium WebDriver](https://www.nuget.org/packages/Selen
 The examples presented here will use ChromeDriver and assume that you have both `Isotope80.Isotope` and `LanguageExt.Prelude` as static usings.
 
 ## Running Within a Test Framework
-A common mechanism for running web automation tests it to utilise a unit testing framework such as NUnit or XUnit. These frameworks rely on catching exceptions to determine if a test has failed. Since Isotope handles exceptions for you we provide a special function to use for this purpose: `RunAndThrowOnError`. This function runs the automation and if the end result is a failure it handles cleaning up your WebDriver instance before throwing the exception for the test framework to deal with.
+A common method for running web automation tests it to utilise a unit testing framework such as NUnit or XUnit. These frameworks rely on catching exceptions to determine if a test has failed. Since Isotope handles exceptions for you we provide a special function to use for this purpose: `RunAndThrowOnError`. This function runs the automation and if the end result is a failure it handles cleaning up your WebDriver instance before throwing the exception for the test framework to deal with.
 
 ## Logging
-Isotope provides a built in logging mechnanism to ensure that detailed output of browser automations can be gathered. Anywhere within an Isotope declaration can use `log` to add to the logs.
+Isotope provides a built in logging mechanism to ensure that detailed output of browser automations can be gathered. Anywhere within an Isotope declaration can use `log` to add to the logs.
 
 ```cs
 from _1 in log("Update Window Size")
