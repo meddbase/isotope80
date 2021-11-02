@@ -563,6 +563,74 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Navigate back using the browser's back button
+        /// </summary>
+        public static Isotope<Unit> back =>
+            from d in webDriver
+            from _ in trya(() => d.Navigate().Back(), "Failed to go back in browser")
+            select unit;
+
+        /// <summary>
+        /// Navigate forward using the browser's forward button
+        /// </summary>
+        public static Isotope<Unit> forward =>
+            from d in webDriver
+            from _ in trya(() => d.Navigate().Forward(), "Failed to go forward in browser")
+            select unit;
+
+        /// <summary>
+        /// Refresh current page
+        /// </summary>
+        public static Isotope<Unit> refresh =>
+            from d in webDriver
+            from _ in trya(() => d.Navigate().Refresh(), "Failed to refresh current page")
+            select unit;
+
+        /// <summary>
+        /// Opens and switches to new tab
+        /// </summary>
+        public static Isotope<Unit> newTab =>
+            from d in webDriver
+            from _ in trya(() => d.SwitchTo().NewWindow(WindowType.Tab), "Failed to open new tab")
+            select unit;
+
+        /// <summary>
+        /// Opens and switches to new tab, then executes Isotope
+        /// </summary>
+        public static Isotope<T> NewTab<T>(this Isotope<T> iso) =>
+            from _1 in newTab
+            from i in iso
+            select i;
+
+        /// <summary>
+        /// Change browser tab by position, determined by the order opened <para/>
+        /// Tabs in separate window also switchable to in the same order
+        /// </summary>
+        /// <param name="position">Zero-based position of tab</param>
+        /// <returns></returns>
+        public static Isotope<Unit> switchTabs(int position) =>
+            from d in webDriver
+            let tabs = d.WindowHandles
+            from _ in trya(() => d.SwitchTo().Window(tabs[position]), "Failed to switch tabs")
+            select unit;
+
+        /// <summary>
+        /// Opens and switches to new window
+        /// </summary>
+        public static Isotope<Unit> newWindow =>
+            from d in webDriver
+            from _ in trya(() => d.SwitchTo().NewWindow(WindowType.Window), "Failed to open new window")
+            select unit;
+
+        /// <summary>
+        /// Opens and switched to new window, then executes Isotope
+        /// </summary>
+        public static Isotope<T> NewWindow<T>(this Isotope<T> iso) =>
+            from _1 in newWindow
+            from i in iso
+            select i;
+
+        /// <summary>
         /// Navigate to a URL
         /// </summary>
         /// <param name="url">URL to navigate to</param>
