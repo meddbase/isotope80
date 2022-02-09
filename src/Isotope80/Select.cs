@@ -439,16 +439,16 @@ namespace Isotope80
 
     internal static class GetElementIdField<A> where A : IWebElement
     {
-        readonly static Func<A, string> InvokeA;
+        static readonly Func<A, string> InvokeA;
             
         static GetElementIdField()
         {
             var dynamic = new DynamicMethod("GetElementIdField", typeof(string), new[] { typeof(A) }, true);
-            var field   = typeof(A).GetTypeInfo().DeclaredFields.Filter(f => f.Name == "elementId").Head();
+            var field   = typeof(A).GetTypeInfo().DeclaredFields.Filter(f => f.Name == "elementId").HeadOrNone();
             var il      = dynamic.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, field);
+            field.IfSome(f => il.Emit(OpCodes.Ldfld, f));
             il.Emit(OpCodes.Ret);
  
             InvokeA = (Func<A, string>)dynamic.CreateDelegate(typeof(Func<A, string>));            
