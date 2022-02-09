@@ -405,7 +405,7 @@ namespace Isotope80
         public Isotope<Seq<WebElement>> ToSeq() =>
             from es in ToIsotope()
             from ie in es.Map(e => iso(() => (e.GetAttribute("id"), e)) | pure(("", e))).Sequence()
-            from pe in pure(ie.Map(e => e.Add(GetElementIdField<RemoteWebElement>.Invoke(e.Item2))))  
+            from pe in pure(ie.Map(e => e.Add(GetElementIdField<IWebElement>.Invoke(e.Item2))))  
             select pe.Map<(string Id, IWebElement El, string ElId), WebElement>((ix, e) => 
                        WebElement.New(
                            this, 
