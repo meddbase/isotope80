@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="3.5.46-beta" />
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="94.0.4606.6100" />
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="98.0.4758.8000" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>
 
