@@ -137,6 +137,14 @@ namespace Isotope80
             trya(element.Clear, $@"Error clearing element: {prettyPrint(element)}");
 
         /// <summary>
+        /// Wait for an element to be rendered and clickable, fail if exceeds default timeout. Mute info in log
+        /// </summary>
+        public static Isotope<Unit> waitUntilClickable(IWebElement element, bool mute) =>
+            from w in defaultWait
+            from _ in waitUntilClickable(element, w, mute)
+            select unit;
+        
+        /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(IWebElement element) =>
@@ -144,6 +152,17 @@ namespace Isotope80
             from _ in waitUntilClickable(element, w)
             select unit;
 
+        public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout, bool mute) =>
+            from _ in Isotope.waitUntil(
+                from _1a in !mute ? info($"Checking clickability " + prettyPrint(el)) : pure(unit)
+                from d in displayed(el)
+                from e in enabled(el)
+                from o in obscured(el, mute)
+                from _2a in !mute ? info($"Displayed: {d}, Enabled: {e}, Obscured: {o}") : pure(unit)
+                select d && e && (!o),
+                identity)
+            select unit;
+        
         public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
             from _ in Isotope.waitUntil(
                 from _1a in info($"Checking clickability " + prettyPrint(el))
@@ -180,6 +199,23 @@ namespace Isotope80
         public static Isotope<bool> enabled(IWebElement el) =>
             tryf(() => el.Enabled, $"Error getting enabled status of {el}");
 
+        /// <summary>
+        /// Checks whether the centre point of an element is the foremost element at that position on the page. Mute to hide info in log
+        /// (Uses the JavaScript document.elementFromPoint function)
+        /// </summary>
+        /// <param name="element">Target element</param>
+        /// <returns>true if the element is foremost</returns>
+        public static Isotope<bool> obscured(IWebElement element, bool mute) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            let coords = element.Location
+            let x = coords.X + (int)Math.Floor((double)(element.Size.Width >> 1))
+            let y = coords.Y + (int)Math.Floor((double)(element.Size.Height >> 1))
+            from _ in !mute ? info($"X: {x}, Y: {y}") : pure(unit)
+            from top in pure((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
+            from _1  in !mute ? info($"Target: {prettyPrint(element)}, Top: {prettyPrint(top)}") : pure(unit)
+            select !element.Equals(top);
+        
         /// <summary>
         /// Checks whether the centre point of an element is the foremost element at that position on the page.
         /// (Uses the JavaScript document.elementFromPoint function)

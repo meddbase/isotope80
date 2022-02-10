@@ -1243,6 +1243,14 @@ namespace Isotope80
               });
 
         /// <summary>
+        /// Wait for an element to be rendered and clickable, fail if exceeds default timeout. Mute to hide info in log
+        /// </summary>
+        public static Isotope<Unit> waitUntilClickable(Select selector, bool mute) =>
+            from w  in defaultWait
+            from el in waitUntilClickable(selector, w, mute)
+            select unit;
+        
+        /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector) =>
@@ -1250,6 +1258,15 @@ namespace Isotope80
             from el in waitUntilClickable(selector, w)
             select unit;
 
+        /// <summary>
+        /// Wait for an element to be rendered and clickable, fail if exceeds timeout specified. Mute to hide info in log
+        /// </summary>
+        public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout, bool mute) =>
+            from _1 in !mute ? info($"Waiting until clickable: {selector}") : pure(unit)
+            from el in selector.WaitUntilExists.ToIsotopeHead()
+            from _2 in IsotopeInternal.waitUntilClickable(el, timeout, mute)
+            select unit;
+        
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds timeout specified
         /// </summary>

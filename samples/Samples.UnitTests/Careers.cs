@@ -29,7 +29,7 @@ namespace Samples.UnitTests
                 select unit);
 
         public static Isotope<Unit> WaitThenClick(By selector) =>
-            from el in waitUntilClickable(selector)
+            from el in waitUntilClickable(selector, true)
             from _2 in click(selector)
             select unit;
 
