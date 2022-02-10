@@ -644,9 +644,7 @@ namespace Isotope80
         /// <param name="selector">Child element selector</param>
         public static Isotope<WebElement> find1(WebElement element, Select selector) =>
             from dr in webDriver
-            from rs in (element.Id == ""
-                          ? find1(new ByElementId(dr, element.ElementId) + selector)
-                          : find1(Select.byId(element.Id) + selector)) |
+            from rs in find1(Select.byId(element.Id) + selector) |
                        find1(element.Selector + atIndex(element.SelectionIndex) + selector)
             select rs; 
         
@@ -664,9 +662,7 @@ namespace Isotope80
         /// <param name="selector">Element selector</param>
         public static Isotope<Seq<WebElement>> find(WebElement element, Select selector) =>
             from dr in webDriver
-            from rs in (element.Id == ""
-                            ? find(new ByElementId(dr, element.ElementId) + selector)
-                            : find(Select.byId(element.Id) + selector)) |
+            from rs in find(Select.byId(element.Id) + selector) |
                        find(element.Selector + atIndex(element.SelectionIndex) + selector)
             select rs; 
 
