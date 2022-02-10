@@ -162,17 +162,9 @@ namespace Isotope80
                 select d && e && (!o),
                 identity)
             select unit;
-        
+
         public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
-            from _ in Isotope.waitUntil(
-                from _1a in info($"Checking clickability " + prettyPrint(el))
-                from d in displayed(el)
-                from e in enabled(el)
-                from o in obscured(el)
-                from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
-                select d && e && (!o),
-                identity)
-            select unit;
+            waitUntilClickable(el, timeout, false);
         
         public static string prettyPrint(IWebElement x)
         {
@@ -215,7 +207,7 @@ namespace Isotope80
             from top in pure((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
             from _1  in !mute ? info($"Target: {prettyPrint(element)}, Top: {prettyPrint(top)}") : pure(unit)
             select !element.Equals(top);
-        
+
         /// <summary>
         /// Checks whether the centre point of an element is the foremost element at that position on the page.
         /// (Uses the JavaScript document.elementFromPoint function)
@@ -223,15 +215,7 @@ namespace Isotope80
         /// <param name="element">Target element</param>
         /// <returns>true if the element is foremost</returns>
         public static Isotope<bool> obscured(IWebElement element) =>
-            from dvr in webDriver
-            let jsExec = (IJavaScriptExecutor)dvr
-            let coords = element.Location
-            let x = coords.X + (int)Math.Floor((double)(element.Size.Width >> 1))
-            let y = coords.Y + (int)Math.Floor((double)(element.Size.Height >> 1))
-            from _ in info($"X: {x}, Y: {y}")
-            from top in pure((IWebElement)jsExec.ExecuteScript($"return document.elementFromPoint({x}, {y});"))
-            from _1  in info($"Target: {prettyPrint(element)}, Top: {prettyPrint(top)}")
-            select !element.Equals(top);
+            obscured(element, false);
 
         /// <summary>
         /// Repeatedly runs an Isotope function and checks whether the condition is met 

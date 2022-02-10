@@ -1249,14 +1249,12 @@ namespace Isotope80
             from w  in defaultWait
             from el in waitUntilClickable(selector, w, mute)
             select unit;
-        
+
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector) =>
-            from w  in defaultWait
-            from el in waitUntilClickable(selector, w)
-            select unit;
+            waitUntilClickable(selector, false);
 
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds timeout specified. Mute to hide info in log
@@ -1266,15 +1264,12 @@ namespace Isotope80
             from el in selector.WaitUntilExists.ToIsotopeHead()
             from _2 in IsotopeInternal.waitUntilClickable(el, timeout, mute)
             select unit;
-        
+
         /// <summary>
         /// Wait for an element to be rendered and clickable, fail if exceeds timeout specified
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
-            from _1 in info($"Waiting until clickable: {selector}")
-            from el in selector.WaitUntilExists.ToIsotopeHead()
-            from _2 in IsotopeInternal.waitUntilClickable(el, timeout)
-            select unit;
+            waitUntilClickable(selector, timeout, false);
         
         /// <summary>
         /// Flips the sequence of Isotopes to an Isotope of Sequences.  It does this by running each Isotope within
