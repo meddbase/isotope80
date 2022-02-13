@@ -23,6 +23,11 @@ namespace Isotope80
         /// <summary>
         /// Microsoft Internet Explorer web-browser
         /// </summary>
-        InternetExplorer
+        InternetExplorer,
+        
+        /// <summary>
+        /// Safari web-browser
+        /// </summary>
+        Safari
     }
 }
