@@ -227,20 +227,25 @@ namespace Isotope80
             TimeSpan wait,
             DateTime started)
         {
-            return go().Bind(o => o.Match(Some: pure, None: fail("Timed out"))); 
-
-            // NOTE: This will probably have to stop being recursive 
-            Isotope<Option<A>> go() =>
-                DateTime.UtcNow - started >= wait
-                    ? pure<Option<A>>(None)
-                    : (from x in iso
+            var cond = from x in iso
                        from r in condition(x)
-                                     ? pure(x)
-                                     : fail("Condition failed")
-                       select Some(r)) |
-                      (from _ in pause(interval)
-                       from r in go()
-                       select r);
+                                     ? pure(true)
+                                     : pause(interval).Map(_ => false)
+                       select (CondPassed: r, Result: x);
+            return new Isotope<A>(s =>
+            {
+                var l = cond.Invoke(s);
+                while (!l.Value.CondPassed)
+                {
+                    l = DateTime.UtcNow - started >= wait
+                            ? new IsotopeState<(bool CondPassed, A Result)>(
+                                (true, default(A)),
+                                s.With(Error: Seq1(fail("Timed out"))))
+                            : cond.Invoke(s);
+                }
+
+                return l.Map(v => v.Result);
+            });
         }
 
         public static Exception Aggregate(Seq<Error> errs) =>
