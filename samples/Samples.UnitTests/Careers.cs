@@ -57,16 +57,18 @@ namespace Samples.UnitTests
         {
             var expected = "https://www.meddbase.com/jobs-at-meddbase/";
 
-            var iso = from _1  in GoToPageAndOpenCareers
+            var iso = from _1  in GoToPageAndOpenCareers 
+                      from vacancies in SelectVacancyTitles
+                      from _2 in vacancies.Map(vacancy => info(vacancy)).Sequence()
                       from url in url
-                      from _2  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
+                      from _3  in assert(url == expected, $"Expected URL to be {expected} but it was {url}")
                       select unit;
            
             var stgs = IsotopeSettings.Create();
             stgs.LogStream.Subscribe(x => output.WriteLine(x.ToString()));
             stgs.ErrorStream.Subscribe(x => output.WriteLine(x.ToString()));
  
-            (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: IsotopeSettings.Create());
+            (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: stgs);
         }
     }
 }
