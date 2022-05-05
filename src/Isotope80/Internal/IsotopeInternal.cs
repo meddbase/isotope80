@@ -207,11 +207,14 @@ namespace Isotope80
             TimeSpan wait,
             DateTime started)
         {
-            var cond = from x in iso
-                       from r in condition(x)
-                                     ? pure(true)
-                                     : pause(interval).Map(_ => false)
-                       select (CondPassed: r, Result: x);
+            var cond = (from x in iso
+                        from _ in condition(x)
+                                      ? pure(unit)
+                                      : fail("Condition failed")
+                        select (CondPassed: true, Result: x)) |
+                       (from _ in pause(interval)
+                        select (CondPassed: false, Result: default(A)));
+            
             return new Isotope<A>(s =>
             {
                 var l = cond.Invoke(s);
