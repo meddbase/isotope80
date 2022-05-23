@@ -34,6 +34,11 @@ namespace Isotope80
         public readonly Stck<string> Context;
 
         /// <summary>
+        /// Mute log
+        /// </summary>
+        public readonly bool Mute;
+        
+        /// <summary>
         /// Creates a new instance of IsotopeState with the supplied settings.
         /// </summary>
         public static IsotopeState Create(IsotopeSettings settings) =>
@@ -48,14 +53,16 @@ namespace Isotope80
             HashMap<string, string>? Configuration = null,
             Seq<Error>? Error = null,
             Log Log = null,
-            Stck<string>? Context = null) =>
+            Stck<string>? Context = null,
+            bool? Mute = null) =>
             new IsotopeState(
                 Driver ?? this.Driver,
                 Settings ?? this.Settings,
                 Configuration ?? this.Configuration, 
                 Error ?? this.Error, 
                 Log ?? this.Log,
-                Context ?? this.Context);
+                Context ?? this.Context,
+                Mute ?? this.Mute);
 
         /// <summary>
         /// Empty state
@@ -69,6 +76,7 @@ namespace Isotope80
                 default, 
                 default, 
                 Log.Empty,
+                default,
                 default);
 
         private IsotopeState(
@@ -77,7 +85,8 @@ namespace Isotope80
             HashMap<string, string> configuration,
             Seq<Error> error, 
             Log log,
-            Stck<string> context)
+            Stck<string> context,
+            bool mute)
         {            
             Driver        = driver;
             Settings      = settings;
@@ -85,6 +94,7 @@ namespace Isotope80
             Error         = error;
             Log           = log;
             Context       = context;
+            Mute          = mute;
         }
 
         internal IsotopeState AddError(Error err) =>
