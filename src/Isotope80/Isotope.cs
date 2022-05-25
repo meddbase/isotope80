@@ -1268,6 +1268,39 @@ namespace Isotope80
             from r in iso
             from _ in modify(s2 => s2.With(Mute: s.Mute))
             select r;
+
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static Isotope<Env, A> mute<Env, A>(
+            Isotope<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))
+            select r;
+        
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static IsotopeAsync<A> mute<A>(
+            IsotopeAsync<A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            select r;
+        
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static IsotopeAsync<Env, A> mute<Env, A>(
+            IsotopeAsync<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            select r;
         
         static Isotope<Unit> writeToLogStream(Log entry) =>
             new Isotope<Unit>(s => {
