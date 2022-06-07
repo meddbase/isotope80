@@ -636,6 +636,18 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Close current tab
+        /// </summary>
+        public static Isotope<Unit> closeTab =>
+            from d in webDriver
+            let currentTab = d.WindowHandles.IndexOf(d.CurrentWindowHandle)
+            from _c in trya(() => d.Close(), "Failed to close current tab")
+            from _s in currentTab > 0                   
+                           ? switchTabs(currentTab - 1) // focus has been lost when tab closed
+                           : pure(unit)
+            select unit;
+        
+        /// <summary>
         /// Opens and switches to new window
         /// </summary>
         public static Isotope<Unit> newWindow =>
