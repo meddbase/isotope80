@@ -636,6 +636,18 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Close current tab
+        /// </summary>
+        public static Isotope<Unit> closeTab =>
+            from d in webDriver
+            let currentTab = d.WindowHandles.IndexOf(d.CurrentWindowHandle)
+            from _c in trya(() => d.Close(), "Failed to close current tab")
+            from _s in currentTab > 0                   
+                           ? switchTabs(currentTab - 1) // focus has been lost when tab closed
+                           : pure(unit)
+            select unit;
+        
+        /// <summary>
         /// Opens and switches to new window
         /// </summary>
         public static Isotope<Unit> newWindow =>
@@ -1258,9 +1270,53 @@ namespace Isotope80
                                            Log: s.Log.Add(s2.Log).Log))   
             select r;
 
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static Isotope<A> mute<A>(
+            Isotope<A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))
+            select r;
+
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static Isotope<Env, A> mute<Env, A>(
+            Isotope<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))
+            select r;
+        
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static IsotopeAsync<A> mute<A>(
+            IsotopeAsync<A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            select r;
+        
+        /// <summary>
+        /// Mute log
+        /// </summary>
+        public static IsotopeAsync<Env, A> mute<Env, A>(
+            IsotopeAsync<Env, A> iso) =>
+            from s in get
+            from x in put(s.With(Mute: true))
+            from r in iso
+            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            select r;
+        
         static Isotope<Unit> writeToLogStream(Log entry) =>
             new Isotope<Unit>(s => {
-                  if (!String.IsNullOrWhiteSpace(entry.Message))
+                  if (!String.IsNullOrWhiteSpace(entry.Message) && !s.Mute)
                   {
                       s.Settings.LogStream.OnNext(new LogOutput(entry.Message, entry.Type, s.Context.Count, entry.Time, entry.CallerMemberName, entry.CallerFilePath, entry.CallerLineNumber));
                   }
