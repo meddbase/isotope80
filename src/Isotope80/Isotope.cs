@@ -1336,8 +1336,10 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
             from _1 in info($"Waiting until clickable: {selector}")
-            from el in selector.WaitUntilExists.ToIsotopeHead()
-            from _2 in IsotopeInternal.waitUntilClickable(el, timeout)
+            let now = DateTime.Now
+            from el in selector.WaitUntilExistsFor(wait: timeout).ToIsotopeHead()
+            let remainingTimeout = timeout - (DateTime.Now - now)
+            from _2 in IsotopeInternal.waitUntilClickable(el, remainingTimeout)
             select unit;
         
         /// <summary>

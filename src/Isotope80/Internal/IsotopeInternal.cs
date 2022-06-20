@@ -152,7 +152,7 @@ namespace Isotope80
                 from o in obscured(el)
                 from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
                 select d && e && (!o),
-                identity)
+                identity, wait: timeout)
             select unit;
         
         public static string prettyPrint(IWebElement x)
