@@ -1318,7 +1318,7 @@ namespace Isotope80
             from t in pure(Stopwatch.StartNew())
             from r in iso
             from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
-            from e in tryf(() => t.Elapsed, "Unable to get measured time")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
             from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
             select (r, e);
 
@@ -1330,7 +1330,7 @@ namespace Isotope80
             from t in pure(Stopwatch.StartNew())
             from r in iso
             from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
-            from e in tryf(() => t.Elapsed, "Unable to get measured time")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
             from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
             select (r, e);
 
@@ -1342,7 +1342,7 @@ namespace Isotope80
             from t in pure(Stopwatch.StartNew())
             from r in iso
             from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
-            from e in tryf(() => t.Elapsed, "Unable to get measured time")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
             from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
             select (r, e);
 
@@ -1354,7 +1354,7 @@ namespace Isotope80
             from t in pure(Stopwatch.StartNew())
             from r in iso
             from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
-            from e in tryf(() => t.Elapsed, "Unable to get measured time")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
             from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
             select (r, e);
         
