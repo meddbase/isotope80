@@ -1273,8 +1273,7 @@ namespace Isotope80
         /// <summary>
         /// Mute log
         /// </summary>
-        public static Isotope<A> mute<A>(
-            Isotope<A> iso) =>
+        public static Isotope<A> mute<A>(Isotope<A> iso) =>
             from s in get
             from x in put(s.With(Mute: true))
             from r in iso
@@ -1284,35 +1283,80 @@ namespace Isotope80
         /// <summary>
         /// Mute log
         /// </summary>
-        public static Isotope<Env, A> mute<Env, A>(
-            Isotope<Env, A> iso) =>
+        public static Isotope<Env, A> mute<Env, A>(Isotope<Env, A> iso) =>
             from s in get
             from x in put(s.With(Mute: true))
             from r in iso
             from _ in modify(s2 => s2.With(Mute: s.Mute))
             select r;
-        
+
         /// <summary>
         /// Mute log
         /// </summary>
-        public static IsotopeAsync<A> mute<A>(
-            IsotopeAsync<A> iso) =>
+        public static IsotopeAsync<A> mute<A>(IsotopeAsync<A> iso) =>
             from s in get
             from x in put(s.With(Mute: true))
             from r in iso
-            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            from _ in modify(s2 => s2.With(Mute: s.Mute))
             select r;
-        
+
         /// <summary>
         /// Mute log
         /// </summary>
-        public static IsotopeAsync<Env, A> mute<Env, A>(
-            IsotopeAsync<Env, A> iso) =>
+        public static IsotopeAsync<Env, A> mute<Env, A>(IsotopeAsync<Env, A> iso) =>
             from s in get
             from x in put(s.With(Mute: true))
             from r in iso
-            from _ in modify(s2 => s2.With(Mute: s.Mute))   
+            from _ in modify(s2 => s2.With(Mute: s.Mute))
             select r;
+
+        /// <summary>
+        /// Measure the time interval of an isotope
+        /// </summary>
+        public static Isotope<(A Result, TimeSpan Time)> stopwatch<A>(Isotope<A> iso) =>
+            from _1 in info("Start stopwatch")
+            from t in pure(Stopwatch.StartNew())
+            from r in iso
+            from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
+            from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
+            select (r, e);
+
+        /// <summary>
+        /// Measure the time interval of an isotope
+        /// </summary>
+        public static Isotope<Env, (A Result, TimeSpan Time)> stopwatch<Env, A>(Isotope<Env, A> iso) =>
+            from _1 in info("Start stopwatch")
+            from t in pure(Stopwatch.StartNew())
+            from r in iso
+            from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
+            from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
+            select (r, e);
+
+        /// <summary>
+        /// Measure the time interval of an isotope
+        /// </summary>
+        public static IsotopeAsync<(A Result, TimeSpan Time)> stopwatch<A>(IsotopeAsync<A> iso) =>
+            from _1 in info("Start stopwatch")
+            from t in pure(Stopwatch.StartNew())
+            from r in iso
+            from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
+            from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
+            select (r, e);
+
+        /// <summary>
+        /// Measure the time interval of an isotope
+        /// </summary>
+        public static IsotopeAsync<Env, (A Result, TimeSpan Time)> stopwatch<Env, A>(IsotopeAsync<Env, A> iso) =>
+            from _1 in info("Start stopwatch")
+            from t in pure(Stopwatch.StartNew())
+            from r in iso
+            from _2 in trya(() => t.Stop(), "Unable to stop stopwatch")
+            from e in tryf(() => t.Elapsed, "Unable to get elapsed time")
+            from _3 in info($"Stop stopwatch, elapsed time: {e.ToString(@"m\:ss\.fff")}")
+            select (r, e);
         
         static Isotope<Unit> writeToLogStream(Log entry) =>
             new Isotope<Unit>(s => {
@@ -1336,8 +1380,8 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
             from _1 in info($"Waiting until clickable: {selector}")
-            from el in selector.WaitUntilExists.ToIsotopeHead()
-            from _2 in IsotopeInternal.waitUntilClickable(el, timeout)
+            from el in mute(stopwatch((selector.WaitUntilExistsFor(wait: timeout).ToIsotopeHead())))
+            from _2 in IsotopeInternal.waitUntilClickable(el.Result, timeout - el.Time)
             select unit;
         
         /// <summary>
