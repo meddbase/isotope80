@@ -86,8 +86,8 @@ namespace Isotope80
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
         /// <returns>Select</returns>
-        public static Select waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
-            Select.waitUntilExistsFor(wait, interval);
+        public static Select waitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+            Select.waitUntilExistsFor(interval, wait);
 
         /// <summary>
         /// Select an item at a specific index

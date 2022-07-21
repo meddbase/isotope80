@@ -132,7 +132,7 @@ namespace Isotope80
         /// <param name="interval">Optional interval between checks</param>
         /// <param name="wait">Optional total wait time</param>
         /// <returns>Select</returns>
-        public static Select waitUntilExistsFor(Option<TimeSpan> wait = default, Option<TimeSpan> interval = default) =>
+        public static Select waitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             waitUntil(es => es.IsEmpty
                                 ? fail("No elements")
                                 : pure(unit),
@@ -373,7 +373,7 @@ namespace Isotope80
                         from r in a.Match(
                             None: fail("`waitUntil` must follow something that queries elements.  It can't run alone"),
                             Some: waitM.Ma)
-                        select a);
+                        select a, waitM.Interval, waitM.Wait);
                 }
                 else if (arr is FilterM filterM)
                 {
