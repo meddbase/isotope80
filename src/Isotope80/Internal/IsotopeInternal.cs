@@ -135,25 +135,6 @@ namespace Isotope80
         /// <returns>Unit</returns>
         public static Isotope<Unit> clear(IWebElement element) =>
             trya(element.Clear, $@"Error clearing element: {prettyPrint(element)}");
-
-        /// <summary>
-        /// Wait for an element to be rendered and clickable, fail if exceeds default timeout
-        /// </summary>
-        public static Isotope<Unit> waitUntilClickable(IWebElement element) =>
-            from w in defaultWait
-            from _ in waitUntilClickable(element, w)
-            select unit;
-
-        public static Isotope<Unit> waitUntilClickable(IWebElement el, TimeSpan timeout) =>
-            from _ in Isotope.waitUntil(
-                from _1a in info($"Checking clickability " + prettyPrint(el))
-                from d in displayed(el)
-                from e in enabled(el)
-                from o in obscured(el)
-                from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
-                select d && e && (!o),
-                identity, wait: timeout)
-            select unit;
         
         public static string prettyPrint(IWebElement x)
         {
