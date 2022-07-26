@@ -1380,8 +1380,15 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
             from _1 in info($"Waiting until clickable: {selector}")
-            from el in mute(stopwatch((selector.WaitUntilExistsFor(wait: timeout).ToIsotopeHead())))
-            from _2 in IsotopeInternal.waitUntilClickable(el.Result, timeout - el.Time)
+            from _ in Isotope.waitUntil(
+                from el in selector.ToIsotopeHead()
+                from _1a in info($"Checking clickability " + prettyPrint(el))
+                from d in IsotopeInternal.displayed(el)
+                from e in IsotopeInternal.enabled(el)
+                from o in IsotopeInternal.obscured(el)
+                from _2a in info($"Displayed: {d}, Enabled: {e}, Obscured: {o}")
+                select d && e && (!o),
+                identity, wait: timeout)
             select unit;
         
         /// <summary>
