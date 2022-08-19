@@ -829,10 +829,16 @@ namespace Isotope80
                     .Bind(IsotopeInternal.clear);
 
         /// <summary>
-        /// Simulates keyboard by sending `keys` and overwriting current content 
+        /// Simulates keyboard by sending `keys` and overwriting current content
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <param name="keys">String of characters that are typed</param>
+        /// <remarks>
+        /// Series of actions where element is clicked, pressed keys CTRL+A, Backspace then typed in new keys.
+        /// It is an alternative to clear (without triggering event (change, blur or focus)) and sendKeys
+        /// 
+        /// https://stackoverflow.com/questions/19833728/webelement-clear-fires-javascript-change-event-alternatives
+        /// </remarks>
         public static Isotope<Unit> overwrite(Select selector, string keys) =>
             selector.ToIsotopeHead()
                     .Bind(el => IsotopeInternal.overwrite(el, keys));

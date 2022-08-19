@@ -147,10 +147,9 @@ namespace Isotope80
             from dvr in webDriver
             let actions = new Actions(dvr)
             from _1 in trya(() => actions.Click(element)
-                                         .SendKeys(Keys.End)
-                                         .KeyDown(Keys.Shift)
-                                         .SendKeys(Keys.Home)
-                                         .KeyUp(Keys.Shift)
+                                         .KeyDown(Keys.Control)
+                                         .SendKeys("a")
+                                         .KeyUp(Keys.Control)
                                          .SendKeys(Keys.Backspace)
                                          .SendKeys(keys)
                                          .Perform(), $@"Error overwriting element: {prettyPrint(element)}")
