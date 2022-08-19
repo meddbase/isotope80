@@ -829,6 +829,15 @@ namespace Isotope80
                     .Bind(IsotopeInternal.clear);
 
         /// <summary>
+        /// Simulates keyboard by sending `keys` and overwriting current content 
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="keys">String of characters that are typed</param>
+        public static Isotope<Unit> overwrite(Select selector, string keys) =>
+            selector.ToIsotopeHead()
+                    .Bind(el => IsotopeInternal.overwrite(el, keys));
+        
+        /// <summary>
         /// ONLY USE AS A LAST RESORT
         /// Pauses the processing for an interval to brute force waiting for actions to complete
         /// </summary>

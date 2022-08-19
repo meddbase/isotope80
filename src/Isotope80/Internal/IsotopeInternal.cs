@@ -12,6 +12,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Edge;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
+using OpenQA.Selenium.Interactions;
 using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 
@@ -135,6 +136,25 @@ namespace Isotope80
         /// <returns>Unit</returns>
         public static Isotope<Unit> clear(IWebElement element) =>
             trya(element.Clear, $@"Error clearing element: {prettyPrint(element)}");
+        
+        /// <summary>
+        /// Overwrites the content of an element
+        /// </summary>
+        /// <param name="element">Web Driver Element</param>
+        /// <param name="keys">String of characters that are typed</param>
+        /// <returns>Unit</returns>
+        public static Isotope<Unit> overwrite(IWebElement element, string keys) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.Click(element)
+                                         .SendKeys(Keys.End)
+                                         .KeyDown(Keys.Shift)
+                                         .SendKeys(Keys.Home)
+                                         .KeyUp(Keys.Shift)
+                                         .SendKeys(Keys.Backspace)
+                                         .SendKeys(keys)
+                                         .Perform(), $@"Error overwriting element: {prettyPrint(element)}")
+            select unit;
         
         public static string prettyPrint(IWebElement x)
         {
