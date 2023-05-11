@@ -35,21 +35,21 @@ namespace Samples.UnitTests
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                WaitThenClick(By.CssSelector("#menu-item-39 > a")));
+                WaitThenClick(By.XPath("//li[@id = 'menu-item-39']/a")));
 
-        public static Isotope<Unit> ClickCareersMenu =>
-            context("Click Careers menu",
-                WaitThenClick(By.CssSelector("#menu-item-29 > a")));
+        public static Isotope<Unit> ClickJobsMenu =>
+            context("Click Jobs menu",
+                WaitThenClick(By.XPath("//li[@id = 'menu-item-29']/a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in find(xPath(@"//section[@class=""careers""]//div[h2[text() = ""Current Vacancies""]]/div[@class=""item""]/a") + whenAtLeastOne)
+            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]/p/a") + whenAtLeastOne)
             let title = links.Map(x => x.Text)
             select title;
 
         public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
             from _2 in ClickMoreMenu
-            from _3 in ClickCareersMenu
+            from _3 in ClickJobsMenu
             select unit;
 
         [Fact]
