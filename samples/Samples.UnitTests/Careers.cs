@@ -49,7 +49,8 @@ namespace Samples.UnitTests
         public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
             from _2 in ClickMoreMenu
-            from _3 in ClickJobsMenu
+            from _3 in ClickMoreMenu // second click necessary as the first closes the menu opened by focus
+            from _4 in ClickJobsMenu
             select unit;
 
         [Fact]
