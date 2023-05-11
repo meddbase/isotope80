@@ -8,7 +8,6 @@ namespace Isotope80
     /// <summary>
     /// Common settings environment that is threaded through every Isotope computation
     /// </summary>
-    [With]
     public partial class IsotopeSettings
     {
         /// <summary>
