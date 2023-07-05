@@ -932,6 +932,9 @@ namespace Isotope80
         static string showContext(Stck<string> ctx) =>
             String.Join(" → ", ctx.Rev());
 
+        static string showMessageAndContext(string message, Stck<string> ctx) =>
+            $"{message}{(ctx.IsEmpty ? "" : $" ({showContext(ctx)})")}";
+
         /// <summary>
         /// Failure
         /// </summary>
@@ -969,9 +972,9 @@ namespace Isotope80
         public static Isotope<A> fail<A>(Error err) =>
             from s in get
             from _ in error(err.ToString())
-            from r in Isotope<A>.Fail(Error.New($"{err.Message} ({showContext(s.Context)})", err.Exception.IsSome ? (Exception)err : null))
+            from r in Isotope<A>.Fail(Error.New(showMessageAndContext(err.Message, s.Context), err.Exception.IsSome ? (Exception) err : null))
             select r;
-        
+
         /// <summary>
         /// Failure - creates an Isotope monad that always fails
         /// </summary>
@@ -979,7 +982,7 @@ namespace Isotope80
         public static Isotope<A> fail<A>(string message) =>
             from s in get
             from _ in error(message)
-            from r in Isotope<A>.Fail(Error.New($"{message} ({showContext(s.Context)})"))
+            from r in Isotope<A>.Fail(Error.New(showMessageAndContext(message, s.Context)))
             select r;
 
         /// <summary>
@@ -989,7 +992,7 @@ namespace Isotope80
         public static Isotope<A> fail<A>(Exception ex) =>
             from s in get
             from _ in error(ex.Message)
-            from r in Isotope<A>.Fail(Error.New($"{ex.Message} ({showContext(s.Context)})", ex))
+            from r in Isotope<A>.Fail(Error.New(showMessageAndContext(ex.Message, s.Context), ex))
             select r;
 
         /// <summary>

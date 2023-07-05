@@ -198,7 +198,8 @@ namespace Isotope80
             select !element.Equals(top);
 
         /// <summary>
-        /// Repeatedly runs an Isotope function and checks whether the condition is met 
+        /// Repeatedly runs an Isotope function and checks whether the condition is met
+        /// Collects first and last error message if fails
         /// </summary>        
         public static Isotope<A> waitUntil<A>(
             Isotope<A> iso,
@@ -207,23 +208,33 @@ namespace Isotope80
             TimeSpan wait,
             DateTime started)
         {
+            const string ConditionFailed = "Condition failed";
             var cond = (from x in iso
                         from _ in condition(x)
                                       ? pure(unit)
-                                      : fail("Condition failed")
-                        select (CondPassed: true, Result: x)) |
-                       (from _ in pause(interval)
-                        select (CondPassed: false, Result: default(A)));
-            
+                                      : fail(ConditionFailed)
+                        select (CondPassed: true, Result: x, Errors: Seq<Error>())) |
+                       (errs => from _1 in pause(interval)
+                                let realErrs = errs.Where(e => e.Message != ConditionFailed)
+                                select (CondPassed: false, Result: default(A), Errors: realErrs));
+
             return new Isotope<A>(s =>
             {
-                var l = cond.Invoke(s);
+                Seq<Error> first = default;
+                Seq<Error> last  = default;
+                var        l     = cond.Invoke(s);
+
                 while (!l.Value.CondPassed)
                 {
+                    first = first.IsEmpty ? l.Value.Errors : first;
+                    last  = l.Value.Errors;
                     l = DateTime.UtcNow - started >= wait
-                            ? new IsotopeState<(bool CondPassed, A Result)>(
-                                (true, default(A)),
-                                s.With(Error: Seq1(fail("Timed out"))))
+                            ? new IsotopeState<(bool CondPassed, A Result, Seq<Error> Errors)>(
+                                (true, default(A), default),
+                                s.With(Error: s.Error
+                                               .Concat(first)
+                                               .Concat(last)
+                                               .Add(fail("Timed out"))))
                             : cond.Invoke(s);
                 }
 

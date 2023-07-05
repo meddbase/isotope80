@@ -76,5 +76,44 @@ namespace Samples.UnitTests
 
             Assert.True(state.Error.Head.Message == "element not found (Chrome → Start Page → Patient tile)");
         }
+        
+        [Fact]
+        public void TestPipelineError()
+        {
+            var errMsg = "This is error messsage";
+            var actual = "";
+            var stgs   = IsotopeSettings.Create();
+
+            var iso = fail<Unit>(errMsg) |
+                      (errs => from _1 in pure(unit)
+                               let _2 = actual = errs.Head.Message
+                               select unit);
+                                
+            (var state, var value) = iso.Run(stgs);
+
+            Assert.Equal(errMsg, actual);
+        }
+
+        [Fact]
+        public void TestWaitUntilError()
+        {
+            var index    = 0;
+            var expected = Seq("Fail 1", "Fail 4", "Timed out");
+
+            var testIso = from _1 in pure(unit)
+                          let _2 = ++index
+                          from _3 in fail<Unit>($"Fail {index}")
+                          select unit;
+
+            var stgs = IsotopeSettings.Create();
+
+            var iso = waitUntil(testIso, _ => true,
+                                interval: TimeSpan.FromMilliseconds(300),
+                                wait: TimeSpan.FromMilliseconds(1050));
+
+            (var state, var value) = iso.Run(stgs);
+
+            Assert.Equal(expected.ToString(), state.Error.ToString());
+        }
     }
 }

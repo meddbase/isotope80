@@ -66,13 +66,20 @@ namespace Isotope80
         /// <summary>
         /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
         /// </summary>
-        public static Isotope<A> operator |(Isotope<A> lhs, Isotope<A> rhs) => 
+        public static Isotope<A> operator |(Isotope<A> lhs, Isotope<A> rhs) =>
+            lhs | (_ => rhs);
+        
+        /// <summary>
+        /// Or operator - evaluates the left hand side, if it fails, it ignores the error and evaluates the right hand side
+        /// Allows to inspect errors of left hand side.
+        /// </summary>
+        public static Isotope<A> operator |(Isotope<A> lhs, Func<Seq<Error>, Isotope<A>> rhs) => 
             new Isotope<A>(s =>
             {
                 var l = lhs.Invoke(s);
                 var r = l.IsFaulted
-                           ? rhs.Invoke(s)
-                           : l;
+                            ? rhs(l.State.Error).Invoke(s)
+                            : l;
 
                 return r.IsFaulted
                            ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
