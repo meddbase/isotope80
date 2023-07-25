@@ -42,7 +42,7 @@ namespace Samples.UnitTests
                 WaitThenClick(By.XPath("//li[@id = 'menu-item-29']/a")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]/p/a") + whenAtLeastOne)
+            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]//li/div/a") + whenAtLeastOne)
             let title = links.Map(x => x.Text)
             select title;
 
