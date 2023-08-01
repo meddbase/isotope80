@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,10 @@ using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
 using OpenQA.Selenium.Safari;
 using OpenQA.Selenium.Remote;
+using WebDriverManager;
+using WebDriverManager.DriverConfigs;
+using WebDriverManager.DriverConfigs.Impl;
+using WebDriverManager.Helpers;
 using static LanguageExt.Prelude;
 using static Isotope80.IsotopeInternal;
 
@@ -418,122 +423,203 @@ namespace Isotope80
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
-        public static Isotope<A> withChromeDriver<A>(Isotope<A> ma) =>
-            context("Chrome", withWebDriver(new ChromeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<A> withChromeDriver<A>(Isotope<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Chrome, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
-        public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma) =>
-            context("Edge", withWebDriver(new EdgeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Edge, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
-        public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma) =>
-            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Firefox, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
-        public static Isotope<A> withInternetExplorerDriver<A>(Isotope<A> ma) =>
-            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<A> withInternetExplorerDriver<A>(Isotope<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.InternetExplorer, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static Isotope<A> withSafariDriver<A>(Isotope<A> ma) =>
-            context("Safari", withWebDriver(new SafariDriver(), ma));
+            withWebDriver(ma, WebDriverSelect.Safari);
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
-        public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma) =>
-            context("Chrome", withWebDriver(new ChromeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Chrome, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
-        public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma) =>
-            context("Edge", withWebDriver(new EdgeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Edge, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
-        public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma) =>
-            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Firefox, latestVersion);
         
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
-        public static Isotope<Env, A> withInternetExplorerDriver<Env, A>(Isotope<Env, A> ma) =>
-            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static Isotope<Env, A> withInternetExplorerDriver<Env, A>(Isotope<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.InternetExplorer, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static Isotope<Env, A> withSafariDriver<Env, A>(Isotope<Env, A> ma) =>
-            context("Safari", withWebDriver(new SafariDriver(), ma));
+            withWebDriver(ma, WebDriverSelect.Safari);
 
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
-        public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma) =>
-            context("Chrome", withWebDriver(new ChromeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Chrome, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
-        public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma) =>
-            context("Edge", withWebDriver(new EdgeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Edge, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
-        public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma) =>
-            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Firefox, latestVersion);
                 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
-        public static IsotopeAsync<A> withInternetExplorerDriver<A>(IsotopeAsync<A> ma) =>
-            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<A> withInternetExplorerDriver<A>(IsotopeAsync<A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.InternetExplorer, latestVersion);
         
         /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static IsotopeAsync<A> withSafariDriver<A>(IsotopeAsync<A> ma) =>
-            context("Safari", withWebDriver(new SafariDriver(), ma));
-        
+            withWebDriver(ma, WebDriverSelect.Safari);
+
         /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
-        public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            context("Chrome", withWebDriver(new ChromeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Chrome, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
-        public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            context("Edge", withWebDriver(new EdgeDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Edge, latestVersion);
 
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
-        public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            context("Firefox", withWebDriver(new FirefoxDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.Firefox, latestVersion);
                 
         /// <summary>
         /// Run the isotope provided with Internet Explorer web-driver
         /// </summary>
-        public static IsotopeAsync<Env, A> withInternetExplorerDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            context("IE", withWebDriver(new InternetExplorerDriver(), ma));
+        /// <param name="latestVersion">Run the latest version of the driver. If not, run the machine matching version</param>
+        public static IsotopeAsync<Env, A> withInternetExplorerDriver<Env, A>(IsotopeAsync<Env, A> ma, bool latestVersion = false) =>
+            withWebDriver(ma, WebDriverSelect.InternetExplorer, latestVersion);
         
         /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withSafariDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
-            context("Safari", withWebDriver(new SafariDriver(), ma));
+            withWebDriver(ma, WebDriverSelect.Safari);
+        
+        static Isotope<A> withWebDriver<A>(Isotope<A> ma, WebDriverSelect webDriver, bool latestVersion = false) =>
+            webDriver == WebDriverSelect.Safari
+                ? context($"{webDriver} ", withWebDriver(new SafariDriver(), ma))
+                : from driver in GetDriver(webDriver, latestVersion)
+                  from iso in context($"{webDriver} ver. {driver.Version}", withWebDriver(driver.WebDriver, ma))
+                  select iso;
+
+        static Isotope<Env, A> withWebDriver<Env, A>(Isotope<Env, A> ma, WebDriverSelect webDriver, bool latestVersion = false) =>
+            webDriver == WebDriverSelect.Safari
+                ? context($"{webDriver} ", withWebDriver(new SafariDriver(), ma))
+                : from driver in GetDriver(webDriver, latestVersion)
+                  from iso in context($"{webDriver} ver. {driver.Version}", withWebDriver(driver.WebDriver, ma))
+                  select iso;
+
+        static IsotopeAsync<A> withWebDriver<A>(IsotopeAsync<A> ma, WebDriverSelect webDriver, bool latestVersion = false) =>
+            webDriver == WebDriverSelect.Safari
+                ? context($"{webDriver} ", withWebDriver(new SafariDriver(), ma))
+                : from driver in GetDriver(webDriver, latestVersion)
+                  from iso in context($"{webDriver} ver. {driver.Version}", withWebDriver(driver.WebDriver, ma))
+                  select iso;
+
+        static IsotopeAsync<Env, A> withWebDriver<Env, A>(IsotopeAsync<Env, A> ma, WebDriverSelect webDriver, bool latestVersion = false) =>
+            webDriver == WebDriverSelect.Safari
+                ? context($"{webDriver} ", withWebDriver(new SafariDriver(), ma))
+                : from driver in GetDriver(webDriver, latestVersion)
+                  from iso in context($"{webDriver} ver. {driver.Version}", withWebDriver(driver.WebDriver, ma))
+                  select iso;
+
+        static Isotope<(IWebDriver WebDriver, IDriverConfig Config, string Version)> GetDriver(WebDriverSelect webDriver, bool latestVersion = false) =>
+            from iDriverConfig in GetIDriverConfig(webDriver)
+            from dir in GetDriverDirectory(iDriverConfig, latestVersion)
+            from iWebDriver in GetIWebDriver(webDriver, dir)
+            let version = latestVersion ? iDriverConfig.GetLatestVersion() : iDriverConfig.GetMatchingBrowserVersion()
+            select (WebDriver: iWebDriver, Config: iDriverConfig, Version: version);
+
+        static Isotope<IDriverConfig> GetIDriverConfig(WebDriverSelect webDriver) =>
+            pure(webDriver switch
+                 {
+                     WebDriverSelect.Chrome           => new ChromeConfig() as IDriverConfig,
+                     WebDriverSelect.Firefox          => new FirefoxConfig() as IDriverConfig,
+                     WebDriverSelect.Edge             => new EdgeConfig() as IDriverConfig,
+                     WebDriverSelect.InternetExplorer => new InternetExplorerConfig() as IDriverConfig,
+                     _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                 });
+
+        static Isotope<string> GetDriverDirectory(IDriverConfig iDriverCofig, bool latestVersion = false) =>
+            tryf(() =>
+                 {
+                     var file = new DriverManager().SetUpDriver(iDriverCofig, latestVersion ? VersionResolveStrategy.Latest : VersionResolveStrategy.MatchingBrowser);
+                     var dir  = Path.GetDirectoryName(file);
+                     return dir;
+                 },
+                 $"Failed to get {webDriver} driver directory");
+
+        static Isotope<IWebDriver> GetIWebDriver(WebDriverSelect webDriver, string directory) =>
+            pure(webDriver switch
+                 {
+                     WebDriverSelect.Chrome           => new ChromeDriver(directory) as IWebDriver,
+                     WebDriverSelect.Firefox          => new FirefoxDriver(directory) as IWebDriver,
+                     WebDriverSelect.Edge             => new EdgeDriver(directory) as IWebDriver,
+                     WebDriverSelect.InternetExplorer => new InternetExplorerDriver(directory) as IWebDriver,
+                     WebDriverSelect.Safari           => new SafariDriver() as IWebDriver,
+                     _                                => throw new NotSupportedException($"Web-driver not supported: {webDriver}")
+                 });
         
         /// <summary>
         /// Set the window size of the browser
