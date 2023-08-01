@@ -608,7 +608,7 @@ namespace Isotope80
                      var dir  = Path.GetDirectoryName(file);
                      return dir;
                  },
-                 $"Failed to get {webDriver} driver directory");
+                 $"Failed to get {iDriverCofig.GetName()} driver directory");
 
         static Isotope<IWebDriver> GetIWebDriver(WebDriverSelect webDriver, string directory) =>
             pure(webDriver switch
