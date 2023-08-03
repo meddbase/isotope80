@@ -654,6 +654,25 @@ namespace Isotope80
             from d in webDriver
             from _ in trya(() => d.SwitchTo().NewWindow(WindowType.Window), "Failed to open new window")
             select unit;
+                
+        /// <summary>
+        /// Switch to frame
+        /// </summary>
+        /// <param name="selector">Frame selector</param>
+        /// <returns></returns>
+        public static Isotope<Unit> switchToFrame(Select selector) =>
+            from el in selector.ToIsotopeHead()
+            from d in webDriver
+            from _ in trya(() => d.SwitchTo().Frame(el), $"Failed to switch to frame with selector: {selector}")
+            select unit;
+        
+        /// <summary>
+        /// Switch to parent frame
+        /// </summary>
+        public static Isotope<Unit> switchToParentFrame =>
+            from d in webDriver
+            from _ in trya(() => d.SwitchTo().ParentFrame(), $"Failed to switch to parent frame")
+            select unit;
 
         /// <summary>
         /// Navigate to a URL
