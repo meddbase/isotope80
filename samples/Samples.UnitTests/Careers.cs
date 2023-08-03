@@ -35,16 +35,16 @@ namespace Samples.UnitTests
 
         public static Isotope<Unit> ClickMoreMenu =>
             context("Click More menu",
-                WaitThenClick(By.XPath("//li[@id = 'menu-item-39']/a")));
+                WaitThenClick(By.XPath("//li/a[text() = 'More…']")));
 
         public static Isotope<Unit> ClickJobsMenu =>
             context("Click Jobs menu",
-                WaitThenClick(By.XPath("//li[@id = 'menu-item-29']/a")));
+                WaitThenClick(By.XPath("//li/a[text() = 'Jobs']")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]/p/a") + whenAtLeastOne)
-            let title = links.Map(x => x.Text)
-            select title;
+            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]//div/a") + whenAtLeastOne)
+            let titles = links.Map(x => x.Text)
+            select titles;
 
         public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
