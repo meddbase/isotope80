@@ -7,7 +7,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <VersionPrefix>0.0.0</VersionPrefix>
-    <VersionSuffix>beta</VersionSuffix>
     <LangVersion>9.0</LangVersion>
     <RepositoryUrl>https://github.com/meddbase/isotope80</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
