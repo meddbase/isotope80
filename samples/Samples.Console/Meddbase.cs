@@ -1,6 +1,5 @@
 ﻿using Isotope80;
 using LanguageExt;
-using OpenQA.Selenium;
 using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 

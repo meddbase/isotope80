@@ -1,18 +1,9 @@
-using System.Collections.ObjectModel;
 using static LanguageExt.Prelude;
-using System.Collections.Generic;
 using static Isotope80.Isotope;
-using OpenQA.Selenium.Internal;
 using LanguageExt.TypeClasses;
-using System.Globalization;
 using OpenQA.Selenium;
-using System.Linq;
 using LanguageExt;
 using System;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Runtime.Serialization;
-using OpenQA.Selenium.Remote;
 
 namespace Isotope80
 {
