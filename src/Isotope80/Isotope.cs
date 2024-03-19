@@ -758,7 +758,7 @@ namespace Isotope80
         /// </summary>
         public static Isotope<string> getAlertText =>
             from d in webDriver
-            from t in tryf(() => d.SwitchTo().Alert().Text, $"Failed to accept alert")
+            from t in tryf(() => d.SwitchTo().Alert().Text, $"Failed to get alert text")
             select t;
         
         /// <summary>
