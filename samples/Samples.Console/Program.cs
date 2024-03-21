@@ -1,8 +1,5 @@
-﻿using OpenQA.Selenium.Chrome;
-using System;
+﻿using System;
 using Isotope80;
-using LanguageExt;
-using LanguageExt.Common;
 using static LanguageExt.Prelude;
 using static System.Console;
 using static Isotope80.Isotope;

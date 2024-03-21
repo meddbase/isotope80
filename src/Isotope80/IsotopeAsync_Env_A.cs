@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using LanguageExt;
 using LanguageExt.Common;
-using OpenQA.Selenium;
 using static LanguageExt.Prelude;
 
 namespace Isotope80

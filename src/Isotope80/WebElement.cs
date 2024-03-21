@@ -1,5 +1,4 @@
 using System.Drawing;
-using LanguageExt;
 
 namespace Isotope80
 {

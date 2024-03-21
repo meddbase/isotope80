@@ -1,7 +1,5 @@
 using System;
 using LanguageExt;
-using LanguageExt.Common;
-using OpenQA.Selenium.Chrome;
 using Xunit;
 using Xunit.Abstractions;
 using Isotope80;
