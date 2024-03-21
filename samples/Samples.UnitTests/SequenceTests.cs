@@ -1,10 +1,5 @@
-using System;
-using LanguageExt;
-using LanguageExt.Common;
-using OpenQA.Selenium.Chrome;
 using Xunit;
 using Isotope80;
-using static System.Console;
 using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 using Error = LanguageExt.Common.Error;

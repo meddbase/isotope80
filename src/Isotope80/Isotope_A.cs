@@ -1,7 +1,6 @@
 using System;
 using LanguageExt;
 using LanguageExt.Common;
-using OpenQA.Selenium;
 using static LanguageExt.Prelude;
 
 namespace Isotope80

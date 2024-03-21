@@ -1,6 +1,5 @@
 ﻿using System;
 using LanguageExt;
-using LanguageExt.Common;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using Xunit;
@@ -33,10 +32,13 @@ namespace Samples.UnitTests
             from _2 in click(selector)
             select unit;
 
-        public static Isotope<Unit> ClickMoreMenu =>
-            context("Click More menu",
-                WaitThenClick(By.XPath("//li/a[text() = 'More…']")));
-
+        public static Isotope<Unit> MoveTo(By selector) =>
+            moveToElement(selector);
+        
+        public static Isotope<Unit> MoveToMoreMenu =>
+            context("Move to More menu",
+                MoveTo(By.XPath("//li/a[text() = 'More…']")));
+        
         public static Isotope<Unit> ClickJobsMenu =>
             context("Click Jobs menu",
                 WaitThenClick(By.XPath("//li/a[text() = 'Jobs']")));
@@ -48,9 +50,8 @@ namespace Samples.UnitTests
 
         public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
-            from _2 in ClickMoreMenu
-            from _3 in ClickMoreMenu // second click necessary as the first closes the menu opened by focus
-            from _4 in ClickJobsMenu
+            from _2 in MoveToMoreMenu
+            from _3 in ClickJobsMenu
             select unit;
 
         [Fact]

@@ -2,16 +2,7 @@ using LanguageExt;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Threading;
-using System.Threading.Tasks;
 using LanguageExt.Common;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Edge;
-using OpenQA.Selenium.Firefox;
-using OpenQA.Selenium.IE;
 using OpenQA.Selenium.Interactions;
 using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
@@ -153,6 +144,40 @@ namespace Isotope80
                                          .SendKeys(Keys.Backspace)
                                          .SendKeys(keys)
                                          .Perform(), $@"Error overwriting element: {prettyPrint(element)}")
+            select unit;
+        /// <summary>
+        /// Moves the mouse to the specified element
+        /// </summary>
+        /// <param name="element">The element to which to move the mouse</param>
+        public static Isotope<Unit> moveToElement(IWebElement element) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.MoveToElement(element)
+                                         .Perform(), $"Error moving to element: {prettyPrint(element)}")
+            select unit;
+        
+        /// <summary>
+        /// Moves the mouse from the upper left corner of the current viewport by the provided offset
+        /// </summary>
+        /// <param name="offsetX">The horizontal offset to which to move the mouse</param>
+        /// <param name="offsetY">The vertical offset to which to move the mouse</param>
+        public static Isotope<Unit> moveToLocation(int offsetX, int offsetY) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.MoveToLocation(offsetX, offsetY)
+                                         .Perform(), $"Error moving to location x: {offsetX} y: {offsetY}")
+            select unit;
+        
+        /// <summary>
+        /// Moves the mouse to the specified offset of the last known mouse coordinates.
+        /// </summary>
+        /// <param name="offsetX">The horizontal offset to which to move the mouse.</param>
+        /// <param name="offsetY">The vertical offset to which to move the mouse.</param>
+        public static Isotope<Unit> moveByOffset(int offsetX, int offsetY) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.MoveByOffset(offsetX, offsetY)
+                                         .Perform(), $"Error moving to location x: {offsetX} y: {offsetY}")
             select unit;
         
         public static string prettyPrint(IWebElement x)

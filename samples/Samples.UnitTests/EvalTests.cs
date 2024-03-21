@@ -1,14 +1,8 @@
-using OpenQA.Selenium.Chrome;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using LanguageExt;
-using LanguageExt.Common;
 using Xunit;
 using Xunit.Abstractions;
 using Isotope80;
-using static LanguageExt.Prelude;
-using static System.Console;
 using static Isotope80.Isotope;
 
 namespace Samples.UnitTests
