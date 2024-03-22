@@ -794,6 +794,20 @@ namespace Isotope80
             select d.Url;
 
         /// <summary>
+        /// Gets the page source currently displayed by the browser
+        /// </summary>
+        public static Isotope<string> pageSource =>
+            from d in webDriver
+            select d.PageSource;
+        
+        /// <summary>
+        /// Gets the page title currently displayed by the browser
+        /// </summary>
+        public static Isotope<string> title =>
+            from d in webDriver
+            select d.Title;
+        
+        /// <summary>
         /// Find an HTML element
         /// </summary>
         /// <param name="selector">Element selector</param>
