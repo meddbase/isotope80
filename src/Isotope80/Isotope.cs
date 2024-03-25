@@ -419,6 +419,18 @@ namespace Isotope80
             context("Chrome", withWebDriver(new ChromeDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<A> withChromeDriver<A>(Isotope<A> ma, ChromeDriverService service) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<A> withChromeDriver<A>(Isotope<A> ma, ChromeDriverService service, ChromeOptions options) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
         public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma) =>
@@ -430,6 +442,18 @@ namespace Isotope80
         public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma, EdgeOptions options) =>
             context("Edge", withWebDriver(new EdgeDriver(options), ma));
 
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma, EdgeDriverService service) =>
+            context("Edge", withWebDriver(new EdgeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<A> withEdgeDriver<A>(Isotope<A> ma, EdgeDriverService service, EdgeOptions options) =>
+            context("Edge", withWebDriver(new EdgeDriver(service, options), ma));
+        
         /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
@@ -443,6 +467,18 @@ namespace Isotope80
             context("Firefox", withWebDriver(new FirefoxDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma, FirefoxDriverService service) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<A> withFirefoxDriver<A>(Isotope<A> ma, FirefoxDriverService service, FirefoxOptions options) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static Isotope<A> withSafariDriver<A>(Isotope<A> ma) =>
@@ -455,6 +491,18 @@ namespace Isotope80
             context("Safari", withWebDriver(new SafariDriver(options), ma));
         
         /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static Isotope<A> withSafariDriver<A>(Isotope<A> ma, SafariDriverService service) =>
+            context("Safari", withWebDriver(new SafariDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static Isotope<A> withSafariDriver<A>(Isotope<A> ma, SafariDriverService service, SafariOptions options) =>
+            context("Safari", withWebDriver(new SafariDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma) =>
@@ -465,6 +513,18 @@ namespace Isotope80
         /// </summary>
         public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma, ChromeOptions options) =>
             context("Chrome", withWebDriver(new ChromeDriver(options), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma, ChromeDriverService service) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static Isotope<Env, A> withChromeDriver<Env, A>(Isotope<Env, A> ma, ChromeDriverService service, ChromeOptions options) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service, options), ma));
 
         /// <summary>
         /// Run the isotope provided with Edge web-driver
@@ -479,6 +539,18 @@ namespace Isotope80
             context("Edge", withWebDriver(new EdgeDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma, EdgeDriverService service) =>
+            context("Edge", withWebDriver(new EdgeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static Isotope<Env, A> withEdgeDriver<Env, A>(Isotope<Env, A> ma, EdgeDriverService service, EdgeOptions options) =>
+            context("Edge", withWebDriver(new EdgeDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma) =>
@@ -490,6 +562,18 @@ namespace Isotope80
         public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma, FirefoxOptions options) =>
             context("Firefox", withWebDriver(new FirefoxDriver(options), ma));
 
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma, FirefoxDriverService service) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static Isotope<Env, A> withFirefoxDriver<Env, A>(Isotope<Env, A> ma, FirefoxDriverService service, FirefoxOptions options) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service, options), ma));
+        
         /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
@@ -503,6 +587,18 @@ namespace Isotope80
             context("Safari", withWebDriver(new SafariDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static Isotope<Env, A> withSafariDriver<Env, A>(Isotope<Env, A> ma, SafariDriverService service) =>
+            context("Safari", withWebDriver(new SafariDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static Isotope<Env, A> withSafariDriver<Env, A>(Isotope<Env, A> ma, SafariDriverService service, SafariOptions options) =>
+            context("Safari", withWebDriver(new SafariDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma) =>
@@ -514,6 +610,18 @@ namespace Isotope80
         public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma, ChromeOptions options) =>
             context("Chrome", withWebDriver(new ChromeDriver(options), ma));
 
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma, ChromeDriverService service) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withChromeDriver<A>(IsotopeAsync<A> ma, ChromeDriverService service, ChromeOptions options) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service, options), ma));
+        
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
@@ -527,6 +635,18 @@ namespace Isotope80
             context("Edge", withWebDriver(new EdgeDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma, EdgeDriverService service) =>
+            context("Edge", withWebDriver(new EdgeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withEdgeDriver<A>(IsotopeAsync<A> ma, EdgeDriverService service, EdgeOptions options) =>
+            context("Edge", withWebDriver(new EdgeDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma) =>
@@ -537,6 +657,18 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma, FirefoxOptions options) =>
             context("Firefox", withWebDriver(new FirefoxDriver(options), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma, FirefoxDriverService service) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withFirefoxDriver<A>(IsotopeAsync<A> ma, FirefoxDriverService service, FirefoxOptions options) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service, options), ma));
         
         /// <summary>
         /// Run the isotope provided with Safari web-driver
@@ -551,6 +683,18 @@ namespace Isotope80
             context("Safari", withWebDriver(new SafariDriver(options), ma));
         
         /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withSafariDriver<A>(IsotopeAsync<A> ma, SafariDriverService service) =>
+            context("Safari", withWebDriver(new SafariDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static IsotopeAsync<A> withSafariDriver<A>(IsotopeAsync<A> ma, SafariDriverService service, SafariOptions options) =>
+            context("Safari", withWebDriver(new SafariDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Chrome web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
@@ -562,6 +706,18 @@ namespace Isotope80
         public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma, ChromeOptions options) =>
             context("Chrome", withWebDriver(new ChromeDriver(options), ma));
 
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma, ChromeDriverService service) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Chrome web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromeDriver<Env, A>(IsotopeAsync<Env, A> ma, ChromeDriverService service, ChromeOptions options) =>
+            context("Chrome", withWebDriver(new ChromeDriver(service, options), ma));
+        
         /// <summary>
         /// Run the isotope provided with Edge web-driver
         /// </summary>
@@ -575,6 +731,18 @@ namespace Isotope80
             context("Edge", withWebDriver(new EdgeDriver(options), ma));
 
         /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma, EdgeDriverService service) =>
+            context("Edge", withWebDriver(new EdgeDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Edge web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withEdgeDriver<Env, A>(IsotopeAsync<Env, A> ma, EdgeDriverService service, EdgeOptions options) =>
+            context("Edge", withWebDriver(new EdgeDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Firefox web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
@@ -587,6 +755,18 @@ namespace Isotope80
             context("Firefox", withWebDriver(new FirefoxDriver(options), ma));
         
         /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma, FirefoxDriverService service) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Firefox web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefoxDriver<Env, A>(IsotopeAsync<Env, A> ma, FirefoxDriverService service, FirefoxOptions options) =>
+            context("Firefox", withWebDriver(new FirefoxDriver(service, options), ma));
+        
+        /// <summary>
         /// Run the isotope provided with Safari web-driver
         /// </summary>
         public static IsotopeAsync<Env, A> withSafariDriver<Env, A>(IsotopeAsync<Env, A> ma) =>
@@ -597,6 +777,18 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<Env, A> withSafariDriver<Env, A>(IsotopeAsync<Env, A> ma, SafariOptions options) =>
             context("Safari", withWebDriver(new SafariDriver(options), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withSafariDriver<Env, A>(IsotopeAsync<Env, A> ma, SafariDriverService service) =>
+            context("Safari", withWebDriver(new SafariDriver(service), ma));
+        
+        /// <summary>
+        /// Run the isotope provided with Safari web-driver
+        /// </summary>
+        public static IsotopeAsync<Env, A> withSafariDriver<Env, A>(IsotopeAsync<Env, A> ma, SafariDriverService service, SafariOptions options) =>
+            context("Safari", withWebDriver(new SafariDriver(service, options), ma));
         
         /// <summary>
         /// Set the window size of the browser
