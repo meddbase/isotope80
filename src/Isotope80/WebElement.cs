@@ -16,6 +16,7 @@ namespace Isotope80
     /// <param name="Location">Gets a <see cref="T:System.Drawing.Point" /> object containing the coordinates of the upper-left corner of this element relative to the upper-left corner of the page.</param>
     /// <param name="Size">Gets a <see cref="P:OpenQA.Selenium.IWebElement.Size" /> object containing the height and width of this element.</param>
     /// <param name="Displayed">Indicates whether or not this element is displayed.</param>
+    /// <param name="Value">Element value attribute</param>
     public record WebElement(
         Select Selector,
         int SelectionIndex,
@@ -26,7 +27,8 @@ namespace Isotope80
         bool Selected,
         Point Location,
         Size Size,
-        bool Displayed)
+        bool Displayed,
+        string Value)
     {
         public static Select operator +(WebElement element, Select @select) =>
             element.Selector + @select;
