@@ -395,8 +395,8 @@ namespace Isotope80
         /// <returns></returns>
         public Isotope<Seq<WebElement>> ToSeq() =>
             from es in ToIsotope()
-            from ie in es.Map(e => iso(() => (e.GetAttribute("id"), e)) | pure(("", e))).Sequence()
-            select ie.Map<(string Id, IWebElement El), WebElement>((ix, e) => 
+            from ie in es.Map(e => iso(() => (e.GetAttribute("id"), e.GetAttribute("value"), e)) | pure(("", "", e))).Sequence()
+            select ie.Map<(string Id, string Value, IWebElement El), WebElement>((ix, e) => 
                        new WebElement(
                            this, 
                            ix,
@@ -407,7 +407,8 @@ namespace Isotope80
                            e.El.Selected, 
                            e.El.Location, 
                            e.El.Size, 
-                           e.El.Displayed))
+                           e.El.Displayed,
+                           e.Value))
                    .ToSeq()
                    .Strict();
         
