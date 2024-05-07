@@ -136,9 +136,9 @@ namespace Isotope80
         /// <returns>Unit</returns>
         public static Isotope<Unit> overwrite(IWebElement element, string keys) =>
             from dvr in webDriver
+            from _1 in click(element)
             let actions = new Actions(dvr)
-            from _1 in trya(() => actions.Click(element)
-                                         .KeyDown(Keys.Control)
+            from _2 in trya(() => actions.KeyDown(Keys.Control)
                                          .SendKeys("a")
                                          .KeyUp(Keys.Control)
                                          .SendKeys(Keys.Backspace)
@@ -177,7 +177,7 @@ namespace Isotope80
             from dvr in webDriver
             let actions = new Actions(dvr)
             from _1 in trya(() => actions.MoveByOffset(offsetX, offsetY)
-                                         .Perform(), $"Error moving to location x: {offsetX} y: {offsetY}")
+                                         .Perform(), $"Error moving from last mouse coordinates by offset x: {offsetX} y: {offsetY}")
             select unit;
         
         public static string prettyPrint(IWebElement x)
