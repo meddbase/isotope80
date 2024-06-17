@@ -901,6 +901,20 @@ namespace Isotope80
                            ? switchTabs(currentTab - 1) // focus has been lost when tab closed
                            : pure(unit)
             select unit;
+
+        /// <summary>
+        /// Get count of currently opened tabs
+        /// </summary>
+        public static Isotope<int> getOpenedTabsCount =>
+            from d in webDriver
+            select d.WindowHandles.Count;
+        
+        /// <summary>
+        /// Get currently opened tab position (zero-based)
+        /// </summary>
+        public static Isotope<int> getCurrentTabNumber =>
+            from d in webDriver
+            select d.WindowHandles.IndexOf(d.CurrentWindowHandle);
         
         /// <summary>
         /// Opens and switches to new window
