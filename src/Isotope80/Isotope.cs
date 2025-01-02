@@ -847,6 +847,14 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Get browser logs
+        /// </summary>
+        public static Isotope<Seq<LogEntry>> getBrowserLogs =>
+            from d in webDriver
+            from logs in tryf(() => d.Manage().Logs.GetLog(OpenQA.Selenium.LogType.Browser).ToSeq(), "Failed to get browser logs")
+            select logs;
+
+        /// <summary>
         /// Navigate back using the browser's back button
         /// </summary>
         public static Isotope<Unit> back =>
