@@ -36,22 +36,22 @@ namespace Samples.UnitTests
             moveToElement(selector);
         
         public static Isotope<Unit> MoveToMoreMenu =>
-            context("Move to More menu",
-                MoveTo(By.XPath("//li/a[text() = 'More…']")));
+            context("Move to Why Meddbase",
+                MoveTo(By.XPath("//li/div/span[text() = 'Why Meddbase']")));
         
-        public static Isotope<Unit> ClickJobsMenu =>
-            context("Click Jobs menu",
-                WaitThenClick(By.XPath("//li/a[text() = 'Jobs']")));
+        public static Isotope<Unit> ClickCareers =>
+            context("Click Careers",
+                WaitThenClick(By.XPath("//div[@class = 'content']/p/a/span[text() = 'Careers']")));
 
         public static Isotope<Seq<string>> SelectVacancyTitles =>
-            from links in find(xPath("//div[h4[strong[text() = 'Current Vacancies']]]//div/a") + whenAtLeastOne)
+            from links in find(xPath("//div[h6[text() = 'Current Vacancies']]//div/a"))
             let titles = links.Map(x => x.Text)
             select titles;
 
         public static Isotope<Unit> GoToPageAndOpenCareers =>
             from _1 in GoToDesktopSite
             from _2 in MoveToMoreMenu
-            from _3 in ClickJobsMenu
+            from _3 in ClickCareers
             select unit;
 
         [Fact]
