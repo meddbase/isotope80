@@ -17,6 +17,7 @@ namespace Isotope80
     /// <param name="Size">Gets a <see cref="P:OpenQA.Selenium.IWebElement.Size" /> object containing the height and width of this element.</param>
     /// <param name="Displayed">Indicates whether or not this element is displayed.</param>
     /// <param name="Value">Element value attribute</param>
+    /// <param name="Title">Element title attribute</param>
     public record WebElement(
         Select Selector,
         int SelectionIndex,
@@ -28,7 +29,8 @@ namespace Isotope80
         Point Location,
         Size Size,
         bool Displayed,
-        string Value)
+        string Value,
+        string Title)
     {
         public static Select operator +(WebElement element, Select @select) =>
             element.Selector + @select;
