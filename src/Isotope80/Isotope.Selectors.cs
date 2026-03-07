@@ -87,6 +87,21 @@ namespace Isotope80
             Select.waitUntilExistsFor(interval, wait);
 
         /// <summary>
+        /// Wait until no elements match the selector query
+        /// </summary>
+        /// <returns>Select</returns>
+        public static readonly Select waitUntilNotExists = Select.waitUntilNotExists;
+
+        /// <summary>
+        /// Wait until no elements match the selector query
+        /// </summary>
+        /// <param name="interval">Optional interval between checks</param>
+        /// <param name="wait">Optional total wait time</param>
+        /// <returns>Select</returns>
+        public static Select waitUntilNotExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+            Select.waitUntilNotExistsFor(interval, wait);
+
+        /// <summary>
         /// Select an item at a specific index
         /// </summary>
         /// <param name="ix">Index to select</param>

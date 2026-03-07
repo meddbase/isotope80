@@ -1154,6 +1154,17 @@ namespace Isotope80
                     .Bind(el => IsotopeInternal.attribute(el, att));
 
         /// <summary>
+        /// Looks for a particular attribute on an existing element, returning None if not found
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="att">Attribute to look up</param>
+        /// <returns>Some(value) if the attribute exists, None otherwise</returns>
+        public static Isotope<Option<string>> attributeOrNone(Select selector, string att) =>
+            from el in selector.ToIsotopeHead()
+            from rs in tryf(() => el.GetAttribute(att), $"Error reading attribute {att} from element: {prettyPrint(el)}")
+            select Optional(rs);
+
+        /// <summary>
         /// Simulates keyboard by sending `keys` 
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -1228,6 +1239,14 @@ namespace Isotope80
         }
 
         /// <summary>
+        /// ONLY USE AS A LAST RESORT
+        /// Pauses the processing for an interval to brute force waiting for actions to complete
+        /// </summary>
+        /// <param name="milliseconds">Number of milliseconds to pause</param>
+        public static Isotope<Unit> pause(int milliseconds) =>
+            pause(TimeSpan.FromMilliseconds(milliseconds));
+
+        /// <summary>
         /// Gets the text inside an element
         /// </summary>
         /// <param name="selector">Element containing txt</param>
@@ -1235,6 +1254,16 @@ namespace Isotope80
             from el in selector.ToIsotopeHead()
             from rs in tryf(() => el.Text, $@"Error getting text from element: {prettyPrint(el)}")
             select rs;
+
+        /// <summary>
+        /// Gets the visible text of all elements matching the selector
+        /// </summary>
+        /// <param name="selector">Element selector</param>
+        /// <returns>Text of all matching elements. Returns an empty Seq if no elements match.</returns>
+        public static Isotope<Seq<string>> texts(Select selector) =>
+            from es in selector.ToIsotope()
+            from ts in es.Map(el => tryf(() => el.Text, $@"Error getting text from element: {prettyPrint(el)}")).Sequence()
+            select ts;
 
         /// <summary>
         /// Gets the value attribute of an element
@@ -2238,6 +2267,14 @@ namespace Isotope80
         public static Isotope<bool> exists(Select selector) =>
             from es in selector.ToIsotope()
             select !es.IsEmpty;
+
+        /// <summary>
+        /// Returns the count of elements matching the selector
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static Isotope<int> elementCount(Select selector) =>
+            from es in selector.ToIsotope()
+            select es.Count;
 
         /// <summary>
         /// Checks whether the centre point of an element is the foremost element at that position on the page.

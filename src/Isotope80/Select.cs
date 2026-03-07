@@ -130,7 +130,28 @@ namespace Isotope80
                       "waitUntilElementExists",
                       interval,
                       wait);
-        
+
+        /// <summary>
+        /// Wait until no elements match the selector (or all matching elements are not displayed)
+        /// </summary>
+        /// <returns>Select</returns>
+        public static readonly Select waitUntilNotExists =
+            waitUntilNotExistsFor();
+
+        /// <summary>
+        /// Wait until no elements match the selector (or all matching elements are not displayed)
+        /// </summary>
+        /// <param name="interval">Optional interval between checks</param>
+        /// <param name="wait">Optional total wait time</param>
+        /// <returns>Select</returns>
+        public static Select waitUntilNotExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+            waitUntil(es => es.IsEmpty
+                                ? pure(unit)
+                                : fail("Elements still present"),
+                      "waitUntilElementNotExists",
+                      interval,
+                      wait);
+
         /// <summary>
         /// Select must have at least one element
         /// </summary>
@@ -285,6 +306,22 @@ namespace Isotope80
         /// <returns>Select</returns>
         public Select WaitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             this + waitUntilExistsFor(interval, wait);
+
+        /// <summary>
+        /// Wait until no elements match the selector (or all matching elements are not displayed)
+        /// </summary>
+        /// <returns>Select</returns>
+        public Select WaitUntilNotExists =>
+            this + waitUntilNotExistsFor();
+
+        /// <summary>
+        /// Wait until no elements match the selector (or all matching elements are not displayed)
+        /// </summary>
+        /// <param name="interval">Optional interval between checks</param>
+        /// <param name="wait">Optional total wait time</param>
+        /// <returns>Select</returns>
+        public Select WaitUntilNotExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
+            this + waitUntilNotExistsFor(interval, wait);
 
         /// <summary>
         /// Maps the select to a runnable Isotope computation that returns the first item.  If there's 0 or more than 1
