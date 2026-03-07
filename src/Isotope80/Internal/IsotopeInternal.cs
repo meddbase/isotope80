@@ -155,6 +155,40 @@ namespace Isotope80
             from _1 in trya(() => actions.MoveToElement(element)
                                          .Perform(), $"Error moving to element: {prettyPrint(element)}")
             select unit;
+
+        /// <summary>
+        /// Double-clicks on the specified element
+        /// </summary>
+        /// <param name="element">Element to double-click</param>
+        public static Isotope<Unit> doubleClick(IWebElement element) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.DoubleClick(element)
+                                         .Perform(), $"Error double-clicking element: {prettyPrint(element)}")
+            select unit;
+
+        /// <summary>
+        /// Right-clicks (context menu) on the specified element
+        /// </summary>
+        /// <param name="element">Element to right-click</param>
+        public static Isotope<Unit> rightClick(IWebElement element) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.ContextClick(element)
+                                         .Perform(), $"Error right-clicking element: {prettyPrint(element)}")
+            select unit;
+
+        /// <summary>
+        /// Drags the source element and drops it onto the target element
+        /// </summary>
+        /// <param name="source">Element to drag</param>
+        /// <param name="target">Element to drop onto</param>
+        public static Isotope<Unit> dragTo(IWebElement source, IWebElement target) =>
+            from dvr in webDriver
+            let actions = new Actions(dvr)
+            from _1 in trya(() => actions.DragAndDrop(source, target)
+                                         .Perform(), $"Error dragging {prettyPrint(source)} to {prettyPrint(target)}")
+            select unit;
         
         /// <summary>
         /// Moves the mouse from the upper left corner of the current viewport by the provided offset

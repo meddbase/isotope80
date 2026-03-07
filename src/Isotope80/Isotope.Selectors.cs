@@ -102,6 +102,11 @@ namespace Isotope80
             Select.waitUntilNotExistsFor(interval, wait);
 
         /// <summary>
+        /// Selects the currently focused element
+        /// </summary>
+        public static readonly Select active = Select.active;
+
+        /// <summary>
         /// Select an item at a specific index
         /// </summary>
         /// <param name="ix">Index to select</param>
