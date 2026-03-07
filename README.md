@@ -1,75 +1,76 @@
 *<sup>80</sup>Se : the most abundant stable isotope of Selenium*
 
 # Isotope80
-Isotope80 (Isotope hereafter) is a functional C# wrapper around Selenium and WebDriver for browser automation. It aims to provide a frictionless way to write declarative, composable statements that can then be run using a WebDriver instance. It builds on the functional C# base class library provided by [Language-Ext](https://github.com/louthy/language-ext).
+
+Isotope80 (Isotope hereafter) is a functional C# wrapper around Selenium and WebDriver for browser automation. It provides a declarative, composable way to write browser automation scripts that handle logging, error management, and driver lifecycle behind the scenes. It builds on the functional C# base class library provided by [Language-Ext](https://github.com/louthy/language-ext).
 
 ## Motivation
-Using Selenium in C# often seems trivial at first glance. The Nuget packages can easily be installed and then you can quickly start to automate a browser instance. Here's a quick example of logging into Twitter:
+
+Using Selenium in C# often seems trivial at first. Install the NuGet packages and you can quickly start automating a browser:
 
 ```cs
-//Create the driver for Chrome
 var driver = new ChromeDriver();
 
-//Navigate to the Twitter's Login page
-driver.Navigate().GoToUrl("https://twitter.com/login");
+driver.Navigate().GoToUrl("https://the-internet.herokuapp.com/login");
 
-//Find the Email box and type the address
-var userName = driver.FindElement(By.ClassName("js-username-field"));
-userName.SendKeys("Your Email Address");
+var userName = driver.FindElement(By.Id("username"));
+userName.SendKeys("tomsmith");
 
-//Find the Password box and type it
-var pass = driver.FindElement(By.ClassName("js-password-field"));
-pass.SendKeys("Your Password");
+var pass = driver.FindElement(By.Id("password"));
+pass.SendKeys("SuperSecretPassword!");
 
-//Find Login Button and press Enter on it
-var loginButton = driver.FindElement(By.CssSelector("button.submit"));
-loginButton.SendKeys(Keys.Enter);
+var loginButton = driver.FindElement(By.CssSelector("button[type='submit']"));
+loginButton.Click();
 ```
 
-When the complexity and volume of automation code increases you start to encounter issues. As you break parts of your code into reusable steps you start to need to pass the WebDriver instance around (or worse reference it globally), to get reproducible steps you may need to add logging code, you might need to pass config around and you start to need error handling strategies. Null reference exceptions are common when you attempt to access elements within a page that do not exist and if not handled then you can leave browsers running beyond the lifetime of your program. None of the problems are insurmountable but each one makes the originally trivial and readable code more complex and much harder to maintain.
+As the complexity and volume of automation code increases you start to encounter issues. You need to pass the `IWebDriver` instance around (or worse, reference it globally). To get reproducible steps you need logging. You need to pass config around. You need error handling strategies. `NullReferenceException` and `NoSuchElementException` are common when elements don't exist, and unhandled exceptions can leave browser processes running. None of these problems are insurmountable, but each one makes originally readable code harder to maintain.
 
 ## DSL
-Isotope provides a domain specific language which addresses the problems previously outlined and results in composable code that wraps up the complexity of logging, error handling, driver instance management and passing config behind the scenes allowing you to focus on automation code. The equivalent of the Twitter example in Isotope would be:
+
+Isotope provides a domain specific language that addresses these problems. The equivalent of the login example above:
 
 ```cs
-var logic =  from _1 in nav("https://twitter.com/login")
-             from _2 in sendKeys(className("js-username-field"), "Your Email Address")
-             from _3 in sendKeys(className("js-password-field"), "Your Password")
-             from _4 in sendKeys(cssSelector("button.submit"), Keys.Enter)
-             select unit;
-             
-var result = chromeDriver(logic).Run();
+var login = from _1 in nav("https://the-internet.herokuapp.com/login")
+            from _2 in sendKeys(css("#username"), "tomsmith")
+            from _3 in sendKeys(css("#password"), "SuperSecretPassword!")
+            from _4 in click(css("button[type='submit']"))
+            select unit;
+
+var result = withChromeDriver(login).RunAndThrowOnError();
 ```
-## Using Linq
-Isotope allows statements to be composed together, you can do this using the Bind function, for example:
+
+Logging, error handling, and driver lifecycle are handled automatically. The `Isotope<A>` type is a monad — each step composes with the next, and if any step fails the chain short-circuits with a descriptive error rather than throwing an exception.
+
+## Using LINQ
+
+Isotope allows statements to be composed together using the `Bind` function:
 
 ```cs
-var logic =  nav("https://twitter.com/login")
-              .Bind(x => sendKeys(className("js-username-field"), "Your Email Address"));
+var logic = nav("https://the-internet.herokuapp.com/login")
+              .Bind(_ => sendKeys(css("#username"), "tomsmith"));
 ```
 
-However the recommended method is to use C#'s LINQ syntax:
+However the recommended approach is to use C#'s LINQ syntax:
 
 ```cs
-var logic =  from _1 in nav("https://twitter.com/login")
-             from _2 in sendKeys(className("js-username-field"), "Your Email Address")
-             select unit;
+var logic = from _1 in nav("https://the-internet.herokuapp.com/login")
+            from _2 in sendKeys(css("#username"), "tomsmith")
+            select unit;
 ```
 
-Both of these examples perform the same action however the LINQ syntax allows for more flexibility and less clutter.
+Both perform the same action but LINQ is more readable when composing many steps. The `_1`, `_2` convention is used for values we don't need — both `nav` and `sendKeys` return `Unit`.
 
-The Language-Ext wiki contains an article detailing why this works: [What is LINQ Really?](https://github.com/louthy/language-ext/wiki/Thinking-Functionally:-What-is-LINQ-really%3F).
-
-In the above example you can see the use of `_1` and `_2` this is a convention we use for values that we are going to ignore, in this instance both `nav(...)` and `sendKeys(...)` return `Unit` so there is no need to use them.
+The Language-Ext wiki explains why this works: [What is LINQ Really?](https://github.com/louthy/language-ext/wiki/Thinking-Functionally:-What-is-LINQ-really%3F).
 
 ## Getting Started
-Isotope can be installed via [Nuget](https://www.nuget.org/packages/Isotope80/0.0.0-beta)
+
+Install via NuGet:
 
 ```bash
-PM> Install-Package Isotope80 -Version 0.0.0-beta
+dotnet add package Isotope80
 ```
 
-Isotope is intended to be referenced via a `using static` statement so that the functions are able to be accessed in a very terse way.
+Isotope is intended to be referenced via `using static` so that the functions can be called directly:
 
 ```cs
 using LanguageExt;
@@ -78,49 +79,174 @@ using static LanguageExt.Prelude;
 using static Isotope80.Isotope;
 ```
 
-Isotope depends on the [Selenium WebDriver](https://www.nuget.org/packages/Selenium.WebDriver) Nuget package but it doesn't include any implementations of `IWebDriver`. To run against a browser you will need the relevant WebDriver package, for example:
+Isotope depends on [Selenium.WebDriver](https://www.nuget.org/packages/Selenium.WebDriver) but doesn't include browser driver implementations. You'll need the relevant driver for your browser:
 
 - [ChromeDriver](https://www.nuget.org/packages/Selenium.WebDriver.ChromeDriver)
-- [IEDriver](https://www.nuget.org/packages/Selenium.WebDriver.IEDriver/)
+- [GeckoDriver (Firefox)](https://www.nuget.org/packages/Selenium.WebDriver.GeckoDriver)
 
-The examples presented here will use ChromeDriver and assume that you have both `Isotope80.Isotope` and `LanguageExt.Prelude` as static usings.
+The examples here use Chrome and assume you have both `Isotope80.Isotope` and `LanguageExt.Prelude` as static usings.
 
-## Running Within a Test Framework
-A common method for running web automation tests it to utilise a unit testing framework such as NUnit or XUnit. These frameworks rely on catching exceptions to determine if a test has failed. Since Isotope handles exceptions for you we provide a special function to use for this purpose: `RunAndThrowOnError`. This function runs the automation and if the end result is a failure it handles cleaning up your WebDriver instance before throwing the exception for the test framework to deal with.
+## Composable Selectors
 
-## Logging
-Isotope provides a built in logging mechanism to ensure that detailed output of browser automations can be gathered. Anywhere within an Isotope declaration can use `log` to add to the logs.
+Isotope uses a `Select` type rather than raw `By` selectors. Selects are composable — you can chain them with `+` to refine queries, add wait conditions, and enforce cardinality:
 
 ```cs
-from _1 in log("Update Window Size")
-from _2 in setWindowSize(1280, 960)
-from _3 in nav("https://www.meddbase.com")
-select unit
+// Wait for an element to exist, then get the first match
+var selector = css(".result") + waitUntilExists + whenAtLeastOne;
+
+// Compose selectors to find elements within elements
+var childSelector = css(".parent") + css(".child");
+
+// Use the active (focused) element
+var focusedText = text(active);
 ```
 
-This simply adds a log entry prior to doing some work. The system also includes the ability to nest logs to make them more readable. To do this you call the context function with the top level string and the Isotope<T> that you want to occur within that context.
+Built-in selector combinators include `waitUntilExists`, `waitUntilNotExists`, `whenAtLeastOne`, `whenSingle`, and `atIndex`.
+
+## A Complete Example
+
+Here's a more realistic example that demonstrates composition, assertions, and the `context` function for structured logging:
 
 ```cs
-public static Isotope<Unit> GoToDesktopSite =>
-  context("Go to Desktop Site",
-    from _1 in log("Update Window Size")
-    from _2 in setWindowSize(1280, 960)
-    from _3 in nav("https://www.meddbase.com")
-    select unit);
+using Isotope80;
+using LanguageExt;
+using static LanguageExt.Prelude;
+using static Isotope80.Isotope;
+using static Isotope80.Assertions;
+
+public static class LoginTest
+{
+    static readonly string BaseUrl = "https://the-internet.herokuapp.com";
+
+    public static Isotope<Unit> GoToLoginPage =>
+        context("Navigate to login page",
+            from _ in nav($"{BaseUrl}/login")
+            select unit);
+
+    public static Isotope<Unit> Login(string username, string password) =>
+        context("Login",
+            from _1 in sendKeys(css("#username"), username)
+            from _2 in sendKeys(css("#password"), password)
+            from _3 in click(css("button[type='submit']"))
+            select unit);
+
+    public static Isotope<Unit> AssertLoginSuccess =>
+        context("Assert login success",
+            from msg in text(css("#flash"))
+            from _   in assert(msg.Contains("You logged into a secure area"),
+                               $"Expected success message but got: {msg}")
+            select unit);
+
+    public static Isotope<Unit> LoginFlow =>
+        from _1 in GoToLoginPage
+        from _2 in Login("tomsmith", "SuperSecretPassword!")
+        from _3 in AssertLoginSuccess
+        select unit;
+}
 ```
 
-This would log:
-
-```
-Go to Desktop Site
-  Update Window Size
-```
-
-It is also possible via the settings to provide an additional action to the logging mechanism to be performed on each log entry, the following writes all logs to the console as they occur with the relevant level of indentation:
+Running it:
 
 ```cs
 var settings = IsotopeSettings.Create();
-settings.LogStream.Subscribe(x => WriteLine(x));
+settings.LogStream.Subscribe(x => Console.WriteLine(x));
 
-var result = chromeDriver(Meddbase.GoToPageAndOpenCareers).Run(settings);
+var (state, _) = withChromeDriver(LoginTest.LoginFlow).Run(settings);
 ```
+
+## Running Within a Test Framework
+
+Test frameworks like NUnit and xUnit rely on exceptions to detect failures. Since Isotope handles errors internally, use `RunAndThrowOnError` to bridge the gap — it runs the automation, cleans up the WebDriver, and throws if the result is a failure:
+
+```cs
+[Fact]
+public void LoginSucceeds()
+{
+    var settings = IsotopeSettings.Create();
+    withChromeDriver(LoginTest.LoginFlow).RunAndThrowOnError(settings: settings);
+}
+```
+
+## Logging
+
+Isotope has built-in logging. Use `info` to add log entries and `context` to create nested log scopes:
+
+```cs
+public static Isotope<Unit> GoToDesktopSite =>
+    context("Go to Desktop Site",
+        from _1 in info("Set window size")
+        from _2 in setWindowSize(1280, 960)
+        from _3 in nav("https://the-internet.herokuapp.com")
+        select unit);
+```
+
+This produces structured output:
+
+```
+Go to Desktop Site
+  Set window size
+```
+
+Subscribe to the log stream to see logs in real time:
+
+```cs
+var settings = IsotopeSettings.Create();
+settings.LogStream.Subscribe(x => Console.WriteLine(x));
+```
+
+## Error Handling
+
+Isotope captures errors rather than throwing exceptions. When a step fails, the chain short-circuits and the error is collected in the state. Use `context` to add meaningful scope to error messages:
+
+```cs
+var result = context("Login workflow",
+    from _1 in nav("https://example.com/login")
+    from _2 in sendKeys(css("#missing-element"), "text")  // This will fail
+    select unit);
+```
+
+The error will include the context: `Login workflow > Element not found`.
+
+Use `exists` to check for elements without failing:
+
+```cs
+from found in exists(css(".optional-banner"))
+from _     in found
+                  ? click(css(".optional-banner .dismiss"))
+                  : pure(unit)
+select unit;
+```
+
+## Assertions
+
+Isotope provides assertion functions that integrate with the error model rather than throwing:
+
+```cs
+using static Isotope80.Assertions;
+
+// Assert a condition
+from _ in assert(url == expected, $"Expected {expected} but got {url}")
+
+// Assert element has specific text
+from _ in assertElementHasText(css(".heading"), "Welcome")
+
+// Assert element is displayed
+from _ in assertElementIsDisplayed(css("#content"))
+```
+
+## Multi-Browser Testing
+
+Run the same automation across multiple browsers:
+
+```cs
+var result = withWebDrivers(myTest,
+    WebDriverSelect.Chrome,
+    WebDriverSelect.Firefox,
+    WebDriverSelect.Edge);
+```
+
+Errors from each browser are collected separately and prefixed with the browser name.
+
+## API Reference
+
+Full API documentation is available in the [docs](./docs/) folder, generated from XML documentation comments.

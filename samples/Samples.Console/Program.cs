@@ -1,5 +1,7 @@
 ﻿using System;
 using Isotope80;
+using Isotope80.Samples.Console;
+using LanguageExt;
 using static LanguageExt.Prelude;
 using static System.Console;
 using static Isotope80.Isotope;
@@ -13,37 +15,63 @@ namespace Samples.Console
             var settings = IsotopeSettings.Create();
             settings.LogStream.Subscribe(x => WriteLine(x));
 
-            var ma = info("item").Map(_ => 1);
-            var mb = info("item").Map(_ => 2);
-            var mc = info("item").Map(_ => 3);
+            // ── Login demo ──────────────────────────────────────────
 
-            var ms = context("items", Seq(ma, mb, mc).Sequence());
+            WriteLine("=== Login Flow ===\n");
 
-            var (nstate, nvalue) = ms.Run(settings);
+            var (loginState, _) = withChromeDriver(TheInternet.LoginFlow).Run(settings);
 
-            WriteLine(nstate.Log.ToString());
-            
-            ForegroundColor = ConsoleColor.Yellow;
-            
-            var stgs = IsotopeSettings.Create();
-            stgs.LogStream.Subscribe(x => WriteLine(x));
-            (var state, var value) = withChromeDriver(Meddbase.GoToPageAndOpenCareers).Run(stgs);
-            
-            Clear();
-            
-            if (state.Error.IsEmpty)
+            if (loginState.Error.IsEmpty)
             {
                 ForegroundColor = ConsoleColor.Green;
-                WriteLine("Current Vacancies:\n");
-                value.Iter(x => WriteLine(x));
+                WriteLine("\nLogin test passed.");
             }
             else
             {
                 ForegroundColor = ConsoleColor.Red;
-                WriteLine($"ERROR: {state.Error.Head}");
+                WriteLine($"\nLogin test failed: {loginState.Error.Head}");
             }
-            
-            ForegroundColor = ConsoleColor.White;
+
+            ResetColor();
+
+            // ── Dropdown demo ───────────────────────────────────────
+
+            WriteLine("\n=== Dropdown Flow ===\n");
+
+            var (dropdownState, selected) = withChromeDriver(TheInternet.DropdownFlow).Run(settings);
+
+            if (dropdownState.Error.IsEmpty)
+            {
+                ForegroundColor = ConsoleColor.Green;
+                WriteLine($"\nDropdown test passed. Selected: {selected}");
+            }
+            else
+            {
+                ForegroundColor = ConsoleColor.Red;
+                WriteLine($"\nDropdown test failed: {dropdownState.Error.Head}");
+            }
+
+            ResetColor();
+
+            // ── Hover demo ──────────────────────────────────────────
+
+            WriteLine("\n=== Hover Flow ===\n");
+
+            var (hoverState, names) = withChromeDriver(TheInternet.HoverFlow).Run(settings);
+
+            if (hoverState.Error.IsEmpty)
+            {
+                ForegroundColor = ConsoleColor.Green;
+                WriteLine("\nHover test passed. Found:");
+                names.Iter(n => WriteLine($"  {n}"));
+            }
+            else
+            {
+                ForegroundColor = ConsoleColor.Red;
+                WriteLine($"\nHover test failed: {hoverState.Error.Head}");
+            }
+
+            ResetColor();
         }
     }
 }
