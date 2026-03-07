@@ -2474,44 +2474,6 @@ namespace Isotope80
             select ts == null ? None : Some(ts.GetScreenshot());
 
         /// <summary>
-        /// Captures a screenshot and saves it to the given file path.
-        /// Creates parent directories if they don't exist.
-        /// </summary>
-        /// <param name="filePath">File path to save the screenshot to</param>
-        public static Isotope<Unit> screenshot(string filePath) =>
-            from s in getScreenshot
-            from _ in s.Match(
-                Some: ss => trya(() =>
-                {
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                    ss.SaveAsFile(filePath);
-                }, $"Failed to save screenshot to: {filePath}"),
-                None: fail("WebDriver does not support screenshots"))
-            select unit;
-
-        /// <summary>
-        /// Captures a screenshot and returns it as a byte array
-        /// </summary>
-        public static Isotope<byte[]> screenshotBytes =>
-            from s in getScreenshot
-            from b in s.Match(
-                Some: ss => pure(ss.AsByteArray),
-                None: fail("WebDriver does not support screenshots"))
-            select b;
-
-        /// <summary>
-        /// Captures a screenshot of a specific element and returns it as a byte array
-        /// </summary>
-        /// <param name="selector">Web element selector</param>
-        public static Isotope<byte[]> screenshotElementBytes(Select selector) =>
-            from s in getElementScreenshot(selector)
-            from b in s.Match(
-                Some: ss => pure(ss.AsByteArray),
-                None: fail("Element does not support screenshots"))
-            select b;
-
-        /// <summary>
         /// Takes a screenshot of a specific element
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -2520,21 +2482,35 @@ namespace Isotope80
             let ts = el as ITakesScreenshot
             select ts == null ? Option<Screenshot>.None : Some(ts.GetScreenshot());
 
+        static void saveScreenshotToFile(Screenshot screenshot, string filePath)
+        {
+            var dir = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            screenshot.SaveAsFile(filePath);
+        }
+
+        /// <summary>
+        /// Captures a screenshot and saves it to the given file path.
+        /// Creates parent directories if they don't exist.
+        /// </summary>
+        /// <param name="filePath">File path to save the screenshot to</param>
+        public static Isotope<Unit> saveScreenshot(string filePath) =>
+            from s in getScreenshot
+            from _ in s.Match(
+                Some: ss => trya(() => saveScreenshotToFile(ss, filePath), $"Failed to save screenshot to: {filePath}"),
+                None: fail("WebDriver does not support screenshots"))
+            select unit;
+
         /// <summary>
         /// Captures a screenshot of a specific element and saves it to the given file path.
         /// Creates parent directories if they don't exist.
         /// </summary>
         /// <param name="selector">Web element selector</param>
         /// <param name="filePath">File path to save the screenshot to</param>
-        public static Isotope<Unit> screenshot(Select selector, string filePath) =>
+        public static Isotope<Unit> saveElementScreenshot(Select selector, string filePath) =>
             from s in getElementScreenshot(selector)
             from _ in s.Match(
-                Some: ss => trya(() =>
-                {
-                    var dir = Path.GetDirectoryName(filePath);
-                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                    ss.SaveAsFile(filePath);
-                }, $"Failed to save element screenshot to: {filePath}"),
+                Some: ss => trya(() => saveScreenshotToFile(ss, filePath), $"Failed to save element screenshot to: {filePath}"),
                 None: fail("Element does not support screenshots"))
             select unit;
 
@@ -2609,18 +2585,18 @@ namespace Isotope80
         /// <summary>
         /// Returns all cookies for the current domain
         /// </summary>
-        public static Isotope<Seq<Cookie>> getCookies =>
+        public static Isotope<Seq<BrowserCookie>> getCookies =>
             from d in webDriver
-            from cs in tryf(() => d.Manage().Cookies.AllCookies.ToSeq().Strict(), "Failed to get cookies")
+            from cs in tryf(() => d.Manage().Cookies.AllCookies.ToSeq().Map(BrowserCookie.FromSelenium).Strict(), "Failed to get cookies")
             select cs;
 
         /// <summary>
         /// Sets a cookie
         /// </summary>
         /// <param name="cookie">Cookie to set</param>
-        public static Isotope<Unit> setCookie(Cookie cookie) =>
+        public static Isotope<Unit> setCookie(BrowserCookie cookie) =>
             from d in webDriver
-            from _ in trya(() => d.Manage().Cookies.AddCookie(cookie), $"Failed to set cookie: {cookie.Name}")
+            from _ in trya(() => d.Manage().Cookies.AddCookie(cookie.ToSelenium()), $"Failed to set cookie: {cookie.Name}")
             select unit;
 
         /// <summary>
