@@ -3,6 +3,7 @@ using OpenQA.Selenium;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -2473,6 +2474,40 @@ namespace Isotope80
             select ts == null ? None : Some(ts.GetScreenshot());
 
         /// <summary>
+        /// Captures a screenshot and saves it to the given file path.
+        /// Creates parent directories if they don't exist.
+        /// </summary>
+        /// <param name="filePath">File path to save the screenshot to</param>
+        public static Isotope<Unit> screenshot(string filePath) =>
+            from s in getScreenshot
+            from _ in s.Match(
+                Some: ss => trya(() =>
+                {
+                    var dir = Path.GetDirectoryName(filePath);
+                    if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                    ss.SaveAsFile(filePath);
+                }, $"Failed to save screenshot to: {filePath}"),
+                None: fail("WebDriver does not support screenshots"))
+            select unit;
+
+        /// <summary>
+        /// Captures a screenshot of a specific element and saves it to the given file path.
+        /// Creates parent directories if they don't exist.
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="filePath">File path to save the screenshot to</param>
+        public static Isotope<Unit> screenshotElement(Select selector, string filePath) =>
+            from el in selector.ToIsotopeHead()
+            from _ in trya(() =>
+            {
+                var ss = ((ITakesScreenshot)el).GetScreenshot();
+                var dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                ss.SaveAsFile(filePath);
+            }, $"Failed to save element screenshot to: {filePath}")
+            select unit;
+
+        /// <summary>
         /// Runs the javascript and returns a value
         /// </summary>
         public static Isotope<T> eval<T>(string javascript) =>
@@ -2480,5 +2515,70 @@ namespace Isotope80
             let jsExec = (IJavaScriptExecutor)dvr
             from res in pure((T)jsExec.ExecuteScript(javascript))
             select res;
+
+        /// <summary>
+        /// Executes JavaScript in the browser context with no return value
+        /// </summary>
+        /// <param name="javascript">JavaScript to execute</param>
+        public static Isotope<Unit> eval(string javascript) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript(javascript), $"Error executing JavaScript")
+            select unit;
+
+        /// <summary>
+        /// Executes JavaScript against a specific element.
+        /// The element is available as arguments[0] in the script.
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="javascript">JavaScript to execute</param>
+        public static Isotope<T> eval<T>(Select selector, string javascript) =>
+            from el in selector.ToIsotopeHead()
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from res in pure((T)jsExec.ExecuteScript(javascript, el))
+            select res;
+
+        /// <summary>
+        /// Returns all cookies for the current domain
+        /// </summary>
+        public static Isotope<Seq<Cookie>> getCookies =>
+            from d in webDriver
+            from cs in tryf(() => d.Manage().Cookies.AllCookies.ToSeq().Strict(), "Failed to get cookies")
+            select cs;
+
+        /// <summary>
+        /// Sets a cookie
+        /// </summary>
+        /// <param name="cookie">Cookie to set</param>
+        public static Isotope<Unit> setCookie(Cookie cookie) =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Cookies.AddCookie(cookie), $"Failed to set cookie: {cookie.Name}")
+            select unit;
+
+        /// <summary>
+        /// Deletes a cookie by name
+        /// </summary>
+        /// <param name="name">Name of the cookie to delete</param>
+        public static Isotope<Unit> deleteCookie(string name) =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Cookies.DeleteCookieNamed(name), $"Failed to delete cookie: {name}")
+            select unit;
+
+        /// <summary>
+        /// Deletes all cookies for the current domain
+        /// </summary>
+        public static Isotope<Unit> deleteAllCookies =>
+            from d in webDriver
+            from _ in trya(() => d.Manage().Cookies.DeleteAllCookies(), "Failed to delete all cookies")
+            select unit;
+
+        /// <summary>
+        /// Gets the current window size
+        /// </summary>
+        public static Isotope<Size> getWindowSize =>
+            from d in webDriver
+            from sz in tryf(() => d.Manage().Window.Size, "Failed to get window size")
+            select sz;
     }
 }
