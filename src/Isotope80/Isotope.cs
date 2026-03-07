@@ -952,6 +952,14 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Switch back to the top-level document (exit all frames)
+        /// </summary>
+        public static Isotope<Unit> switchToDefaultContent =>
+            from d in webDriver
+            from _ in trya(() => d.SwitchTo().DefaultContent(), "Failed to switch to default content")
+            select unit;
+
+        /// <summary>
         /// Accept allert
         /// </summary>
         public static Isotope<Unit> acceptAlert =>
