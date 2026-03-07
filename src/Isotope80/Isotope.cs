@@ -2554,7 +2554,7 @@ namespace Isotope80
         public static Isotope<Unit> eval(string javascript) =>
             from dvr in webDriver
             let jsExec = (IJavaScriptExecutor)dvr
-            from _ in trya(() => jsExec.ExecuteScript(javascript), $"Error executing JavaScript")
+            let _ = jsExec.ExecuteScript(javascript)
             select unit;
 
         /// <summary>
@@ -2568,6 +2568,42 @@ namespace Isotope80
             from dvr in webDriver
             let jsExec = (IJavaScriptExecutor)dvr
             from res in pure((T)jsExec.ExecuteScript(javascript, el))
+            select res;
+
+        /// <summary>
+        /// Runs the javascript and returns a value.
+        /// Errors are caught and converted to Isotope failures.
+        /// </summary>
+        /// <param name="javascript">JavaScript to execute</param>
+        public static Isotope<T> evalSafe<T>(string javascript) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from res in tryf(() => (T)jsExec.ExecuteScript(javascript), "Error executing JavaScript")
+            select res;
+
+        /// <summary>
+        /// Executes JavaScript in the browser context with no return value.
+        /// Errors are caught and converted to Isotope failures.
+        /// </summary>
+        /// <param name="javascript">JavaScript to execute</param>
+        public static Isotope<Unit> evalSafe(string javascript) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript(javascript), "Error executing JavaScript")
+            select unit;
+
+        /// <summary>
+        /// Executes JavaScript against a specific element.
+        /// The element is available as arguments[0] in the script.
+        /// Errors are caught and converted to Isotope failures.
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="javascript">JavaScript to execute</param>
+        public static Isotope<T> evalSafe<T>(Select selector, string javascript) =>
+            from el in selector.ToIsotopeHead()
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from res in tryf(() => (T)jsExec.ExecuteScript(javascript, el), "Error executing JavaScript on element")
             select res;
 
         /// <summary>
