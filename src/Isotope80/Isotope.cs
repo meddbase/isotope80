@@ -1180,7 +1180,34 @@ namespace Isotope80
         public static Isotope<Unit> click(Select selector) =>
             selector.ToIsotopeHead()
                     .Bind(IsotopeInternal.click);
-        
+
+        /// <summary>
+        /// Double-clicks on the element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static Isotope<Unit> doubleClick(Select selector) =>
+            selector.ToIsotopeHead()
+                    .Bind(IsotopeInternal.doubleClick);
+
+        /// <summary>
+        /// Right-clicks (context menu) on the element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static Isotope<Unit> rightClick(Select selector) =>
+            selector.ToIsotopeHead()
+                    .Bind(IsotopeInternal.rightClick);
+
+        /// <summary>
+        /// Drags the source element and drops it onto the target element
+        /// </summary>
+        /// <param name="source">Source element selector</param>
+        /// <param name="target">Target element selector</param>
+        public static Isotope<Unit> dragTo(Select source, Select target) =>
+            from s in source.ToIsotopeHead()
+            from t in target.ToIsotopeHead()
+            from _ in IsotopeInternal.dragTo(s, t)
+            select unit;
+
         /// <summary>
         /// Clears the content of an element
         /// </summary>
@@ -1227,7 +1254,47 @@ namespace Isotope80
         /// <param name="offsetY">The vertical offset to which to move the mouse</param>
         public static Isotope<Unit> moveToLocation(int offsetX, int offsetY) =>
             IsotopeInternal.moveToLocation(offsetX, offsetY);
-        
+
+        /// <summary>
+        /// Scrolls the page until the element is in the viewport
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static Isotope<Unit> scrollToElement(Select selector) =>
+            from el in selector.ToIsotopeHead()
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript("arguments[0].scrollIntoView({block:'center'})", el), $"Error scrolling to element: {IsotopeInternal.prettyPrint(el)}")
+            select unit;
+
+        /// <summary>
+        /// Scrolls the viewport by a relative pixel offset
+        /// </summary>
+        /// <param name="x">Horizontal pixel offset</param>
+        /// <param name="y">Vertical pixel offset</param>
+        public static Isotope<Unit> scrollBy(int x, int y) =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript($"window.scrollBy({x},{y})"), $"Error scrolling by offset x: {x} y: {y}")
+            select unit;
+
+        /// <summary>
+        /// Scrolls to the top of the page
+        /// </summary>
+        public static Isotope<Unit> scrollToTop =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript("window.scrollTo(0,0)"), "Error scrolling to top")
+            select unit;
+
+        /// <summary>
+        /// Scrolls to the bottom of the page
+        /// </summary>
+        public static Isotope<Unit> scrollToBottom =>
+            from dvr in webDriver
+            let jsExec = (IJavaScriptExecutor)dvr
+            from _ in trya(() => jsExec.ExecuteScript("window.scrollTo(0,document.body.scrollHeight)"), "Error scrolling to bottom")
+            select unit;
+
         /// <summary>
         /// ONLY USE AS A LAST RESORT
         /// Pauses the processing for an interval to brute force waiting for actions to complete

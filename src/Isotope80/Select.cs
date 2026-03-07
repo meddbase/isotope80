@@ -32,6 +32,12 @@ namespace Isotope80
             byCss("*");
 
         /// <summary>
+        /// Selects the currently focused element
+        /// </summary>
+        public static readonly Select active =
+            byCss(":focus");
+
+        /// <summary>
         /// Create a Select from a By
         /// </summary>
         /// <param name="by">Selector arrows</param>
