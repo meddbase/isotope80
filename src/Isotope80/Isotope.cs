@@ -248,20 +248,48 @@ namespace Isotope80
         /// </summary>
         public static Isotope<A> withWebDriver<A>(IWebDriver driver, Isotope<A> ma) =>
             use(driver, disposeWebDriver, d => from st in get
-                                               from _1 in setWebDriver(driver)  
+                                               from _1 in setWebDriver(driver)
                                                from rs in ma
-                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver)
                                                select rs);
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context.
+        /// When <paramref name="keepAlive"/> is true the driver is not disposed after the isotope completes,
+        /// allowing the same driver to be reused across multiple runs (e.g. REPL / persistent sessions).
+        /// </summary>
+        public static Isotope<A> withWebDriver<A>(IWebDriver driver, Isotope<A> ma, bool keepAlive) =>
+            keepAlive
+                ? from st in get
+                  from _1 in setWebDriver(driver)
+                  from rs in ma
+                  from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver)
+                  select rs
+                : withWebDriver(driver, ma);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
         /// </summary>
         public static Isotope<Env, A> withWebDriver<Env, A>(IWebDriver driver, Isotope<Env, A> ma) =>
             use(driver, disposeWebDriver, d => from st in get
-                                               from _1 in setWebDriver(driver)  
+                                               from _1 in setWebDriver(driver)
                                                from rs in ma
-                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver) 
+                                               from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver)
                                                select rs);
+
+        /// <summary>
+        /// Run the isotope provided with the web-driver context.
+        /// When <paramref name="keepAlive"/> is true the driver is not disposed after the isotope completes,
+        /// allowing the same driver to be reused across multiple runs (e.g. REPL / persistent sessions).
+        /// </summary>
+        public static Isotope<Env, A> withWebDriver<Env, A>(IWebDriver driver, Isotope<Env, A> ma, bool keepAlive) =>
+            keepAlive
+                ? from st in get
+                  from _1 in setWebDriver(driver)
+                  from rs in ma
+                  from _2 in st.Driver.Match(Some: setWebDriver, None: clearWebDriver)
+                  select rs
+                : withWebDriver(driver, ma);
 
         /// <summary>
         /// Run the isotope provided with the web-driver context
