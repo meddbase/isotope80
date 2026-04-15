@@ -878,9 +878,9 @@ namespace Isotope80
         /// <summary>
         /// Get browser logs
         /// </summary>
-        public static Isotope<Seq<LogEntry>> getBrowserLogs =>
+        public static Isotope<Seq<BrowserLogEntry>> getBrowserLogs =>
             from d in webDriver
-            from logs in tryf(() => d.Manage().Logs.GetLog(OpenQA.Selenium.LogType.Browser).ToSeq(), "Failed to get browser logs")
+            from logs in tryf(() => d.Manage().Logs.GetLog(OpenQA.Selenium.LogType.Browser).ToSeq().Map(BrowserLogEntry.FromSelenium), "Failed to get browser logs")
             select logs;
 
         /// <summary>
@@ -2496,25 +2496,25 @@ namespace Isotope80
         /// <summary>
         /// Takes a screenshot if the current WebDriver supports that functionality
         /// </summary>
-        public static Isotope<Option<Screenshot>> getScreenshot =>
+        public static Isotope<Option<BrowserScreenshot>> getScreenshot =>
             from dvr in webDriver
             let ts = dvr as ITakesScreenshot
-            select ts == null ? None : Some(ts.GetScreenshot());
+            select ts == null ? None : Some(BrowserScreenshot.FromSelenium(ts.GetScreenshot()));
 
         /// <summary>
         /// Takes a screenshot of a specific element
         /// </summary>
         /// <param name="selector">Web element selector</param>
-        public static Isotope<Option<Screenshot>> getElementScreenshot(Select selector) =>
+        public static Isotope<Option<BrowserScreenshot>> getElementScreenshot(Select selector) =>
             from el in selector.ToIsotopeHead()
             let ts = el as ITakesScreenshot
-            select ts == null ? Option<Screenshot>.None : Some(ts.GetScreenshot());
+            select ts == null ? Option<BrowserScreenshot>.None : Some(BrowserScreenshot.FromSelenium(ts.GetScreenshot()));
 
-        static void saveScreenshotToFile(Screenshot screenshot, string filePath)
+        static void saveScreenshotToFile(BrowserScreenshot screenshot, string filePath)
         {
             var dir = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            screenshot.SaveAsFile(filePath);
+            screenshot.SaveToFile(filePath);
         }
 
         /// <summary>
