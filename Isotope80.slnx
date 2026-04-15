@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/Samples.Console/Samples.Console.csproj" />
+    <Project Path="samples/Samples.UnitTests/Samples.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Isotope80/Isotope80.csproj" />
+  </Folder>
+</Solution>
