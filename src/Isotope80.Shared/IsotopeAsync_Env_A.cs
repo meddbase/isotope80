@@ -14,7 +14,7 @@ namespace Isotope80
     public struct IsotopeAsync<Env, A>
     {
         readonly Func<Env, IsotopeState, ValueTask<IsotopeState<A>>> Thunk;
-        
+
         /// <summary>
         /// Ctor
         /// </summary>
@@ -49,7 +49,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="env">Environment</param>
         /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
+        /// <returns>Returning an optional error.
         /// The computation succeeds if result.IsNone is true</returns>
         public async ValueTask<(IsotopeState state, A value)> Run(Env env, IsotopeSettings settings = null)
         {
@@ -62,7 +62,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="env">Environment</param>
         /// <param name="settings">Optional settings</param>
-        /// <returns>Returning an optional error. 
+        /// <returns>Returning an optional error.
         /// The computation succeeds if result.IsNone is true</returns>
         public async ValueTask<(IsotopeState state, A value)> RunAndThrowOnError(Env env, IsotopeSettings settings = null)
         {
@@ -72,23 +72,23 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Implicit conversion 
+        /// Implicit conversion
         /// </summary>
         public static implicit operator IsotopeAsync<Env, A>(Isotope<A> ma) =>
             new IsotopeAsync<Env, A>((_, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(state)));
 
         /// <summary>
-        /// Implicit conversion 
+        /// Implicit conversion
         /// </summary>
         public static implicit operator IsotopeAsync<Env, A>(Isotope<Env, A> ma) =>
             new IsotopeAsync<Env, A>((env, state) => new ValueTask<IsotopeState<A>>(ma.Invoke(env, state)));
 
         /// <summary>
-        /// Implicit conversion 
+        /// Implicit conversion
         /// </summary>
         public static implicit operator IsotopeAsync<Env, A>(IsotopeAsync<A> ma) =>
             new IsotopeAsync<Env, A>((_, state) => ma.Invoke(state));
-        
+
         /// <summary>
         /// Implicit conversion from Error
         /// </summary>
@@ -112,25 +112,25 @@ namespace Isotope80
                                      });
 
         /// <summary>
-        /// Lift the pure value into the monadic space 
+        /// Lift the pure value into the monadic space
         /// </summary>
         public static IsotopeAsync<Env, A> Pure(A value) =>
             new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(value, s)));
 
         /// <summary>
-        /// Lift the error into the monadic space 
+        /// Lift the error into the monadic space
         /// </summary>
         public static IsotopeAsync<Env, A> Fail(Error error) =>
             new IsotopeAsync<Env, A>((e, s) => new ValueTask<IsotopeState<A>>(new IsotopeState<A>(default(A), s.AddError(error))));
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<B>> f)
         {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
-            { 
+            var self = this;
+            return new IsotopeAsync<Env, B>( async (env, state) =>
+            {
                 var s = await self.Invoke(env, state).ConfigureAwait(false);
                 if (s.IsFaulted) return s.CastError<B>();
                 return f(s.Value).Invoke(s.State);
@@ -138,13 +138,13 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> Bind<B>(Func<A, Isotope<Env, B>> f)
         {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
-            { 
+            var self = this;
+            return new IsotopeAsync<Env, B>( async (env, state) =>
+            {
                 var s = await self.Invoke(env, state).ConfigureAwait(false);
                 if (s.IsFaulted) return s.CastError<B>();
                 return f(s.Value).Invoke(env, s.State);
@@ -152,13 +152,13 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<B>> f)
         {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
+            var self = this;
+            return new IsotopeAsync<Env, B>(async (env, state) =>
+            {
                 var s = await self.Invoke(env, state).ConfigureAwait(false);
                 if (s.IsFaulted) return s.CastError<B>();
                 return await f(s.Value).Invoke(s.State).ConfigureAwait(false);
@@ -166,13 +166,13 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> Bind<B>(Func<A, IsotopeAsync<Env, B>> f)
         {
-            var self = this;   
-            return new IsotopeAsync<Env, B>(async (env, state) => 
-            { 
+            var self = this;
+            return new IsotopeAsync<Env, B>(async (env, state) =>
+            {
                 var s = await self.Invoke(env, state).ConfigureAwait(false);
                 if (s.IsFaulted) return s.CastError<B>();
                 return await f(s.Value).Invoke(env, s.State).ConfigureAwait(false);
@@ -180,49 +180,49 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<B>> f) =>
             Bind(f);
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> SelectMany<B>(Func<A, Isotope<Env, B>> f) =>
             Bind(f);
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<B>> f) =>
             Bind(f);
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, B> SelectMany<B>(Func<A, IsotopeAsync<Env, B>> f) =>
             Bind(f);
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<B>> bind, Func<A, B, C> project) =>
             Bind(a => bind(a).Map(b => project(a, b)));
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, Isotope<Env, B>> bind, Func<A, B, C> project) =>
             Bind(a => bind(a).Map(b => project(a, b)));
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<B>> bind, Func<A, B, C> project) =>
             Bind(a => bind(a).Map(b => project(a, b)));
 
         /// <summary>
-        /// Monadic bind 
+        /// Monadic bind
         /// </summary>
         public IsotopeAsync<Env, C> SelectMany<B, C>(Func<A, IsotopeAsync<Env, B>> bind, Func<A, B, C> project) =>
             Bind(a => bind(a).Map(b => project(a, b)));
@@ -232,8 +232,8 @@ namespace Isotope80
         /// </summary>
         public IsotopeAsync<Env, B> Map<B>(Func<A, B> f)
         {
-            var self = this;   
-            return new IsotopeAsync<Env, B>( async (env, state) => 
+            var self = this;
+            return new IsotopeAsync<Env, B>( async (env, state) =>
             {
                 var s = await self.Invoke(env, state).ConfigureAwait(false);
                 if (s.IsFaulted) return s.CastError<B>();
@@ -280,7 +280,7 @@ namespace Isotope80
                                : new IsotopeState<B>(Succ(r.Value), r.State);
                 });
         }
-        
+
         /// <summary>
         /// Map the alternative value (errors)
         /// </summary>

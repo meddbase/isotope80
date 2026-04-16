@@ -4,10 +4,10 @@ using System.IO;
 namespace Isotope80
 {
     /// <summary>
-    /// Isotope-owned screenshot representation, decoupled from Selenium's Screenshot type
+    /// Immutable screenshot representation
     /// </summary>
     /// <param name="Data">Raw screenshot bytes (PNG)</param>
-    public record BrowserScreenshot(byte[] Data)
+    public partial record BrowserScreenshot(byte[] Data)
     {
         /// <summary>
         /// Returns the screenshot as a Base64-encoded string
@@ -19,8 +19,5 @@ namespace Isotope80
         /// </summary>
         /// <param name="path">File path to write</param>
         public void SaveToFile(string path) => File.WriteAllBytes(path, Data);
-
-        internal static BrowserScreenshot FromSelenium(OpenQA.Selenium.Screenshot screenshot) =>
-            new BrowserScreenshot(screenshot.AsByteArray);
     }
 }
