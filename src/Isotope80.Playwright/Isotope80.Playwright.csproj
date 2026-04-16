@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyTitle>Isotope80.Playwright</AssemblyTitle>
+    <Authors>Medical Management Systems</Authors>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <VersionPrefix>0.0.0</VersionPrefix>
+    <VersionSuffix>beta</VersionSuffix>
+    <LangVersion>12.0</LangVersion>
+    <RepositoryUrl>https://github.com/meddbase/isotope80</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Functional C# wrapper around Microsoft Playwright for browser automation</Description>
+    <PackageTags>Playwright Language-Ext Browser Automation</PackageTags>
+    <PackageProjectUrl>https://github.com/meddbase/isotope80</PackageProjectUrl>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Isotope80.Shared\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LanguageExt.Core" Version="4.4.3" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
+  </ItemGroup>
+</Project>

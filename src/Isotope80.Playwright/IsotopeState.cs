@@ -1,5 +1,5 @@
-﻿using LanguageExt;
-using OpenQA.Selenium;
+using LanguageExt;
+using Microsoft.Playwright;
 using System;
 using System.Reactive.Subjects;
 using System.Runtime.ExceptionServices;
@@ -14,20 +14,24 @@ namespace Isotope80
     /// </summary>
     public partial class IsotopeState
     {
-        internal readonly Option<IWebDriver> Driver;
+        internal readonly Option<IPage> Page;
+        internal readonly Option<IBrowserContext> BrowserContext;
+        internal readonly Option<IBrowser> Browser;
+        internal readonly Option<IPlaywright> Playwright;
+        internal readonly Stck<IFrameLocator> FrameScope;
         internal readonly IsotopeSettings Settings;
         internal readonly HashMap<string, string> Configuration;
-        
+
         /// <summary>
         /// Errors
         /// </summary>
         public readonly Seq<Error> Error;
-        
+
         /// <summary>
         /// Log
         /// </summary>
         public readonly Log Log;
-        
+
         /// <summary>
         /// Context stack
         /// </summary>
@@ -37,7 +41,7 @@ namespace Isotope80
         /// Mute log
         /// </summary>
         public readonly bool Mute;
-        
+
         /// <summary>
         /// Creates a new instance of IsotopeState with the supplied settings.
         /// </summary>
@@ -48,7 +52,11 @@ namespace Isotope80
         /// Immutable transformation
         /// </summary>
         internal IsotopeState With(
-            Option<IWebDriver>? Driver = null,
+            Option<IPage>? Page = null,
+            Option<IBrowserContext>? BrowserContext = null,
+            Option<IBrowser>? Browser = null,
+            Option<IPlaywright>? Playwright = null,
+            Stck<IFrameLocator>? FrameScope = null,
             IsotopeSettings Settings = null,
             HashMap<string, string>? Configuration = null,
             Seq<Error>? Error = null,
@@ -56,10 +64,14 @@ namespace Isotope80
             Stck<string>? Context = null,
             bool? Mute = null) =>
             new IsotopeState(
-                Driver ?? this.Driver,
+                Page ?? this.Page,
+                BrowserContext ?? this.BrowserContext,
+                Browser ?? this.Browser,
+                Playwright ?? this.Playwright,
+                FrameScope ?? this.FrameScope,
                 Settings ?? this.Settings,
-                Configuration ?? this.Configuration, 
-                Error ?? this.Error, 
+                Configuration ?? this.Configuration,
+                Error ?? this.Error,
                 Log ?? this.Log,
                 Context ?? this.Context,
                 Mute ?? this.Mute);
@@ -70,31 +82,43 @@ namespace Isotope80
         internal static IsotopeState Empty =
             new IsotopeState(
                 default,
+                default,
+                default,
+                default,
+                default,
                 IsotopeSettings.Create(
-                    new Subject<Error>(), 
-                    new Subject<LogOutput>()), 
-                default, 
-                default, 
+                    new Subject<Error>(),
+                    new Subject<LogOutput>()),
+                default,
+                default,
                 Log.Empty,
                 default,
                 default);
 
         private IsotopeState(
-            Option<IWebDriver> driver,
+            Option<IPage> page,
+            Option<IBrowserContext> browserContext,
+            Option<IBrowser> browser,
+            Option<IPlaywright> playwright,
+            Stck<IFrameLocator> frameScope,
             IsotopeSettings settings,
             HashMap<string, string> configuration,
-            Seq<Error> error, 
+            Seq<Error> error,
             Log log,
             Stck<string> context,
             bool mute)
-        {            
-            Driver        = driver;
-            Settings      = settings;
-            Configuration = configuration;
-            Error         = error;
-            Log           = log;
-            Context       = context;
-            Mute          = mute;
+        {
+            Page           = page;
+            BrowserContext = browserContext;
+            Browser        = browser;
+            Playwright     = playwright;
+            FrameScope     = frameScope;
+            Settings       = settings;
+            Configuration  = configuration;
+            Error          = error;
+            Log            = log;
+            Context        = context;
+            Mute           = mute;
         }
 
         internal IsotopeState AddError(Error err) =>
@@ -124,7 +148,7 @@ namespace Isotope80
             Error.Iter(Settings.ErrorStream.OnNext);
             if (Error.Count == 1)
             {
-                ExceptionDispatchInfo.Capture(Error.Head).Throw(); 
+                ExceptionDispatchInfo.Capture(Error.Head).Throw();
             }
             else
             {

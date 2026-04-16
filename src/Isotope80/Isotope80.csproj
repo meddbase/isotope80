@@ -33,4 +33,8 @@
     </Compile>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Isotope80.Shared\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-﻿using LanguageExt;
+using LanguageExt;
 using System;
 using static LanguageExt.Prelude;
 
@@ -13,17 +13,17 @@ namespace Isotope80
         /// Contextual header
         /// </summary>
         Context,
-        
+
         /// <summary>
         /// Information message
         /// </summary>
         Info,
-        
+
         /// <summary>
         /// Warning message
         /// </summary>
         Warn,
-        
+
         /// <summary>
         /// Error message
         /// </summary>
@@ -39,7 +39,7 @@ namespace Isotope80
         /// Empty log
         /// </summary>
         public static readonly Log Empty = new Log(0, default, "", default, DateTime.MinValue, "", "", 0);
-        
+
         /// <summary>
         /// Number of tabs to indent
         /// </summary>
@@ -49,12 +49,12 @@ namespace Isotope80
         /// Log type
         /// </summary>
         public readonly LogType Type;
-        
+
         /// <summary>
         /// Node message
         /// </summary>
         public readonly string Message;
-        
+
         /// <summary>
         /// Child messages
         /// </summary>
@@ -64,17 +64,17 @@ namespace Isotope80
         /// The time the log was captured.
         /// </summary>
         public readonly DateTime Time;
-        
+
         /// <summary>
         /// The name of the method the log was called from.
         /// </summary>
         public readonly string CallerMemberName;
-        
+
         /// <summary>
         /// The full path of the file the log was called from.
         /// </summary>
         public readonly string CallerFilePath;
-        
+
         /// <summary>
         /// The line number of the line the log was called from.
         /// </summary>
@@ -124,7 +124,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="message">Message to log</param>
         public static Log Info(string message, DateTime time, string callerMemberName, string callerFilePath, int callerLineNumber) =>
-            new Log(0, LogType.Info, $"INFO: {message}", default, time, callerMemberName, callerFilePath, callerLineNumber); 
+            new Log(0, LogType.Info, $"INFO: {message}", default, time, callerMemberName, callerFilePath, callerLineNumber);
 
         /// <summary>
         /// Add a message to the log
@@ -170,12 +170,12 @@ namespace Isotope80
         /// Log message
         /// </summary>
         public readonly string Message;
-        
+
         /// <summary>
         /// Severity type
         /// </summary>
         public readonly LogType Type;
-        
+
         /// <summary>
         /// Indentation
         /// </summary>
@@ -185,17 +185,17 @@ namespace Isotope80
         /// The time the log was captured.
         /// </summary>
         public readonly DateTime Time;
-        
+
         /// <summary>
         /// The name of the method the log was called from.
         /// </summary>
         public readonly string CallerMemberName;
-        
+
         /// <summary>
         /// The full path of the file the log was called from.
         /// </summary>
         public readonly string CallerFilePath;
-        
+
         /// <summary>
         /// The line number of the line the log was called from.
         /// </summary>
@@ -216,7 +216,7 @@ namespace Isotope80
         }
 
         /// <summary>
-        /// Tabbed format display 
+        /// Tabbed format display
         /// </summary>
         public override string ToString() =>
             Text.Tabs(Indent, Message);
@@ -226,7 +226,7 @@ namespace Isotope80
         /// </summary>
         /// <param name="expectedMaxMessageLength">Number of characters reserved for the message so the output looks lined up.</param>
         /// <remarks>
-        /// Message format: [TIME]: [INDENT][MESSAGE][GAP][FILE]:line [LINE] 
+        /// Message format: [TIME]: [INDENT][MESSAGE][GAP][FILE]:line [LINE]
         /// </remarks>
         public string ToVerboseString(int expectedMaxMessageLength = 60) =>
             Time.ToString("HH:mm:ss.fff: ") +

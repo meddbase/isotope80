@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reactive.Subjects;
 using LanguageExt.Common;
 
@@ -18,11 +18,11 @@ namespace Isotope80
         /// Default interval
         /// </summary>
         private static readonly TimeSpan defaultInterval = TimeSpan.FromMilliseconds(500);
- 
+
         /// <summary>
         /// Errors
         /// </summary>
-        public readonly Subject<Error> ErrorStream; 
+        public readonly Subject<Error> ErrorStream;
 
         /// <summary>
         /// Errors
@@ -33,7 +33,7 @@ namespace Isotope80
         /// Wait time
         /// </summary>
         public readonly TimeSpan Wait;
-        
+
         /// <summary>
         /// Interval time
         /// </summary>
@@ -68,7 +68,7 @@ namespace Isotope80
                 logStream,
                 wait ?? defaultWait,
                 interval ?? defaultInterval);
- 
+
         /// <summary>
         /// Create an IsotopeSettings
         /// </summary>
