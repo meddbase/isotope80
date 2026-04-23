@@ -1099,6 +1099,18 @@ namespace Isotope80
             context("Chromium", withBrowser(ma, pw => pw.Chromium, options));
 
         /// <summary>
+        /// Run the isotope provided with Chromium browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromium<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withChromium(ma, null);
+
+        /// <summary>
+        /// Run the isotope provided with Chromium browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromium<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
+            context("Chromium", withBrowser(ma, pw => pw.Chromium, options));
+
+        /// <summary>
         /// Run the isotope provided with Firefox browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withFirefox<A>(IsotopeAsync<A> ma) =>
@@ -1111,6 +1123,18 @@ namespace Isotope80
             context("Firefox", withBrowser(ma, pw => pw.Firefox, options));
 
         /// <summary>
+        /// Run the isotope provided with Firefox browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefox<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withFirefox(ma, null);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefox<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
+            context("Firefox", withBrowser(ma, pw => pw.Firefox, options));
+
+        /// <summary>
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withWebkit<A>(IsotopeAsync<A> ma) =>
@@ -1120,6 +1144,18 @@ namespace Isotope80
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withWebkit<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions options) =>
+            context("WebKit", withBrowser(ma, pw => pw.Webkit, options));
+
+        /// <summary>
+        /// Run the isotope provided with WebKit browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withWebkit<Env, A>(IsotopeAsync<Env, A> ma) =>
+            withWebkit(ma, null);
+
+        /// <summary>
+        /// Run the isotope provided with WebKit browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withWebkit<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
             context("WebKit", withBrowser(ma, pw => pw.Webkit, options));
 
         /// <summary>
@@ -1148,6 +1184,42 @@ namespace Isotope80
                             var pg = await ctx.NewPageAsync().ConfigureAwait(false);
                             var newState = state.With(Page: Some(pg), BrowserContext: Some(ctx), Browser: Some(bro), Playwright: Some(pw));
                             var result = await ma.Invoke(newState).ConfigureAwait(false);
+                            var finalState = result.State.With(Page: prevPage, BrowserContext: prevCtx, Browser: prevBro, Playwright: prevPw);
+                            return new IsotopeState<A>(result.Value, finalState);
+                        }
+                        finally { await ctx.CloseAsync().ConfigureAwait(false); }
+                    }
+                    finally { await bro.CloseAsync().ConfigureAwait(false); }
+                }
+                finally { pw.Dispose(); }
+            });
+
+        /// <summary>
+        /// Internal helper that manages the full Playwright lifecycle (with environment)
+        /// </summary>
+        static IsotopeAsync<Env, A> withBrowser<Env, A>(
+            IsotopeAsync<Env, A> ma,
+            Func<IPlaywright, IBrowserType> browserTypeSelector,
+            BrowserTypeLaunchOptions options) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var prevPage = state.Page;
+                var prevCtx  = state.BrowserContext;
+                var prevBro  = state.Browser;
+                var prevPw   = state.Playwright;
+
+                var pw = await Microsoft.Playwright.Playwright.CreateAsync().ConfigureAwait(false);
+                try
+                {
+                    var bro = await browserTypeSelector(pw).LaunchAsync(options).ConfigureAwait(false);
+                    try
+                    {
+                        var ctx = await bro.NewContextAsync().ConfigureAwait(false);
+                        try
+                        {
+                            var pg = await ctx.NewPageAsync().ConfigureAwait(false);
+                            var newState = state.With(Page: Some(pg), BrowserContext: Some(ctx), Browser: Some(bro), Playwright: Some(pw));
+                            var result = await ma.Invoke(env, newState).ConfigureAwait(false);
                             var finalState = result.State.With(Page: prevPage, BrowserContext: prevCtx, Browser: prevBro, Playwright: prevPw);
                             return new IsotopeState<A>(result.Value, finalState);
                         }
@@ -1238,6 +1310,31 @@ namespace Isotope80
                     };
 
                     var r = await wrapped.Invoke(state).ConfigureAwait(false);
+                    errors = errors + r.State.Error;
+                }
+
+                return new IsotopeState<Unit>(unit, state.With(Error: errors));
+            });
+
+        /// <summary>
+        /// Run the isotope computation against multiple browser types, collecting errors from all.
+        /// </summary>
+        public static IsotopeAsync<Env, Unit> withBrowsers<Env, A>(IsotopeAsync<Env, A> ma, params BrowserSelect[] browsers) =>
+            new IsotopeAsync<Env, Unit>(async (env, state) =>
+            {
+                Seq<Error> errors = Empty;
+
+                foreach (var bs in browsers)
+                {
+                    var wrapped = bs switch
+                    {
+                        BrowserSelect.Chromium => withChromium(ma),
+                        BrowserSelect.Firefox  => withFirefox(ma),
+                        BrowserSelect.Webkit   => withWebkit(ma),
+                        _                      => throw new ArgumentOutOfRangeException(nameof(browsers), bs, "Unknown browser type")
+                    };
+
+                    var r = await wrapped.Invoke(env, state).ConfigureAwait(false);
                     errors = errors + r.State.Error;
                 }
 
