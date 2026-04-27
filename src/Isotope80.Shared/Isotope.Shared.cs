@@ -693,6 +693,44 @@ namespace Isotope80
                .MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
 
         /// <summary>
+        /// Try an async action
+        /// </summary>
+        /// <param name="action">Async action to try</param>
+        /// <param name="label">Error string if exception is thrown</param>
+        public static IsotopeAsync<Unit> trya(Func<Task> action, string label) =>
+            isoAsync<Unit>(async () => { await action().ConfigureAwait(false); return unit; })
+               .MapFail(e => Error.New(label, Aggregate(e)));
+
+        /// <summary>
+        /// Try an async action
+        /// </summary>
+        /// <param name="action">Async action to try</param>
+        /// <param name="makeError">Convert errors to string</param>
+        public static IsotopeAsync<Unit> trya(Func<Task> action, Func<Error, string> makeError) =>
+            isoAsync<Unit>(async () => { await action().ConfigureAwait(false); return unit; })
+               .MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
+
+        /// <summary>
+        /// Try an async function
+        /// </summary>
+        /// <typeparam name="A">Return type of the function</typeparam>
+        /// <param name="func">Async function to try</param>
+        /// <param name="label">Error string if exception is thrown</param>
+        public static IsotopeAsync<A> tryf<A>(Func<Task<A>> func, string label) =>
+            isoAsync<A>(async () => await func().ConfigureAwait(false))
+               .MapFail(e => Error.New(label, Aggregate(e)));
+
+        /// <summary>
+        /// Try an async function
+        /// </summary>
+        /// <typeparam name="A">Return type of the function</typeparam>
+        /// <param name="func">Async function to try</param>
+        /// <param name="makeError">Convert errors to string</param>
+        public static IsotopeAsync<A> tryf<A>(Func<Task<A>> func, Func<Error, string> makeError) =>
+            isoAsync<A>(async () => await func().ConfigureAwait(false))
+               .MapFail(e => Error.New(makeError(e.Last), Aggregate(e)));
+
+        /// <summary>
         /// Run a void returning action
         /// </summary>
         /// <param name="action">Action to run</param>

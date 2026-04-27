@@ -275,6 +275,37 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Presses a single key or key combination on an element.
+        /// Supports special keys: "Tab", "Enter", "End", "Home", "Escape", "Backspace", "Delete",
+        /// "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", and modifiers like "Shift+Tab".
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="key">Key to press (e.g. "Tab", "Enter", "End")</param>
+        public static IsotopeAsync<Unit> pressKey(Select selector, string key) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.PressAsync(key).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Presses a single key or key combination on the page (not targeting a specific element).
+        /// Supports special keys: "Tab", "Enter", "End", "Home", "Escape", "Backspace", "Delete",
+        /// "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", and modifiers like "Shift+Tab".
+        /// </summary>
+        /// <param name="key">Key to press (e.g. "Tab", "Enter", "End")</param>
+        public static IsotopeAsync<Unit> pressKey(string key) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.Keyboard.PressAsync(key).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Fill an input element with a value (clears first, then sets)
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -416,6 +447,20 @@ namespace Isotope80
             from _ in isoAsync<Unit>(async () =>
             {
                 await loc.SelectOptionAsync(new SelectOptionValue { Value = optionValue }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Selects an option from a select element by its zero-based index
+        /// </summary>
+        /// <param name="selector">Select element selector</param>
+        /// <param name="index">Zero-based index of the option to select</param>
+        public static IsotopeAsync<Unit> selectByPosition(Select selector, int index) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SelectOptionAsync(new SelectOptionValue { Index = index }).ConfigureAwait(false);
                 return unit;
             })
             select unit;
@@ -1090,73 +1135,109 @@ namespace Isotope80
         /// Run the isotope provided with Chromium browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withChromium<A>(IsotopeAsync<A> ma) =>
-            withChromium(ma, null);
+            withChromium(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with Chromium browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withChromium<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions options) =>
-            context("Chromium", withBrowser(ma, pw => pw.Chromium, options));
+            withChromium(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with Chromium browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<A> withChromium<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("Chromium", withBrowser(ma, pw => pw.Chromium, launchOptions, contextOptions));
 
         /// <summary>
         /// Run the isotope provided with Chromium browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withChromium<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withChromium(ma, null);
+            withChromium(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with Chromium browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withChromium<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
-            context("Chromium", withBrowser(ma, pw => pw.Chromium, options));
+            withChromium(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with Chromium browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withChromium<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("Chromium", withBrowser(ma, pw => pw.Chromium, launchOptions, contextOptions));
 
         /// <summary>
         /// Run the isotope provided with Firefox browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withFirefox<A>(IsotopeAsync<A> ma) =>
-            withFirefox(ma, null);
+            withFirefox(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with Firefox browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withFirefox<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions options) =>
-            context("Firefox", withBrowser(ma, pw => pw.Firefox, options));
+            withFirefox(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<A> withFirefox<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("Firefox", withBrowser(ma, pw => pw.Firefox, launchOptions, contextOptions));
 
         /// <summary>
         /// Run the isotope provided with Firefox browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withFirefox<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withFirefox(ma, null);
+            withFirefox(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with Firefox browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withFirefox<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
-            context("Firefox", withBrowser(ma, pw => pw.Firefox, options));
+            withFirefox(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with Firefox browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withFirefox<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("Firefox", withBrowser(ma, pw => pw.Firefox, launchOptions, contextOptions));
 
         /// <summary>
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withWebkit<A>(IsotopeAsync<A> ma) =>
-            withWebkit(ma, null);
+            withWebkit(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<A> withWebkit<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions options) =>
-            context("WebKit", withBrowser(ma, pw => pw.Webkit, options));
+            withWebkit(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with WebKit browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<A> withWebkit<A>(IsotopeAsync<A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("WebKit", withBrowser(ma, pw => pw.Webkit, launchOptions, contextOptions));
 
         /// <summary>
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withWebkit<Env, A>(IsotopeAsync<Env, A> ma) =>
-            withWebkit(ma, null);
+            withWebkit(ma, null, null);
 
         /// <summary>
         /// Run the isotope provided with WebKit browser (full lifecycle)
         /// </summary>
         public static IsotopeAsync<Env, A> withWebkit<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions options) =>
-            context("WebKit", withBrowser(ma, pw => pw.Webkit, options));
+            withWebkit(ma, options, null);
+
+        /// <summary>
+        /// Run the isotope provided with WebKit browser (full lifecycle)
+        /// </summary>
+        public static IsotopeAsync<Env, A> withWebkit<Env, A>(IsotopeAsync<Env, A> ma, BrowserTypeLaunchOptions launchOptions, BrowserNewContextOptions contextOptions) =>
+            context("WebKit", withBrowser(ma, pw => pw.Webkit, launchOptions, contextOptions));
 
         /// <summary>
         /// Internal helper that manages the full Playwright lifecycle
@@ -1164,7 +1245,8 @@ namespace Isotope80
         static IsotopeAsync<A> withBrowser<A>(
             IsotopeAsync<A> ma,
             Func<IPlaywright, IBrowserType> browserTypeSelector,
-            BrowserTypeLaunchOptions options) =>
+            BrowserTypeLaunchOptions options,
+            BrowserNewContextOptions contextOptions) =>
             new IsotopeAsync<A>(async state =>
             {
                 var prevPage = state.Page;
@@ -1178,7 +1260,7 @@ namespace Isotope80
                     var bro = await browserTypeSelector(pw).LaunchAsync(options).ConfigureAwait(false);
                     try
                     {
-                        var ctx = await bro.NewContextAsync().ConfigureAwait(false);
+                        var ctx = await bro.NewContextAsync(contextOptions).ConfigureAwait(false);
                         try
                         {
                             var pg = await ctx.NewPageAsync().ConfigureAwait(false);
@@ -1200,7 +1282,8 @@ namespace Isotope80
         static IsotopeAsync<Env, A> withBrowser<Env, A>(
             IsotopeAsync<Env, A> ma,
             Func<IPlaywright, IBrowserType> browserTypeSelector,
-            BrowserTypeLaunchOptions options) =>
+            BrowserTypeLaunchOptions options,
+            BrowserNewContextOptions contextOptions) =>
             new IsotopeAsync<Env, A>(async (env, state) =>
             {
                 var prevPage = state.Page;
@@ -1214,7 +1297,7 @@ namespace Isotope80
                     var bro = await browserTypeSelector(pw).LaunchAsync(options).ConfigureAwait(false);
                     try
                     {
-                        var ctx = await bro.NewContextAsync().ConfigureAwait(false);
+                        var ctx = await bro.NewContextAsync(contextOptions).ConfigureAwait(false);
                         try
                         {
                             var pg = await ctx.NewPageAsync().ConfigureAwait(false);
