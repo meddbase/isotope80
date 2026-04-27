@@ -94,7 +94,7 @@ public class InteractionTests
     }
 
     [Fact]
-    public async Task SelectByText_SelectByValue_GetSelected()
+    public async Task SelectByText_SelectByValue_SelectByPosition_GetSelected()
     {
         var test =
             from _1 in nav("https://the-internet.herokuapp.com/dropdown")
@@ -106,6 +106,10 @@ public class InteractionTests
             from _4 in selectByValue(css("#dropdown"), "2")
             from sv in getSelectedOptionValue(css("#dropdown"))
             from _5 in assert(sv == "2", $"Expected selected value '2', got '{sv}'")
+            // selectByPosition to pick option in position 1
+            from _6 in selectByPosition(css("#dropdown"), 1)
+            from si in getSelectedOptionValue(css("#dropdown"))
+            from _7 in assert(si == "1", $"Expected selected value '1', got '{si}'")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
