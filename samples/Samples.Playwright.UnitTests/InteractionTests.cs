@@ -110,6 +110,10 @@ public class InteractionTests
             from _6 in selectByPosition(css("#dropdown"), 1)
             from si in getSelectedOptionValue(css("#dropdown"))
             from _7 in assert(si == "1", $"Expected selected value '1', got '{si}'")
+            // selectByTextContaining to pick option containing "tion 1"
+            from _8 in selectByTextContaining(css("#dropdown"), "tion 1")
+            from sc in getSelectedOptionText(css("#dropdown"))
+            from _9 in assert(sc == "Option 1", $"Expected selected text 'Option 1', got '{sc}'")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();

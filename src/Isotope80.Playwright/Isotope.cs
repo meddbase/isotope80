@@ -466,6 +466,22 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Selects an option from a select element where the option text contains the specified substring
+        /// </summary>
+        /// <param name="selector">Select element selector</param>
+        /// <param name="partialText">Substring to match against option text</param>
+        public static IsotopeAsync<Unit> selectByTextContaining(Select selector, string partialText) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                var option = loc.Locator("option", new LocatorLocatorOptions { HasTextString = partialText });
+                var text = await option.First.TextContentAsync().ConfigureAwait(false);
+                await loc.SelectOptionAsync(new SelectOptionValue { Label = text }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Sets a checkbox or radio button to the desired checked state
         /// </summary>
         /// <param name="selector">Checkbox or radio button selector</param>
