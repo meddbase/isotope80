@@ -136,6 +136,26 @@ public class InteractionTests
 
         await withChromium(test).RunAndThrowOnError();
     }
+    
+    [Fact]
+    public async Task Check_and_Uncheck()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/checkboxes")
+            let cb = css("input[type='checkbox']") + atIndex(0)
+            // ensure unchecked, then check
+            from _2 in uncheck(cb)
+            from _3 in check(cb)
+            from c1 in isCheckboxChecked(cb)
+            from _4 in assert(c1, "Expected checkbox to be checked after check()")
+            // uncheck
+            from _5 in uncheck(cb)
+            from c2 in isCheckboxChecked(cb)
+            from _6 in assert(!c2, "Expected checkbox to be unchecked after uncheck()")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
 
     [Fact]
     public async Task WaitUntilClickable_succeeds_on_visible_enabled_element()
