@@ -333,6 +333,32 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Removes keyboard focus from an element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Unit> blur(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.BlurAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Sets keyboard focus on an element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Unit> focus(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.FocusAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Simulates keyboard by sending keys and overwriting current content
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -365,6 +391,19 @@ namespace Isotope80
             from _ in isoAsync<Unit>(async () =>
             {
                 await loc.ClickAsync(new LocatorClickOptions { Button = MouseButton.Right }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Performs a touch tap on an element. Essential for testing mobile/touch UIs
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Unit> tap(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.TapAsync().ConfigureAwait(false);
                 return unit;
             })
             select unit;
@@ -496,6 +535,32 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Checks a checkbox/radio if not already checked
+        /// </summary>
+        /// <param name="selector">Checkbox or radio button selector</param>
+        public static IsotopeAsync<Unit> check(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.CheckAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Unchecks a checkbox if not already unchecked
+        /// </summary>
+        /// <param name="selector">Checkbox selector</param>
+        public static IsotopeAsync<Unit> uncheck(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.UncheckAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Clears the element and then types the keys one at a time using PressSequentiallyAsync.
         /// This is useful when FillAsync does not trigger the required input events.
         /// </summary>
@@ -507,6 +572,117 @@ namespace Isotope80
             {
                 await loc.ClearAsync().ConfigureAwait(false);
                 await loc.PressSequentiallyAsync(keys).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Sets a file for a file input element
+        /// </summary>
+        /// <param name="selector">File input element selector</param>
+        /// <param name="path">Path to the file</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, string path) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SetInputFilesAsync(path).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Sets multiple files for a file input element
+        /// </summary>
+        /// <param name="selector">File input element selector</param>
+        /// <param name="paths">Paths to the files</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, string[] paths) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SetInputFilesAsync(paths).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Sets an in-memory file for a file input element
+        /// </summary>
+        /// <param name="selector">File input element selector</param>
+        /// <param name="file">File payload with name, MIME type, and content</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, FilePayload file) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SetInputFilesAsync(file).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Sets multiple in-memory files for a file input element
+        /// </summary>
+        /// <param name="selector">File input element selector</param>
+        /// <param name="files">File payloads with name, MIME type, and content</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, FilePayload[] files) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SetInputFilesAsync(files).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Clears the selected files from a file input element
+        /// </summary>
+        /// <param name="selector">File input element selector</param>
+        public static IsotopeAsync<Unit> clearInputFiles(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SetInputFilesAsync(System.Array.Empty<string>()).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Selects all text content inside an element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Unit> selectText(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.SelectTextAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Dispatches a DOM event on an element
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="type">Event type (e.g. "click", "change", "input")</param>
+        public static IsotopeAsync<Unit> dispatchEvent(Select selector, string type) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.DispatchEventAsync(type).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Dispatches a DOM event on an element with event initialisation data
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="type">Event type (e.g. "click", "change", "input")</param>
+        /// <param name="eventInit">Event initialisation data passed to the event constructor</param>
+        public static IsotopeAsync<Unit> dispatchEvent(Select selector, string type, object eventInit) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.DispatchEventAsync(type, eventInit).ConfigureAwait(false);
                 return unit;
             })
             select unit;
@@ -531,6 +707,37 @@ namespace Isotope80
             from ts in isoAsync<Seq<string>>(async () =>
             {
                 var all = await loc.AllInnerTextsAsync().ConfigureAwait(false);
+                return all.ToSeq();
+            })
+            select ts;
+
+        /// <summary>
+        /// Returns the inner HTML markup of an element (vs. InnerTextAsync which returns visible text only)
+        /// </summary>
+        /// <param name="selector">Element selector</param>
+        public static IsotopeAsync<string> innerHTML(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from h in isoAsync<string>(async () => await loc.InnerHTMLAsync().ConfigureAwait(false))
+            select h;
+
+        /// <summary>
+        /// Gets the raw textContent of an element (includes hidden text, unlike text/InnerText)
+        /// </summary>
+        /// <param name="selector">Element selector</param>
+        public static IsotopeAsync<string> textContent(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from t in isoAsync<string>(async () => await loc.TextContentAsync().ConfigureAwait(false))
+            select t ?? "";
+
+        /// <summary>
+        /// Gets the raw textContent of all elements matching the selector
+        /// </summary>
+        /// <param name="selector">Element selector</param>
+        public static IsotopeAsync<Seq<string>> textContents(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from ts in isoAsync<Seq<string>>(async () =>
+            {
+                var all = await loc.AllTextContentsAsync().ConfigureAwait(false);
                 return all.ToSeq();
             })
             select ts;
@@ -590,6 +797,36 @@ namespace Isotope80
             select v;
 
         /// <summary>
+        /// Finds an element by a selector and checks if it is currently hidden
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <returns>True if the element is currently hidden</returns>
+        public static IsotopeAsync<bool> hidden(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from v in isoAsync<bool>(async () => await loc.IsHiddenAsync().ConfigureAwait(false))
+            select v;
+
+        /// <summary>
+        /// Finds an element by a selector and checks if it is currently editable
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <returns>True if the element is editable (not disabled and not readonly)</returns>
+        public static IsotopeAsync<bool> editable(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from v in isoAsync<bool>(async () => await loc.IsEditableAsync().ConfigureAwait(false))
+            select v;
+
+        /// <summary>
+        /// Finds an element by a selector and checks if it is currently disabled
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <returns>True if the element is currently disabled</returns>
+        public static IsotopeAsync<bool> disabled(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from v in isoAsync<bool>(async () => await loc.IsDisabledAsync().ConfigureAwait(false))
+            select v;
+
+        /// <summary>
         /// Gets the computed value of a CSS style property for an element
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -626,6 +863,44 @@ namespace Isotope80
                     return top !== el && !el.contains(top);
                 }").ConfigureAwait(false))
             select v;
+
+        /// <summary>
+        /// Returns the element's position and size (x, y, width, height). Useful for layout assertions and custom click offsets.
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <returns>Some(RectangleF) with the element's position and size, or None if not visible</returns>
+        public static IsotopeAsync<Option<RectangleF>> boundingBox(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from box in isoAsync<Option<RectangleF>>(async () =>
+            {
+                var b = await loc.BoundingBoxAsync().ConfigureAwait(false);
+                return b != null
+                    ? Some(new RectangleF(b.X, b.Y, b.Width, b.Height))
+                    : Option<RectangleF>.None;
+            })
+            select box;
+
+        /// <summary>
+        /// Returns the accessibility tree snapshot for the element. Useful for a11y testing.
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<string> ariaSnapshot(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from s in isoAsync<string>(async () => await loc.AriaSnapshotAsync().ConfigureAwait(false))
+            select s;
+
+        /// <summary>
+        /// Visually highlights the element in the browser for debugging
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Unit> highlight(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.HighlightAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
 
         /// <summary>
         /// Checks whether a checkbox or radio button element is checked

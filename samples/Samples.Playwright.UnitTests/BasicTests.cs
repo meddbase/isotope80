@@ -91,8 +91,10 @@ public class BasicTests
         var test =
             from _1 in nav("https://the-internet.herokuapp.com/login")
             from _2 in fill(css("#username"), "tomsmith")
+            from _3 in blur(css("#username"))
+            from _4 in focus(css("#username"))
             from val in value(css("#username"))
-            from _3 in assert(val == "tomsmith", $"Expected 'tomsmith', got '{val}'")
+            from _5 in assert(val == "tomsmith", $"Expected 'tomsmith', got '{val}'")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
@@ -130,8 +132,12 @@ public class BasicTests
             from _2 in assert(ex, "Expected #username to exist")
             from vis in displayed(css("#username"))
             from _3 in assert(vis, "Expected #username to be displayed")
+            from hid in hidden(css("#username"))
+            from _4 in assert(!hid, "Expected #username not to be hidden")
+            from edi in editable(css("#username"))
+            from _5 in assert(edi, "Expected #username to be editable")
             from noExist in exists(css("#nonexistent-element"))
-            from _4 in assert(!noExist, "Expected #nonexistent-element to not exist")
+            from _6 in assert(!noExist, "Expected #nonexistent-element to not exist")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
