@@ -862,7 +862,13 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<Unit> newTab =>
             from ctx in browserContext
-            from pg in isoAsync<IPage>(async () => await ctx.NewPageAsync().ConfigureAwait(false))
+            from w in defaultWait
+            from pg in isoAsync<IPage>(async () =>
+            {
+                var p = await ctx.NewPageAsync().ConfigureAwait(false);
+                p.SetDefaultTimeout((float)w.TotalMilliseconds);
+                return p;
+            })
             from _ in setPage(pg)
             select unit;
 
@@ -917,8 +923,14 @@ namespace Isotope80
         /// </summary>
         public static IsotopeAsync<Unit> newWindow =>
             from bro in browser
+            from w in defaultWait
             from ctx in isoAsync<IBrowserContext>(async () => await bro.NewContextAsync().ConfigureAwait(false))
-            from pg in isoAsync<IPage>(async () => await ctx.NewPageAsync().ConfigureAwait(false))
+            from pg in isoAsync<IPage>(async () =>
+            {
+                var p = await ctx.NewPageAsync().ConfigureAwait(false);
+                p.SetDefaultTimeout((float)w.TotalMilliseconds);
+                return p;
+            })
             from _1 in setBrowserContext(ctx)
             from _2 in setPage(pg)
             select unit;
@@ -1280,6 +1292,7 @@ namespace Isotope80
                         try
                         {
                             var pg = await ctx.NewPageAsync().ConfigureAwait(false);
+                            pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
                             var newState = state.With(Page: Some(pg), BrowserContext: Some(ctx), Browser: Some(bro), Playwright: Some(pw));
                             var result = await ma.Invoke(newState).ConfigureAwait(false);
                             var finalState = result.State.With(Page: prevPage, BrowserContext: prevCtx, Browser: prevBro, Playwright: prevPw);
@@ -1317,6 +1330,7 @@ namespace Isotope80
                         try
                         {
                             var pg = await ctx.NewPageAsync().ConfigureAwait(false);
+                            pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
                             var newState = state.With(Page: Some(pg), BrowserContext: Some(ctx), Browser: Some(bro), Playwright: Some(pw));
                             var result = await ma.Invoke(env, newState).ConfigureAwait(false);
                             var finalState = result.State.With(Page: prevPage, BrowserContext: prevCtx, Browser: prevBro, Playwright: prevPw);
@@ -1349,6 +1363,7 @@ namespace Isotope80
             new IsotopeAsync<A>(async state =>
             {
                 var prevPage = state.Page;
+                pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
                 var newState = state.With(Page: Some(pg));
                 try
                 {
@@ -1759,6 +1774,7 @@ namespace Isotope80
                 try
                 {
                     var pg = await ctx.NewPageAsync().ConfigureAwait(false);
+                    pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
                     var newState = broState.State.With(Page: Some(pg), BrowserContext: Some(ctx));
                     var result = await ma.Invoke(newState).ConfigureAwait(false);
                     return new IsotopeState<A>(result.Value, result.State.With(Page: prevPage, BrowserContext: prevCtx));
@@ -1792,6 +1808,7 @@ namespace Isotope80
                 try
                 {
                     var pg = await ctx.NewPageAsync().ConfigureAwait(false);
+                    pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
                     var newState = broState.State.With(Page: Some(pg), BrowserContext: Some(ctx));
                     var result = await ma.Invoke(newState).ConfigureAwait(false);
                     return new IsotopeState<A>(result.Value, result.State.With(Page: prevPage, BrowserContext: prevCtx));
