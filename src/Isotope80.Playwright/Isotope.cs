@@ -521,6 +521,26 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Selects an option from a select element where the option text starts with the specified prefix
+        /// </summary>
+        /// <param name="selector">Select element selector</param>
+        /// <param name="prefix">Prefix to match against the start of option text</param>
+        public static IsotopeAsync<Unit> selectByStartingWithText(Select selector, string prefix) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                var escapedPrefix = System.Text.RegularExpressions.Regex.Escape(prefix);
+                var option = loc.Locator("option", new LocatorLocatorOptions
+                                                   {
+                                                       HasTextRegex = new System.Text.RegularExpressions.Regex($@"^\s*{escapedPrefix}")
+                                                   });
+                var text = (await option.First.TextContentAsync().ConfigureAwait(false))?.Trim();
+                await loc.SelectOptionAsync(new SelectOptionValue { Label = text }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Sets a checkbox or radio button to the desired checked state
         /// </summary>
         /// <param name="selector">Checkbox or radio button selector</param>
@@ -879,15 +899,6 @@ namespace Isotope80
                     : Option<RectangleF>.None;
             })
             select box;
-
-        /// <summary>
-        /// Returns the accessibility tree snapshot for the element. Useful for a11y testing.
-        /// </summary>
-        /// <param name="selector">Web element selector</param>
-        public static IsotopeAsync<string> ariaSnapshot(Select selector) =>
-            from loc in selector.ToIsotopeLocator()
-            from s in isoAsync<string>(async () => await loc.AriaSnapshotAsync().ConfigureAwait(false))
-            select s;
 
         /// <summary>
         /// Visually highlights the element in the browser for debugging

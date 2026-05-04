@@ -114,6 +114,10 @@ public class InteractionTests
             from _8 in selectByTextContaining(css("#dropdown"), "tion 1")
             from sc in getSelectedOptionText(css("#dropdown"))
             from _9 in assert(sc == "Option 1", $"Expected selected text 'Option 1', got '{sc}'")
+            // selectByStartingWithText to pick option starting with "Option 2"
+            from _10 in selectByStartingWithText(css("#dropdown"), "Option 2")
+            from ss in getSelectedOptionText(css("#dropdown"))
+            from _11 in assert(ss == "Option 2", $"Expected selected text 'Option 2', got '{ss}'")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
