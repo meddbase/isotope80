@@ -945,6 +945,30 @@ namespace Isotope80
             select v;
 
         /// <summary>
+        /// Gets the visible text of an option at a given zero-based index in a select element
+        /// </summary>
+        /// <param name="selector">Select element selector</param>
+        /// <param name="index">Zero-based index of the option</param>
+        /// <returns>The text of the option at the specified index</returns>
+        public static IsotopeAsync<string> getOptionText(Select selector, int index) =>
+            from loc in selector.ToIsotopeLocator()
+            from v in isoAsync<string>(async () =>
+                await loc.EvaluateAsync<string>("(el, i) => el.options[i].text", index).ConfigureAwait(false))
+            select v;
+
+        /// <summary>
+        /// Gets the value attribute of an option at a given zero-based index in a select element
+        /// </summary>
+        /// <param name="selector">Select element selector</param>
+        /// <param name="index">Zero-based index of the option</param>
+        /// <returns>The value of the option at the specified index</returns>
+        public static IsotopeAsync<string> getOptionValue(Select selector, int index) =>
+            from loc in selector.ToIsotopeLocator()
+            from v in isoAsync<string>(async () =>
+                await loc.EvaluateAsync<string>("(el, i) => el.options[i].value", index).ConfigureAwait(false))
+            select v;
+
+        /// <summary>
         /// Gets the full HTML source of the current page
         /// </summary>
         public static IsotopeAsync<string> pageSource =>
@@ -1384,15 +1408,9 @@ namespace Isotope80
         /// </remarks>
         /// <param name="selector">Web element selector</param>
         public static IsotopeAsync<Unit> waitUntilClickable(Select selector) =>
-            from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible }).ConfigureAwait(false);
-                var isEnabled = await loc.IsEnabledAsync().ConfigureAwait(false);
-                if (!isEnabled) throw new Exception("Element is visible but not enabled");
-                return unit;
-            })
-            select unit;
+            from w in defaultWait
+            from r in waitUntilClickable(selector, w)
+            select r;
 
         /// <summary>
         /// Waits until an element is visible and enabled (clickable) with a specified timeout.
@@ -1405,15 +1423,28 @@ namespace Isotope80
         /// <param name="timeout">Maximum time to wait</param>
         public static IsotopeAsync<Unit> waitUntilClickable(Select selector, TimeSpan timeout) =>
             from loc in selector.ToIsotopeLocator()
+            from i in defaultInterval
             from _ in isoAsync<Unit>(async () =>
             {
-                await loc.WaitForAsync(new LocatorWaitForOptions
+                var deadline = DateTime.UtcNow + timeout;
+                try
                 {
-                    State = WaitForSelectorState.Visible,
-                    Timeout = (float)timeout.TotalMilliseconds
-                }).ConfigureAwait(false);
-                var isEnabled = await loc.IsEnabledAsync().ConfigureAwait(false);
-                if (!isEnabled) throw new Exception("Element is visible but not enabled");
+                    await loc.WaitForAsync(new LocatorWaitForOptions
+                    {
+                        State = WaitForSelectorState.Visible,
+                        Timeout = (float)timeout.TotalMilliseconds
+                    }).ConfigureAwait(false);
+                }
+                catch (TimeoutException)
+                {
+                    throw new TimeoutException($"waitUntilClickable: '{selector}' not visible after {timeout.TotalMilliseconds}ms");
+                }
+                while (!await loc.IsEnabledAsync().ConfigureAwait(false))
+                {
+                    if (DateTime.UtcNow >= deadline)
+                        throw new TimeoutException($"waitUntilClickable: '{selector}' visible but not enabled after {timeout.TotalMilliseconds}ms");
+                    await Task.Delay(i).ConfigureAwait(false);
+                }
                 return unit;
             })
             select unit;
