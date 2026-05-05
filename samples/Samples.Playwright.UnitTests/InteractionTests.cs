@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using static Isotope80.Isotope;
 using static Isotope80.Assertions;
@@ -94,26 +95,49 @@ public class InteractionTests
     }
 
     [Fact]
-    public async Task SelectByText_SelectByValue_SelectByPosition_GetSelected()
+    public async Task SelectByText_SelectByValue_SelectByPosition()
     {
         var test =
             from _1 in nav("https://the-internet.herokuapp.com/dropdown")
-            // selectByText to pick "Option 1"
             from _2 in selectByText(css("#dropdown"), "Option 1")
             from st in getSelectedOptionText(css("#dropdown"))
             from _3 in assert(st == "Option 1", $"Expected selected text 'Option 1', got '{st}'")
-            // selectByValue to pick value "2"
             from _4 in selectByValue(css("#dropdown"), "2")
             from sv in getSelectedOptionValue(css("#dropdown"))
             from _5 in assert(sv == "2", $"Expected selected value '2', got '{sv}'")
-            // selectByPosition to pick option in position 1
             from _6 in selectByPosition(css("#dropdown"), 1)
             from si in getSelectedOptionValue(css("#dropdown"))
             from _7 in assert(si == "1", $"Expected selected value '1', got '{si}'")
-            // selectByTextContaining to pick option containing "tion 1"
-            from _8 in selectByTextContaining(css("#dropdown"), "tion 1")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task SelectByTextContaining_SelectByStartingWithText()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/dropdown")
+            from _2 in selectByTextContaining(css("#dropdown"), "tion 1")
             from sc in getSelectedOptionText(css("#dropdown"))
-            from _9 in assert(sc == "Option 1", $"Expected selected text 'Option 1', got '{sc}'")
+            from _3 in assert(sc == "Option 1", $"Expected selected text 'Option 1', got '{sc}'")
+            from _4 in selectByStartingWithText(css("#dropdown"), "Option 2")
+            from ss in getSelectedOptionText(css("#dropdown"))
+            from _5 in assert(ss == "Option 2", $"Expected selected text 'Option 2', got '{ss}'")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task GetOptionText_GetOptionValue()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/dropdown")
+            from ot in getOptionText(css("#dropdown"), 1)
+            from _2 in assert(ot == "Option 1", $"Expected option at index 1 to be 'Option 1', got '{ot}'")
+            from ov in getOptionValue(css("#dropdown"), 1)
+            from _3 in assert(ov == "1", $"Expected option value at index 1 to be '1', got '{ov}'")
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
@@ -136,6 +160,26 @@ public class InteractionTests
 
         await withChromium(test).RunAndThrowOnError();
     }
+    
+    [Fact]
+    public async Task Check_and_Uncheck()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/checkboxes")
+            let cb = css("input[type='checkbox']") + atIndex(0)
+            // ensure unchecked, then check
+            from _2 in uncheck(cb)
+            from _3 in check(cb)
+            from c1 in isCheckboxChecked(cb)
+            from _4 in assert(c1, "Expected checkbox to be checked after check()")
+            // uncheck
+            from _5 in uncheck(cb)
+            from c2 in isCheckboxChecked(cb)
+            from _6 in assert(!c2, "Expected checkbox to be unchecked after uncheck()")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
 
     [Fact]
     public async Task WaitUntilClickable_succeeds_on_visible_enabled_element()
@@ -146,6 +190,58 @@ public class InteractionTests
             select unit;
 
         await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task WaitUntilClickable_waits_for_element_to_become_enabled()
+    {
+        var html = "data:text/html,<html><body>"
+                 + "<button id='btn' disabled>Click me</button>"
+                 + "<script>setTimeout(function(){ document.getElementById('btn').disabled = false; }, 3000);</script>"
+                 + "</body></html>";
+
+        var test =
+            from _1 in nav(html)
+            from en1 in enabled(css("#btn"))
+            from _2 in assert(!en1, "Expected button to be disabled initially")
+            from _3 in waitUntilClickable(css("#btn"))
+            from en2 in enabled(css("#btn"))
+            from _4 in assert(en2, "Expected button to be enabled after waitUntilClickable")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task WaitUntilClickable_fails_with_not_visible_message()
+    {
+        var html = "data:text/html,<html><body>"
+                 + "<button id='btn' style='display:none'>Hidden</button>"
+                 + "</body></html>";
+
+        var test =
+            from _1 in nav(html)
+            from _2 in waitUntilClickable(css("#btn"), TimeSpan.FromSeconds(2))
+            select unit;
+
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() => withChromium(test).RunAndThrowOnError().AsTask());
+        Assert.Contains("not visible after 2000ms", ex.Message);
+    }
+
+    [Fact]
+    public async Task WaitUntilClickable_fails_with_not_enabled_message()
+    {
+        var html = "data:text/html,<html><body>"
+                 + "<button id='btn' disabled>Disabled</button>"
+                 + "</body></html>";
+
+        var test =
+            from _1 in nav(html)
+            from _2 in waitUntilClickable(css("#btn"), TimeSpan.FromSeconds(2))
+            select unit;
+
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() => withChromium(test).RunAndThrowOnError().AsTask());
+        Assert.Contains("visible but not enabled after 2000ms", ex.Message);
     }
 
     [Fact]
