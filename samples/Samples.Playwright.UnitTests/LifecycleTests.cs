@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using static Isotope80.Isotope;
 using static Isotope80.Assertions;
@@ -37,5 +38,26 @@ public class LifecycleTests
             if (br != null) await br.CloseAsync();
             pw?.Dispose();
         }
+    }
+
+    [Fact]
+    public async Task Settings_wait_propagates_to_playwright_default_timeout()
+    {
+        var settings = IsotopeSettings.Create(wait: TimeSpan.FromMilliseconds(5000));
+
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/")
+            from pg in page
+            from _2 in isoAsync<Unit>(async () =>
+            {
+                await pg.ClickAsync("#does-not-exist").ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        var ex = await Assert.ThrowsAsync<TimeoutException>(
+            async () => await withChromium(test).RunAndThrowOnError(settings));
+
+        Assert.Contains("Timeout 5000ms exceeded", ex.Message);
     }
 }
