@@ -1945,6 +1945,7 @@ namespace Isotope80
                 var p = pState.Value;
                 var responseTask = p.WaitForResponseAsync(urlPattern);
                 var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                if (actionResult.IsFaulted) return actionResult.CastError<IResponse>();
                 var response = await responseTask.ConfigureAwait(false);
 
                 return new IsotopeState<IResponse>(response, actionResult.State);
@@ -2019,6 +2020,7 @@ namespace Isotope80
             from download in waitForDownload(action)
             from path in isoAsync<string>(async () =>
             {
+                System.IO.Directory.CreateDirectory(directory);
                 var filePath = System.IO.Path.Combine(directory, download.SuggestedFilename);
                 await download.SaveAsAsync(filePath).ConfigureAwait(false);
                 return filePath;
@@ -2033,20 +2035,7 @@ namespace Isotope80
         /// <param name="path">Path to the file to upload</param>
         /// <param name="action">Action that triggers the file chooser (e.g. clicking an upload button)</param>
         public static IsotopeAsync<Unit> withFileChooser<A>(string path, IsotopeAsync<A> action) =>
-            new IsotopeAsync<Unit>(async state =>
-            {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<Unit>();
-
-                var p = pState.Value;
-                var fileChooserTask = p.WaitForFileChooserAsync();
-                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
-                if (actionResult.IsFaulted) return actionResult.CastError<Unit>();
-                var fileChooser = await fileChooserTask.ConfigureAwait(false);
-                await fileChooser.SetFilesAsync(path).ConfigureAwait(false);
-
-                return new IsotopeState<Unit>(unit, actionResult.State);
-            });
+            withFileChooser(new[] { path }, action);
 
         /// <summary>
         /// Run an action that triggers a file chooser dialog and set multiple files on it.
@@ -2287,6 +2276,7 @@ namespace Isotope80
                 var p = pState.Value;
                 var popupTask = p.WaitForPopupAsync();
                 var actionResult = await triggerAction.Invoke(pState.State).ConfigureAwait(false);
+                if (actionResult.IsFaulted) return actionResult.CastError<IPage>();
                 var popupPage = await popupTask.ConfigureAwait(false);
 
                 return new IsotopeState<IPage>(popupPage, actionResult.State);
