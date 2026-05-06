@@ -1973,6 +1973,105 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Run an action that triggers a download and return the download object.
+        /// Starts listening for the download event before executing the action.
+        /// </summary>
+        /// <typeparam name="A">Result type of the triggering action</typeparam>
+        /// <param name="action">Action that triggers the download (e.g. clicking a download button)</param>
+        public static IsotopeAsync<IDownload> waitForDownload<A>(IsotopeAsync<A> action) =>
+            new IsotopeAsync<IDownload>(async state =>
+            {
+                var pState = await page.Invoke(state).ConfigureAwait(false);
+                if (pState.IsFaulted) return pState.CastError<IDownload>();
+
+                var p = pState.Value;
+                var downloadTask = p.WaitForDownloadAsync();
+                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                if (actionResult.IsFaulted) return actionResult.CastError<IDownload>();
+                var download = await downloadTask.ConfigureAwait(false);
+
+                return new IsotopeState<IDownload>(download, actionResult.State);
+            });
+
+        /// <summary>
+        /// Run an action that triggers a download and save the file to the specified path.
+        /// </summary>
+        /// <typeparam name="A">Result type of the triggering action</typeparam>
+        /// <param name="targetPath">Full file path where the download should be saved</param>
+        /// <param name="action">Action that triggers the download</param>
+        public static IsotopeAsync<Unit> downloadTo<A>(string targetPath, IsotopeAsync<A> action) =>
+            from download in waitForDownload(action)
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await download.SaveAsAsync(targetPath).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Run an action that triggers a download and save the file using its suggested filename
+        /// into the specified directory. Returns the full path of the saved file.
+        /// </summary>
+        /// <typeparam name="A">Result type of the triggering action</typeparam>
+        /// <param name="directory">Directory where the download should be saved</param>
+        /// <param name="action">Action that triggers the download</param>
+        public static IsotopeAsync<string> downloadToDirectory<A>(string directory, IsotopeAsync<A> action) =>
+            from download in waitForDownload(action)
+            from path in isoAsync<string>(async () =>
+            {
+                var filePath = System.IO.Path.Combine(directory, download.SuggestedFilename);
+                await download.SaveAsAsync(filePath).ConfigureAwait(false);
+                return filePath;
+            })
+            select path;
+
+        /// <summary>
+        /// Run an action that triggers a file chooser dialog and set a single file on it.
+        /// Starts listening for the file chooser event before executing the action.
+        /// </summary>
+        /// <typeparam name="A">Result type of the triggering action</typeparam>
+        /// <param name="path">Path to the file to upload</param>
+        /// <param name="action">Action that triggers the file chooser (e.g. clicking an upload button)</param>
+        public static IsotopeAsync<Unit> withFileChooser<A>(string path, IsotopeAsync<A> action) =>
+            new IsotopeAsync<Unit>(async state =>
+            {
+                var pState = await page.Invoke(state).ConfigureAwait(false);
+                if (pState.IsFaulted) return pState.CastError<Unit>();
+
+                var p = pState.Value;
+                var fileChooserTask = p.WaitForFileChooserAsync();
+                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                if (actionResult.IsFaulted) return actionResult.CastError<Unit>();
+                var fileChooser = await fileChooserTask.ConfigureAwait(false);
+                await fileChooser.SetFilesAsync(path).ConfigureAwait(false);
+
+                return new IsotopeState<Unit>(unit, actionResult.State);
+            });
+
+        /// <summary>
+        /// Run an action that triggers a file chooser dialog and set multiple files on it.
+        /// Starts listening for the file chooser event before executing the action.
+        /// </summary>
+        /// <typeparam name="A">Result type of the triggering action</typeparam>
+        /// <param name="paths">Paths to the files to upload</param>
+        /// <param name="action">Action that triggers the file chooser (e.g. clicking an upload button)</param>
+        public static IsotopeAsync<Unit> withFileChooser<A>(string[] paths, IsotopeAsync<A> action) =>
+            new IsotopeAsync<Unit>(async state =>
+            {
+                var pState = await page.Invoke(state).ConfigureAwait(false);
+                if (pState.IsFaulted) return pState.CastError<Unit>();
+
+                var p = pState.Value;
+                var fileChooserTask = p.WaitForFileChooserAsync();
+                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                if (actionResult.IsFaulted) return actionResult.CastError<Unit>();
+                var fileChooser = await fileChooserTask.ConfigureAwait(false);
+                await fileChooser.SetFilesAsync(paths).ConfigureAwait(false);
+
+                return new IsotopeState<Unit>(unit, actionResult.State);
+            });
+
+        /// <summary>
         /// Start a Playwright trace for the current browser context.
         /// Traces capture screenshots, snapshots, and network activity for debugging.
         /// </summary>
