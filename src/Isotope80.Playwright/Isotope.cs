@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LanguageExt;
@@ -600,28 +602,22 @@ namespace Isotope80
         /// Sets a file for a file input element
         /// </summary>
         /// <param name="selector">File input element selector</param>
-        /// <param name="path">Path to the file</param>
-        public static IsotopeAsync<Unit> setInputFiles(Select selector, string path) =>
+        /// <param name="file">File to upload</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, FileInfo file) =>
             from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.SetInputFilesAsync(path).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await loc.SetInputFilesAsync(file.FullName).ConfigureAwait(false),
+                           $"Failed to set input file '{file.FullName}'")
             select unit;
 
         /// <summary>
         /// Sets multiple files for a file input element
         /// </summary>
         /// <param name="selector">File input element selector</param>
-        /// <param name="paths">Paths to the files</param>
-        public static IsotopeAsync<Unit> setInputFiles(Select selector, string[] paths) =>
+        /// <param name="files">Files to upload</param>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, IEnumerable<FileInfo> files) =>
             from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.SetInputFilesAsync(paths).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await loc.SetInputFilesAsync(files.Select(f => f.FullName).ToArray()).ConfigureAwait(false),
+                           $"Failed to set input files")
             select unit;
 
         /// <summary>
@@ -631,11 +627,8 @@ namespace Isotope80
         /// <param name="file">File payload with name, MIME type, and content</param>
         public static IsotopeAsync<Unit> setInputFiles(Select selector, FilePayload file) =>
             from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.SetInputFilesAsync(file).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await loc.SetInputFilesAsync(file).ConfigureAwait(false),
+                           $"Failed to set input file payload '{file.Name}'")
             select unit;
 
         /// <summary>
@@ -643,13 +636,10 @@ namespace Isotope80
         /// </summary>
         /// <param name="selector">File input element selector</param>
         /// <param name="files">File payloads with name, MIME type, and content</param>
-        public static IsotopeAsync<Unit> setInputFiles(Select selector, FilePayload[] files) =>
+        public static IsotopeAsync<Unit> setInputFiles(Select selector, IEnumerable<FilePayload> files) =>
             from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.SetInputFilesAsync(files).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await loc.SetInputFilesAsync(files.ToArray()).ConfigureAwait(false),
+                           $"Failed to set input file payloads")
             select unit;
 
         /// <summary>
@@ -658,11 +648,8 @@ namespace Isotope80
         /// <param name="selector">File input element selector</param>
         public static IsotopeAsync<Unit> clearInputFiles(Select selector) =>
             from loc in selector.ToIsotopeLocator()
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await loc.SetInputFilesAsync(System.Array.Empty<string>()).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await loc.SetInputFilesAsync(new string[0]).ConfigureAwait(false),
+                           "Failed to clear input files")
             select unit;
 
         /// <summary>
@@ -1939,16 +1926,23 @@ namespace Isotope80
         public static IsotopeAsync<IResponse> waitForResponse<A>(string urlPattern, IsotopeAsync<A> action) =>
             new IsotopeAsync<IResponse>(async state =>
             {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<IResponse>();
+                try
+                {
+                    var pState = await page.Invoke(state).ConfigureAwait(false);
+                    if (pState.IsFaulted) return pState.CastError<IResponse>();
 
-                var p = pState.Value;
-                var responseTask = p.WaitForResponseAsync(urlPattern);
-                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
-                if (actionResult.IsFaulted) return actionResult.CastError<IResponse>();
-                var response = await responseTask.ConfigureAwait(false);
+                    var p = pState.Value;
+                    var responseTask = p.WaitForResponseAsync(urlPattern);
+                    var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                    if (actionResult.IsFaulted) return actionResult.CastError<IResponse>();
+                    var response = await responseTask.ConfigureAwait(false);
 
-                return new IsotopeState<IResponse>(response, actionResult.State);
+                    return new IsotopeState<IResponse>(response, actionResult.State);
+                }
+                catch (Exception ex)
+                {
+                    return new IsotopeState<IResponse>(default, state.AddError(Error.New($"Failed waiting for response matching '{urlPattern}'", ex)));
+                }
             });
 
         /// <summary>
@@ -1962,15 +1956,22 @@ namespace Isotope80
         public static IsotopeAsync<Unit> waitForNavigation<A>(IsotopeAsync<A> action, string urlPattern = "**/*") =>
             new IsotopeAsync<Unit>(async state =>
             {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<Unit>();
+                try
+                {
+                    var pState = await page.Invoke(state).ConfigureAwait(false);
+                    if (pState.IsFaulted) return pState.CastError<Unit>();
 
-                var p = pState.Value;
-                var waitTask = p.WaitForURLAsync(urlPattern);
-                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
-                await waitTask.ConfigureAwait(false);
+                    var p = pState.Value;
+                    var waitTask = p.WaitForURLAsync(urlPattern);
+                    var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                    await waitTask.ConfigureAwait(false);
 
-                return new IsotopeState<Unit>(unit, actionResult.State);
+                    return new IsotopeState<Unit>(unit, actionResult.State);
+                }
+                catch (Exception ex)
+                {
+                    return new IsotopeState<Unit>(default, state.AddError(Error.New("Failed waiting for navigation", ex)));
+                }
             });
 
         /// <summary>
@@ -1982,82 +1983,93 @@ namespace Isotope80
         public static IsotopeAsync<IDownload> waitForDownload<A>(IsotopeAsync<A> action) =>
             new IsotopeAsync<IDownload>(async state =>
             {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<IDownload>();
+                try
+                {
+                    var pState = await page.Invoke(state).ConfigureAwait(false);
+                    if (pState.IsFaulted) return pState.CastError<IDownload>();
 
-                var p = pState.Value;
-                var downloadTask = p.WaitForDownloadAsync();
-                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
-                if (actionResult.IsFaulted) return actionResult.CastError<IDownload>();
-                var download = await downloadTask.ConfigureAwait(false);
+                    var p = pState.Value;
+                    var downloadTask = p.WaitForDownloadAsync();
+                    var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                    if (actionResult.IsFaulted) return actionResult.CastError<IDownload>();
+                    var download = await downloadTask.ConfigureAwait(false);
 
-                return new IsotopeState<IDownload>(download, actionResult.State);
+                    return new IsotopeState<IDownload>(download, actionResult.State);
+                }
+                catch (Exception ex)
+                {
+                    return new IsotopeState<IDownload>(default, state.AddError(Error.New("Failed waiting for download", ex)));
+                }
             });
 
         /// <summary>
         /// Run an action that triggers a download and save the file to the specified path.
         /// </summary>
         /// <typeparam name="A">Result type of the triggering action</typeparam>
-        /// <param name="targetPath">Full file path where the download should be saved</param>
+        /// <param name="target">File where the download should be saved</param>
         /// <param name="action">Action that triggers the download</param>
-        public static IsotopeAsync<Unit> downloadTo<A>(string targetPath, IsotopeAsync<A> action) =>
+        public static IsotopeAsync<Unit> downloadTo<A>(FileInfo target, IsotopeAsync<A> action) =>
             from download in waitForDownload(action)
-            from _ in isoAsync<Unit>(async () =>
-            {
-                await download.SaveAsAsync(targetPath).ConfigureAwait(false);
-                return unit;
-            })
+            from _ in trya(async () => await download.SaveAsAsync(target.FullName).ConfigureAwait(false),
+                           $"Failed to save download to '{target.FullName}'")
             select unit;
 
         /// <summary>
         /// Run an action that triggers a download and save the file using its suggested filename
-        /// into the specified directory. Returns the full path of the saved file.
+        /// into the specified directory. Returns the saved file.
         /// </summary>
         /// <typeparam name="A">Result type of the triggering action</typeparam>
         /// <param name="directory">Directory where the download should be saved</param>
         /// <param name="action">Action that triggers the download</param>
-        public static IsotopeAsync<string> downloadToDirectory<A>(string directory, IsotopeAsync<A> action) =>
+        public static IsotopeAsync<FileInfo> downloadToDirectory<A>(DirectoryInfo directory, IsotopeAsync<A> action) =>
             from download in waitForDownload(action)
-            from path in isoAsync<string>(async () =>
+            from file in tryf(async () =>
             {
-                System.IO.Directory.CreateDirectory(directory);
-                var filePath = System.IO.Path.Combine(directory, download.SuggestedFilename);
+                directory.Create();
+                var filePath = Path.Combine(directory.FullName, download.SuggestedFilename);
                 await download.SaveAsAsync(filePath).ConfigureAwait(false);
-                return filePath;
-            })
-            select path;
+                return new FileInfo(filePath);
+            }, $"Failed to save download to directory '{directory.FullName}'")
+            select file;
 
         /// <summary>
         /// Run an action that triggers a file chooser dialog and set a single file on it.
         /// Starts listening for the file chooser event before executing the action.
         /// </summary>
         /// <typeparam name="A">Result type of the triggering action</typeparam>
-        /// <param name="path">Path to the file to upload</param>
+        /// <param name="file">File to upload</param>
         /// <param name="action">Action that triggers the file chooser (e.g. clicking an upload button)</param>
-        public static IsotopeAsync<Unit> withFileChooser<A>(string path, IsotopeAsync<A> action) =>
-            withFileChooser(new[] { path }, action);
+        public static IsotopeAsync<Unit> withFileChooser<A>(FileInfo file, IsotopeAsync<A> action) =>
+            withFileChooser(new[] { file }, action);
 
         /// <summary>
         /// Run an action that triggers a file chooser dialog and set multiple files on it.
         /// Starts listening for the file chooser event before executing the action.
         /// </summary>
         /// <typeparam name="A">Result type of the triggering action</typeparam>
-        /// <param name="paths">Paths to the files to upload</param>
+        /// <param name="files">Files to upload</param>
         /// <param name="action">Action that triggers the file chooser (e.g. clicking an upload button)</param>
-        public static IsotopeAsync<Unit> withFileChooser<A>(string[] paths, IsotopeAsync<A> action) =>
+        public static IsotopeAsync<Unit> withFileChooser<A>(IEnumerable<FileInfo> files, IsotopeAsync<A> action) =>
             new IsotopeAsync<Unit>(async state =>
             {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<Unit>();
+                try
+                {
+                    var pState = await page.Invoke(state).ConfigureAwait(false);
+                    if (pState.IsFaulted) return pState.CastError<Unit>();
 
-                var p = pState.Value;
-                var fileChooserTask = p.WaitForFileChooserAsync();
-                var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
-                if (actionResult.IsFaulted) return actionResult.CastError<Unit>();
-                var fileChooser = await fileChooserTask.ConfigureAwait(false);
-                await fileChooser.SetFilesAsync(paths).ConfigureAwait(false);
+                    var p = pState.Value;
+                    var fileChooserTask = p.WaitForFileChooserAsync();
+                    var actionResult = await action.Invoke(pState.State).ConfigureAwait(false);
+                    if (actionResult.IsFaulted) return actionResult.CastError<Unit>();
+                    var fileChooser = await fileChooserTask.ConfigureAwait(false);
+                    await fileChooser.SetFilesAsync(files.Select(f => f.FullName).ToArray()).ConfigureAwait(false);
 
-                return new IsotopeState<Unit>(unit, actionResult.State);
+                    return new IsotopeState<Unit>(unit, actionResult.State);
+                }
+                catch (Exception ex)
+                {
+                    return new IsotopeState<Unit>(default, state.AddError(Error.New("Failed to set files via file chooser", ex)));
+                }
             });
 
         /// <summary>
@@ -2270,16 +2282,23 @@ namespace Isotope80
         public static IsotopeAsync<IPage> waitForPopup<A>(IsotopeAsync<A> triggerAction) =>
             new IsotopeAsync<IPage>(async state =>
             {
-                var pState = await page.Invoke(state).ConfigureAwait(false);
-                if (pState.IsFaulted) return pState.CastError<IPage>();
+                try
+                {
+                    var pState = await page.Invoke(state).ConfigureAwait(false);
+                    if (pState.IsFaulted) return pState.CastError<IPage>();
 
-                var p = pState.Value;
-                var popupTask = p.WaitForPopupAsync();
-                var actionResult = await triggerAction.Invoke(pState.State).ConfigureAwait(false);
-                if (actionResult.IsFaulted) return actionResult.CastError<IPage>();
-                var popupPage = await popupTask.ConfigureAwait(false);
+                    var p = pState.Value;
+                    var popupTask = p.WaitForPopupAsync();
+                    var actionResult = await triggerAction.Invoke(pState.State).ConfigureAwait(false);
+                    if (actionResult.IsFaulted) return actionResult.CastError<IPage>();
+                    var popupPage = await popupTask.ConfigureAwait(false);
 
-                return new IsotopeState<IPage>(popupPage, actionResult.State);
+                    return new IsotopeState<IPage>(popupPage, actionResult.State);
+                }
+                catch (Exception ex)
+                {
+                    return new IsotopeState<IPage>(default, state.AddError(Error.New("Failed waiting for popup", ex)));
+                }
             });
 
         /// <summary>
