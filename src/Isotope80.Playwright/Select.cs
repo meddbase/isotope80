@@ -274,16 +274,17 @@ namespace Isotope80
         /// <returns>Select</returns>
         public static Select waitUntilExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             waitUntil(
-                locator => isoAsync<Unit>(async () =>
-                {
-                    var timeout = wait.IfNone(TimeSpan.FromSeconds(10));
-                    await locator.WaitForAsync(new LocatorWaitForOptions
-                    {
-                        State = WaitForSelectorState.Attached,
-                        Timeout = (float)timeout.TotalMilliseconds
-                    }).ConfigureAwait(false);
-                    return unit;
-                }),
+                locator => from timeout in wait.Match(Some: pure, None: defaultWait)
+                           from _ in isoAsync<Unit>(async () =>
+                           {
+                               await locator.WaitForAsync(new LocatorWaitForOptions
+                               {
+                                   State = WaitForSelectorState.Attached,
+                                   Timeout = (float)timeout.TotalMilliseconds
+                               }).ConfigureAwait(false);
+                               return unit;
+                           })
+                           select unit,
                 "waitUntilElementExists",
                 interval,
                 wait);
@@ -303,16 +304,17 @@ namespace Isotope80
         /// <returns>Select</returns>
         public static Select waitUntilNotExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             waitUntil(
-                locator => isoAsync<Unit>(async () =>
-                {
-                    var timeout = wait.IfNone(TimeSpan.FromSeconds(10));
-                    await locator.WaitForAsync(new LocatorWaitForOptions
-                    {
-                        State = WaitForSelectorState.Hidden,
-                        Timeout = (float)timeout.TotalMilliseconds
-                    }).ConfigureAwait(false);
-                    return unit;
-                }),
+                locator => from timeout in wait.Match(Some: pure, None: defaultWait)
+                           from _ in isoAsync<Unit>(async () =>
+                           {
+                               await locator.WaitForAsync(new LocatorWaitForOptions
+                               {
+                                   State = WaitForSelectorState.Hidden,
+                                   Timeout = (float)timeout.TotalMilliseconds
+                               }).ConfigureAwait(false);
+                               return unit;
+                           })
+                           select unit,
                 "waitUntilElementNotExists",
                 interval,
                 wait);
