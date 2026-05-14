@@ -794,7 +794,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -837,7 +837,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -880,7 +880,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -923,7 +923,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
