@@ -98,7 +98,7 @@ public class WindowAndTabTests
                 info("before switch"),
                 switchTabs(1),
                 info("after switch")
-            ).Sequence().Select(_ => unit)
+            ).Sequence().Map(_ => unit)
             from tabAfter in getCurrentTabNumber
             from _7 in assert(tabAfter == 1, $"Expected tab 1 after Sequence, got {tabAfter}")
             select unit;
