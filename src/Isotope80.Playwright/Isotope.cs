@@ -2273,6 +2273,43 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Run a computation with an environment while capturing browser console messages.
+        /// Returns the computation result alongside all console messages captured during execution.
+        /// </summary>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Result type</typeparam>
+        /// <param name="ma">Computation to run</param>
+        /// <returns>A tuple of the computation result and captured console log entries</returns>
+        public static IsotopeAsync<Env, (A Result, Seq<BrowserLogEntry> Logs)> withConsoleCapture<Env, A>(IsotopeAsync<Env, A> ma) =>
+            new IsotopeAsync<Env, (A, Seq<BrowserLogEntry>)>(async (env, state) =>
+            {
+                var pState = await page.Invoke(state).ConfigureAwait(false);
+                if (pState.IsFaulted) return pState.CastError<(A, Seq<BrowserLogEntry>)>();
+
+                var p = pState.Value;
+                var logs = new ConcurrentBag<BrowserLogEntry>();
+
+                void handler(object sender, IConsoleMessage msg)
+                {
+                    logs.Add(new BrowserLogEntry(msg.Text, msg.Type, DateTime.UtcNow));
+                }
+
+                p.Console += handler;
+                try
+                {
+                    var result = await ma.Invoke(env, pState.State).ConfigureAwait(false);
+                    var capturedLogs = logs.ToSeq();
+                    return new IsotopeState<(A, Seq<BrowserLogEntry>)>(
+                        (result.Value, capturedLogs),
+                        result.State);
+                }
+                finally
+                {
+                    p.Console -= handler;
+                }
+            });
+
+        /// <summary>
         /// Run an action that triggers a popup (new page) and return the new page.
         /// Registers a popup handler before running the action.
         /// </summary>
