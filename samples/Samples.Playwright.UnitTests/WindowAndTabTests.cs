@@ -85,6 +85,28 @@ public class WindowAndTabTests
     }
 
     [Fact]
+    public async Task Sequence_preserves_tab_switch()
+    {
+        var test =
+            from _1 in nav("data:text/html,<html><body><h1>Tab 0</h1></body></html>")
+            from _2 in newTab
+            from _3 in nav("data:text/html,<html><body><h1>Tab 1</h1></body></html>")
+            from _4 in switchTabs(0)
+            from tabBefore in getCurrentTabNumber
+            from _5 in assert(tabBefore == 0, $"Expected tab 0 before Sequence, got {tabBefore}")
+            from _6 in Seq(
+                info("before switch"),
+                switchTabs(1),
+                info("after switch")
+            ).Sequence().Map(_ => unit)
+            from tabAfter in getCurrentTabNumber
+            from _7 in assert(tabAfter == 1, $"Expected tab 1 after Sequence, got {tabAfter}")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
     public async Task NewWindow_creates_isolated_context()
     {
         var test =

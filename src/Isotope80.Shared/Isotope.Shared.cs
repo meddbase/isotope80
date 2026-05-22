@@ -786,7 +786,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
                         nstate      = rstate.State;
@@ -794,7 +794,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -817,7 +817,6 @@ namespace Isotope80
             new Isotope<Env, Seq<A>>(
                 (env, state) => {
                     var vals  = new A[mas.Count];
-                    var log   = state.Log;
                     int index = 0;
 
                     var nstate = state;
@@ -829,7 +828,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
                         nstate      = rstate.State;
@@ -837,7 +836,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -860,7 +859,6 @@ namespace Isotope80
             new IsotopeAsync<Seq<A>>(
                 async state => {
                     var vals  = new A[mas.Count];
-                    var log   = state.Log;
                     int index = 0;
 
                     var nstate = state;
@@ -872,7 +870,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
                         nstate      = rstate.State;
@@ -880,7 +878,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -903,7 +901,6 @@ namespace Isotope80
             new IsotopeAsync<Env, Seq<A>>(
                 async (env, state) => {
                     var vals  = new A[mas.Count];
-                    var log   = state.Log;
                     int index = 0;
 
                     var nstate = state;
@@ -915,7 +912,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                state.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
                         }
 
                         nstate      = rstate.State;
@@ -923,7 +920,7 @@ namespace Isotope80
                         index++;
                     }
 
-                    return new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log));
+                    return new IsotopeState<Seq<A>>(vals.ToSeq(), nstate);
                 });
 
         /// <summary>
@@ -955,7 +952,7 @@ namespace Isotope80
 
                         vals[index] = rstate.Value;
                         errs[index] = rstate.State.Error;
-                        nstate = state.With(Error: Empty, Log: rstate.State.Log);
+                        nstate      = rstate.State.With(Error: Empty);
 
                         index++;
                     }
@@ -964,8 +961,8 @@ namespace Isotope80
                     var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
 
                     return nerr.IsEmpty
-                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
-                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), nstate)
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), nstate.With(Error: nerr));
                 });
 
         /// <summary>
@@ -997,7 +994,7 @@ namespace Isotope80
 
                         vals[index] = rstate.Value;
                         errs[index] = rstate.State.Error;
-                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);
+                        nstate      = rstate.State.With(Error: Empty);
 
                         index++;
                     }
@@ -1006,8 +1003,8 @@ namespace Isotope80
                     var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
 
                     return nerr.IsEmpty
-                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
-                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), nstate)
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), nstate.With(Error: nerr));
                 });
 
         /// <summary>
@@ -1039,7 +1036,7 @@ namespace Isotope80
 
                         vals[index] = rstate.Value;
                         errs[index] = rstate.State.Error;
-                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);
+                        nstate      = rstate.State.With(Error: Empty);
 
                         index++;
                     }
@@ -1048,8 +1045,8 @@ namespace Isotope80
                     var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
 
                     return nerr.IsEmpty
-                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
-                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), nstate)
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), nstate.With(Error: nerr));
                 });
 
         /// <summary>
@@ -1081,7 +1078,7 @@ namespace Isotope80
 
                         vals[index] = rstate.Value;
                         errs[index] = rstate.State.Error;
-                        nstate      = state.With(Error: Empty, Log: rstate.State.Log);
+                        nstate      = rstate.State.With(Error: Empty);
 
                         index++;
                     }
@@ -1090,8 +1087,8 @@ namespace Isotope80
                     var nerr = errs.Fold(Seq<Error>(), (s, e) => s + e);
 
                     return nerr.IsEmpty
-                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Log: nstate.Log))
-                               : new IsotopeState<Seq<A>>(vals.ToSeq(), state.With(Error: nerr, Log: nstate.Log));
+                               ? new IsotopeState<Seq<A>>(vals.ToSeq(), nstate)
+                               : new IsotopeState<Seq<A>>(vals.ToSeq(), nstate.With(Error: nerr));
                 });
 
         /// <summary>
