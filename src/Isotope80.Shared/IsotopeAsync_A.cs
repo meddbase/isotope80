@@ -97,6 +97,22 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Run lhs, if it fails run rhs with the failed state (preserving Page, BrowserContext, etc.)
+        /// Unlike | which resets to the original state for retry semantics.
+        /// </summary>
+        public static IsotopeAsync<A> OnFail(IsotopeAsync<A> lhs, IsotopeAsync<A> rhs) =>
+            new IsotopeAsync<A>(async s =>
+            {
+                var l = await lhs.Invoke(s).ConfigureAwait(false);
+                if (!l.IsFaulted) return l;
+
+                var r = await rhs.Invoke(l.State.With(Error: default(Seq<Error>))).ConfigureAwait(false);
+                return r.IsFaulted
+                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           : r;
+            });
+
+        /// <summary>
         /// Lift the pure value into the monadic space
         /// </summary>
         public static IsotopeAsync<A> Pure(A value) =>

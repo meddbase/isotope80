@@ -43,5 +43,34 @@ namespace Samples.UnitTests
 
             (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: stgs);
         }
+        
+        [Fact]
+        public void OnFail_passes_failed_state_to_rhs()
+        {
+            var lhs = from _1 in initConfig(("marker", "from-lhs"))
+                      from _2 in fail<string>("boom")
+                      select "";
+
+            var rhs = config("marker");
+
+            var (state, value) = Isotope<string>.OnFail(lhs, rhs).Run();
+
+            Assert.False(state.IsFaulted);
+            Assert.Equal("from-lhs", value);
+        }
+
+        [Fact]
+        public void Pipe_operator_does_not_pass_failed_state_to_rhs()
+        {
+            var lhs = from _1 in initConfig(("marker", "from-lhs"))
+                      from _2 in fail<string>("boom")
+                      select "";
+
+            var rhs = config("marker");
+
+            var (state, _) = (lhs | rhs).Run();
+
+            Assert.True(state.IsFaulted, "Expected rhs to fail because | passes original state");
+        }
     }
 }
