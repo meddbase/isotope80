@@ -43,5 +43,34 @@ namespace Samples.UnitTests
 
             (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: stgs);
         }
+
+        [Fact]
+        public void OnFail_passes_failed_state_to_handler()
+        {
+            var operation = from _1 in initConfig(("marker", "from-operation"))
+                            from _2 in fail<string>("boom")
+                            select "";
+
+            var handler = config("marker");
+
+            var (state, value) = operation.OnFail(handler).Run();
+
+            Assert.False(state.IsFaulted);
+            Assert.Equal("from-operation", value);
+        }
+
+        [Fact]
+        public void Pipe_operator_does_not_pass_failed_state_to_handler()
+        {
+            var operation = from _1 in initConfig(("marker", "from-operation"))
+                            from _2 in fail<string>("boom")
+                            select "";
+
+            var handler = config("marker");
+
+            var (state, _) = (operation | handler).Run();
+
+            Assert.True(state.IsFaulted, "Expected handler to fail because | passes original state");
+        }
     }
 }
