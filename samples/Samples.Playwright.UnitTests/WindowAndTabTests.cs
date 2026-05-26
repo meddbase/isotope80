@@ -124,7 +124,7 @@ public class WindowAndTabTests
     [Fact]
     public async Task OnFail_sees_page_source_from_failed_tab()
     {
-        var lhs =
+        var operation =
             from _1 in nav("data:text/html,<html><body>Tab A</body></html>")
             from _2 in newTab
             from _3 in nav("data:text/html,<html><body>Tab B</body></html>")
@@ -132,7 +132,7 @@ public class WindowAndTabTests
             select "";
 
         var (_, value) = await withChromium(
-                             IsotopeAsync<string>.OnFail(lhs, pageSource)
+                             operation.OnFail(pageSource)
                          ).RunAndThrowOnError();
 
         Assert.Contains("Tab B", value);
@@ -141,7 +141,7 @@ public class WindowAndTabTests
     [Fact]
     public async Task Pipe_operator_sees_page_source_from_original_tab()
     {
-        var lhs =
+        var operation =
             from _1 in nav("data:text/html,<html><body>Tab A</body></html>")
             from _2 in newTab
             from _3 in nav("data:text/html,<html><body>Tab B</body></html>")
@@ -149,7 +149,7 @@ public class WindowAndTabTests
             select "";
 
         var (_, value) = await withChromium(
-                             lhs | pageSource
+                             operation | pageSource
                          ).RunAndThrowOnError();
 
         Assert.Contains("Tab A", value);

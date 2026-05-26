@@ -43,34 +43,34 @@ namespace Samples.UnitTests
 
             (var state, var value) = withChromeDriver(iso).RunAndThrowOnError(settings: stgs);
         }
-        
+
         [Fact]
-        public void OnFail_passes_failed_state_to_rhs()
+        public void OnFail_passes_failed_state_to_handler()
         {
-            var lhs = from _1 in initConfig(("marker", "from-lhs"))
-                      from _2 in fail<string>("boom")
-                      select "";
+            var operation = from _1 in initConfig(("marker", "from-operation"))
+                            from _2 in fail<string>("boom")
+                            select "";
 
-            var rhs = config("marker");
+            var handler = config("marker");
 
-            var (state, value) = Isotope<string>.OnFail(lhs, rhs).Run();
+            var (state, value) = operation.OnFail(handler).Run();
 
             Assert.False(state.IsFaulted);
-            Assert.Equal("from-lhs", value);
+            Assert.Equal("from-operation", value);
         }
 
         [Fact]
-        public void Pipe_operator_does_not_pass_failed_state_to_rhs()
+        public void Pipe_operator_does_not_pass_failed_state_to_handler()
         {
-            var lhs = from _1 in initConfig(("marker", "from-lhs"))
-                      from _2 in fail<string>("boom")
-                      select "";
+            var operation = from _1 in initConfig(("marker", "from-operation"))
+                            from _2 in fail<string>("boom")
+                            select "";
 
-            var rhs = config("marker");
+            var handler = config("marker");
 
-            var (state, _) = (lhs | rhs).Run();
+            var (state, _) = (operation | handler).Run();
 
-            Assert.True(state.IsFaulted, "Expected rhs to fail because | passes original state");
+            Assert.True(state.IsFaulted, "Expected handler to fail because | passes original state");
         }
     }
 }

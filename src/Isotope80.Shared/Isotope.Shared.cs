@@ -112,6 +112,34 @@ namespace Isotope80
             select r;
 
         /// <summary>
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
+        /// Unlike | which resets to the original state for retry semantics.
+        /// </summary>
+        public static Isotope<A> onFail<A>(Isotope<A> operation, Isotope<A> handler) =>
+            operation.OnFail(handler);
+
+        /// <summary>
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
+        /// Unlike | which resets to the original state for retry semantics.
+        /// </summary>
+        public static IsotopeAsync<A> onFail<A>(IsotopeAsync<A> operation, IsotopeAsync<A> handler) =>
+            operation.OnFail(handler);
+
+        /// <summary>
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
+        /// Unlike | which resets to the original state for retry semantics.
+        /// </summary>
+        public static Isotope<Env, A> onFail<Env, A>(Isotope<Env, A> operation, Isotope<Env, A> handler) =>
+            operation.OnFail(handler);
+
+        /// <summary>
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
+        /// Unlike | which resets to the original state for retry semantics.
+        /// </summary>
+        public static IsotopeAsync<Env, A> onFail<Env, A>(IsotopeAsync<Env, A> operation, IsotopeAsync<Env, A> handler) =>
+            operation.OnFail(handler);
+
+        /// <summary>
         /// Lift the function into the isotope monadic space
         /// </summary>
         public static Isotope<A> iso<A>(Func<A> f) =>

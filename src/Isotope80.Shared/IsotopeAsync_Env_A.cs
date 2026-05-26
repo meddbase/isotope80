@@ -112,20 +112,23 @@ namespace Isotope80
                                      });
 
         /// <summary>
-        /// Run lhs, if it fails run rhs with the failed state (preserving Page, BrowserContext, etc.)
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
         /// Unlike | which resets to the original state for retry semantics.
         /// </summary>
-        public static IsotopeAsync<Env, A> OnFail(IsotopeAsync<Env, A> lhs, IsotopeAsync<Env, A> rhs) =>
-            new IsotopeAsync<Env, A>(async (e, s) =>
+        public IsotopeAsync<Env, A> OnFail(IsotopeAsync<Env, A> handler)
+        {
+            var operation = this;
+            return new IsotopeAsync<Env, A>(async (e, s) =>
             {
-                var l = await lhs.Invoke(e, s).ConfigureAwait(false);
+                var l = await operation.Invoke(e, s).ConfigureAwait(false);
                 if (!l.IsFaulted) return l;
 
-                var r = await rhs.Invoke(e, l.State.With(Error: default(Seq<Error>))).ConfigureAwait(false);
+                var r = await handler.Invoke(e, l.State.With(Error: default(Seq<Error>))).ConfigureAwait(false);
                 return r.IsFaulted
-                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           ? new IsotopeState<A>(default, l.State.With(Error: l.State.Error + r.State.Error))
                            : r;
             });
+        }
 
         /// <summary>
         /// Lift the pure value into the monadic space

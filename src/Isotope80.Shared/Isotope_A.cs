@@ -79,20 +79,23 @@ namespace Isotope80
             });
 
         /// <summary>
-        /// Run lhs, if it fails run rhs with the failed state (preserving Page, BrowserContext, etc.)
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
         /// Unlike | which resets to the original state for retry semantics.
         /// </summary>
-        public static Isotope<A> OnFail(Isotope<A> lhs, Isotope<A> rhs) =>
-            new Isotope<A>(s =>
+        public Isotope<A> OnFail(Isotope<A> handler)
+        {
+            var operation = this;
+            return new Isotope<A>(s =>
             {
-                var l = lhs.Invoke(s);
+                var l = operation.Invoke(s);
                 if (!l.IsFaulted) return l;
 
-                var r = rhs.Invoke(l.State.With(Error: default(Seq<Error>)));
+                var r = handler.Invoke(l.State.With(Error: default(Seq<Error>)));
                 return r.IsFaulted
-                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           ? new IsotopeState<A>(default, l.State.With(Error: l.State.Error + r.State.Error))
                            : r;
             });
+        }
 
         /// <summary>
         /// Implicit conversion from Error

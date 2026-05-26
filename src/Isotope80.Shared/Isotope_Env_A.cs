@@ -95,20 +95,23 @@ namespace Isotope80
                                 });
 
         /// <summary>
-        /// Run lhs, if it fails run rhs with the failed state (preserving Page, BrowserContext, etc.)
+        /// Run the operation, if it fails run the handler with the failed state (preserving Page, BrowserContext, etc.)
         /// Unlike | which resets to the original state for retry semantics.
         /// </summary>
-        public static Isotope<Env, A> OnFail(Isotope<Env, A> lhs, Isotope<Env, A> rhs) =>
-            new Isotope<Env, A>((e, s) =>
+        public Isotope<Env, A> OnFail(Isotope<Env, A> handler)
+        {
+            var operation = this;
+            return new Isotope<Env, A>((e, s) =>
             {
-                var l = lhs.Invoke(e, s);
+                var l = operation.Invoke(e, s);
                 if (!l.IsFaulted) return l;
 
-                var r = rhs.Invoke(e, l.State.With(Error: default(Seq<Error>)));
+                var r = handler.Invoke(e, l.State.With(Error: default(Seq<Error>)));
                 return r.IsFaulted
-                           ? new IsotopeState<A>(default, s.With(Error: l.State.Error + r.State.Error))
+                           ? new IsotopeState<A>(default, l.State.With(Error: l.State.Error + r.State.Error))
                            : r;
             });
+        }
 
         /// <summary>
         /// Lift the pure value into the monadic space
