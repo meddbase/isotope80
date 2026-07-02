@@ -1805,6 +1805,50 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Do while the condition is true, or it reaches max repeats (async variant with environment)
+        /// </summary>
+        public static IsotopeAsync<Env, A> doWhile<Env, A>(
+            IsotopeAsync<Env, A> iso,
+            Func<A, bool> condition,
+            int maxRepeats = 100) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var s = state;
+                A value = default;
+                for (var i = maxRepeats; i > 0; i--)
+                {
+                    var r = await iso.Invoke(env, s).ConfigureAwait(false);
+                    s = r.State;
+                    value = r.Value;
+
+                    if (r.IsFaulted || !condition(r.Value))
+                        return r;
+                }
+                return new IsotopeState<A>(value, s);
+            });
+
+        /// <summary>
+        /// Run iso while the condition is true.  Fails if max-attempts are reached (async variant with environment).
+        /// </summary>
+        public static IsotopeAsync<Env, A> doWhileOrFail<Env, A>(
+            IsotopeAsync<Env, A> iso,
+            Func<A, bool> condition,
+            int maxAttempts = 100) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var s = state;
+                for (var i = maxAttempts; i > 0; i--)
+                {
+                    var r = await iso.Invoke(env, s).ConfigureAwait(false);
+                    s = r.State;
+
+                    if (r.IsFaulted || !condition(r.Value))
+                        return r;
+                }
+                return new IsotopeState<A>(default, s.AddError(Error.New("do while reached the max-attempts")));
+            });
+
+        /// <summary>
         /// Run an action that triggers a dialog, handle it (accept/dismiss), and return the dialog message.
         /// The dialog handler is registered before the action runs and removed after it completes.
         /// </summary>
