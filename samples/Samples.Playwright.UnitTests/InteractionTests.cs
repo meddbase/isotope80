@@ -254,4 +254,62 @@ public class InteractionTests
 
         await withChromium(test).RunAndThrowOnError();
     }
+
+    [Fact]
+    public async Task InsertText_inserts_at_focus()
+    {
+        var test =
+            from _1 in nav("data:text/html,<input id='f' />")
+            from _2 in focus(css("#f"))
+            from _3 in insertText("hello world")
+            from v in value(css("#f"))
+            from _4 in assert(v == "hello world", $"Expected 'hello world' after insertText, got '{v}'")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task InsertText_sets_content_in_a_real_Monaco_editor()
+    {
+        // Mirrors the technique from the Playwright issue thread (click the editor, select-all, then
+        // set the text) but uses insertText, which the thread notes avoids the autocomplete/typing
+        // flakiness of sendKeys - proving it works against a real Monaco editor.
+        const string token = "IsotopeInsertTextProof";
+        var editor    = css(".monaco-editor") + atIndex(0);
+        var viewLines = editor + css(".view-lines");
+
+        var test =
+            from _1 in nav("https://microsoft.github.io/monaco-editor/playground.html")
+            from _2 in displayed(viewLines)
+            from _3 in click(editor)
+            from _4 in pressKey("ControlOrMeta+KeyA")
+            from _5 in insertText(token)
+            from _6 in pause(TimeSpan.FromSeconds(1))
+            from txt in text(viewLines)
+            from _7 in assert(txt.Contains(token), $"Expected Monaco editor to contain '{token}', got '{txt}'")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task InsertText_bypasses_keydown_handlers()
+    {
+        // The field swallows every keydown, so per-key typing (sendKeys) inserts nothing.
+        // insertText dispatches a single input event with no keydown, so it still sets the value -
+        // this is why it works for rich editors (e.g. Monaco) that hook keydown.
+        var test =
+            from _1 in nav("data:text/html,<input id='f' onkeydown='return false' />")
+            from _2 in focus(css("#f"))
+            from _3 in sendKeys(css("#f"), "typed")
+            from v1 in value(css("#f"))
+            from _4 in assert(v1 == "", $"Expected sendKeys to be blocked by onkeydown, got '{v1}'")
+            from _5 in insertText("inserted")
+            from v2 in value(css("#f"))
+            from _6 in assert(v2 == "inserted", $"Expected 'inserted' via insertText, got '{v2}'")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
 }
