@@ -57,7 +57,7 @@ namespace Samples.UnitTests
         [Fact]
         public void CareersMenuItemLoadsCareersPage() 
         {
-            var expected = "https://www.meddbase.com/jobs-at-meddbase/";
+            var expected = "https://www.meddbase.com/us/jobs-at-meddbase/";
 
             var iso = from _1  in GoToPageAndOpenCareers 
                       from vacancies in SelectVacancyTitles

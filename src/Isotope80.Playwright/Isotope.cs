@@ -308,6 +308,24 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Inserts text at the current keyboard focus by dispatching a single input event, without
+        /// emitting per-character key events. This bypasses editor behaviours that hook keydown -
+        /// autocomplete, auto-closing brackets/tags, auto-indent - so it can set content verbatim in
+        /// rich editors such as Monaco, where <see cref="fill(Select, string)"/> does not work (the
+        /// visible content is not a real input) and <see cref="sendKeys(Select, string)"/> corrupts it.
+        /// Text is inserted at the caret; select existing content first (e.g. Control+A) to replace it.
+        /// </summary>
+        /// <param name="text">Text to insert at the current focus</param>
+        public static IsotopeAsync<Unit> insertText(string text) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.Keyboard.InsertTextAsync(text).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Fill an input element with a value (clears first, then sets)
         /// </summary>
         /// <param name="selector">Web element selector</param>
