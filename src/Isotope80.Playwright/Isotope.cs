@@ -1703,11 +1703,59 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Run the isotope provided with the page context (environment aware)
+        /// </summary>
+        /// <param name="pg">Page to use</param>
+        /// <param name="ma">Computation to run</param>
+        public static IsotopeAsync<Env, A> withPage<Env, A>(IPage pg, IsotopeAsync<Env, A> ma) =>
+            withPage(pg, ma, false);
+
+        /// <summary>
+        /// Run the isotope provided with the page context (environment aware).
+        /// When <paramref name="keepAlive"/> is true the page is not closed after the isotope completes,
+        /// allowing the same page to be reused across multiple runs.
+        /// </summary>
+        /// <param name="pg">Page to use</param>
+        /// <param name="ma">Computation to run</param>
+        /// <param name="keepAlive">When true, the page is not closed after the isotope completes</param>
+        public static IsotopeAsync<Env, A> withPage<Env, A>(IPage pg, IsotopeAsync<Env, A> ma, bool keepAlive) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var prevPage = state.Page;
+                pg.SetDefaultTimeout((float)state.Settings.Wait.TotalMilliseconds);
+                var newState = state.With(Page: Some(pg));
+                try
+                {
+                    var result = await ma.Invoke(env, newState).ConfigureAwait(false);
+                    // Restore previous page in state
+                    return new IsotopeState<A>(result.Value, result.State.With(Page: prevPage));
+                }
+                finally
+                {
+                    if (!keepAlive)
+                    {
+                        await pg.CloseAsync().ConfigureAwait(false);
+                    }
+                }
+            });
+
+        /// <summary>
         /// Run the isotope provided with the browser context
         /// </summary>
         /// <param name="ctx">Browser context to use</param>
         /// <param name="ma">Computation to run</param>
         public static IsotopeAsync<A> withContext<A>(IBrowserContext ctx, IsotopeAsync<A> ma) =>
+            withContext(ctx, ma, false);
+
+        /// <summary>
+        /// Run the isotope provided with the browser context.
+        /// When <paramref name="keepAlive"/> is true the context is not closed after the isotope completes,
+        /// allowing the same context (and its session state) to be reused across multiple runs.
+        /// </summary>
+        /// <param name="ctx">Browser context to use</param>
+        /// <param name="ma">Computation to run</param>
+        /// <param name="keepAlive">When true, the context is not closed after the isotope completes</param>
+        public static IsotopeAsync<A> withContext<A>(IBrowserContext ctx, IsotopeAsync<A> ma, bool keepAlive) =>
             new IsotopeAsync<A>(async state =>
             {
                 var prevCtx = state.BrowserContext;
@@ -1719,7 +1767,45 @@ namespace Isotope80
                 }
                 finally
                 {
-                    await ctx.CloseAsync().ConfigureAwait(false);
+                    if (!keepAlive)
+                    {
+                        await ctx.CloseAsync().ConfigureAwait(false);
+                    }
+                }
+            });
+
+        /// <summary>
+        /// Run the isotope provided with the browser context (environment aware)
+        /// </summary>
+        /// <param name="ctx">Browser context to use</param>
+        /// <param name="ma">Computation to run</param>
+        public static IsotopeAsync<Env, A> withContext<Env, A>(IBrowserContext ctx, IsotopeAsync<Env, A> ma) =>
+            withContext(ctx, ma, false);
+
+        /// <summary>
+        /// Run the isotope provided with the browser context (environment aware).
+        /// When <paramref name="keepAlive"/> is true the context is not closed after the isotope completes,
+        /// allowing the same context (and its session state) to be reused across multiple runs.
+        /// </summary>
+        /// <param name="ctx">Browser context to use</param>
+        /// <param name="ma">Computation to run</param>
+        /// <param name="keepAlive">When true, the context is not closed after the isotope completes</param>
+        public static IsotopeAsync<Env, A> withContext<Env, A>(IBrowserContext ctx, IsotopeAsync<Env, A> ma, bool keepAlive) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var prevCtx = state.BrowserContext;
+                var newState = state.With(BrowserContext: Some(ctx));
+                try
+                {
+                    var result = await ma.Invoke(env, newState).ConfigureAwait(false);
+                    return new IsotopeState<A>(result.Value, result.State.With(BrowserContext: prevCtx));
+                }
+                finally
+                {
+                    if (!keepAlive)
+                    {
+                        await ctx.CloseAsync().ConfigureAwait(false);
+                    }
                 }
             });
 
