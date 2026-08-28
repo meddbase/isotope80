@@ -814,7 +814,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                rstate.State.RestoreScopeFrom(nstate));
                         }
 
                         nstate      = rstate.State;
@@ -856,7 +856,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                rstate.State.RestoreScopeFrom(nstate));
                         }
 
                         nstate      = rstate.State;
@@ -898,7 +898,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                rstate.State.RestoreScopeFrom(nstate));
                         }
 
                         nstate      = rstate.State;
@@ -940,7 +940,7 @@ namespace Isotope80
                         {
                             return new IsotopeState<Seq<A>>(
                                 vals.ToSeq(),
-                                nstate.With(Error: rstate.State.Error, Log: rstate.State.Log));
+                                rstate.State.RestoreScopeFrom(nstate));
                         }
 
                         nstate      = rstate.State;
