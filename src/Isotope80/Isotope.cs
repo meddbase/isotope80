@@ -812,6 +812,30 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Navigate to a URL, allowing the page load to take longer (or shorter) than the driver's current page-load timeout.
+        /// The driver's page-load timeout is restored once the navigation has finished.
+        /// </summary>
+        /// <param name="url">URL to navigate to</param>
+        /// <param name="timeout">Maximum time to wait for the page to load</param>
+        public static Isotope<Unit> nav(string url, TimeSpan timeout) =>
+            from d in webDriver
+            from _ in trya(() =>
+            {
+                var timeouts = d.Manage().Timeouts();
+                var previous = timeouts.PageLoad;
+                timeouts.PageLoad = timeout;
+                try
+                {
+                    d.Navigate().GoToUrl(url);
+                }
+                finally
+                {
+                    timeouts.PageLoad = previous;
+                }
+            }, $"Failed to navigate to: {url} within {timeout.TotalMilliseconds}ms")
+            select unit;
+
+        /// <summary>
         /// Gets the URL currently displayed by the browser
         /// </summary>
         public static Isotope<string> url =>
