@@ -164,6 +164,20 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Navigate to a URL, allowing the navigation to take longer than the page's default timeout
+        /// </summary>
+        /// <param name="url">URL to navigate to</param>
+        /// <param name="timeout">Maximum time to wait for the navigation to complete</param>
+        public static IsotopeAsync<Unit> nav(string url, TimeSpan timeout) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.GotoAsync(url, new PageGotoOptions { Timeout = (float)timeout.TotalMilliseconds }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Gets the URL currently displayed by the browser
         /// </summary>
         public static IsotopeAsync<string> url =>
