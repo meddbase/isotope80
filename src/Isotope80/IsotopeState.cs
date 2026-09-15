@@ -97,6 +97,14 @@ namespace Isotope80
             Mute          = mute;
         }
 
+        /// <summary>
+        /// Keeps this (failed) state's live browser handles while restoring the logical scoping
+        /// from the original state. A failed computation never unwinds its context scope,
+        /// but its browser side effects (e.g. an opened tab) are real and must not be rolled back.
+        /// </summary>
+        internal IsotopeState RestoreScopeFrom(IsotopeState original) =>
+            With(Context: original.Context, Mute: original.Mute);
+
         internal IsotopeState AddError(Error err) =>
             With(Error: Error.Add(err));
 
