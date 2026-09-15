@@ -80,23 +80,4 @@ public class NavigationTimeoutTests
         var ex = await Assert.ThrowsAnyAsync<Exception>(() => withChromium(test).RunAndThrowOnError(settings).AsTask());
         Assert.Contains("Timeout 1000ms exceeded", ex.Message);
     }
-
-    [Fact]
-    public async Task Nav_with_goto_options_honours_wait_until_and_timeout()
-    {
-        var options = new PageGotoOptions
-                      {
-                          Timeout = (float)TimeSpan.FromSeconds(10).TotalMilliseconds,
-                          WaitUntil = WaitUntilState.DOMContentLoaded
-                      };
-
-        var test =
-            from _1 in slowRoute(TimeSpan.FromMilliseconds(200))
-            from _2 in nav(SlowUrl, options)
-            from heading in text(css("#slow"))
-            from _3 in assert(heading == "slow page", $"Expected heading 'slow page', got '{heading}'")
-            select unit;
-
-        await withChromium(test).RunAndThrowOnError();
-    }
 }

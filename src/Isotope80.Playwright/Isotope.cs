@@ -169,18 +169,10 @@ namespace Isotope80
         /// <param name="url">URL to navigate to</param>
         /// <param name="timeout">Maximum time to wait for the navigation to complete</param>
         public static IsotopeAsync<Unit> nav(string url, TimeSpan timeout) =>
-            nav(url, new PageGotoOptions { Timeout = (float)timeout.TotalMilliseconds });
-
-        /// <summary>
-        /// Navigate to a URL with full control over Playwright's navigation options (timeout, wait-until state, referer)
-        /// </summary>
-        /// <param name="url">URL to navigate to</param>
-        /// <param name="options">Playwright navigation options</param>
-        public static IsotopeAsync<Unit> nav(string url, PageGotoOptions options) =>
             from p in page
             from _ in isoAsync<Unit>(async () =>
             {
-                await p.GotoAsync(url, options).ConfigureAwait(false);
+                await p.GotoAsync(url, new PageGotoOptions { Timeout = (float)timeout.TotalMilliseconds }).ConfigureAwait(false);
                 return unit;
             })
             select unit;
