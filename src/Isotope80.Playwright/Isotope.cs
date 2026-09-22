@@ -277,6 +277,14 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// The description attached to a selector by <see cref="Select.Describe"/>, as Playwright sees it
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        public static IsotopeAsync<Option<string>> description(Select selector) =>
+            from loc in selector.ToIsotopeLocator()
+            select Optional(loc.Description);
+
+        /// <summary>
         /// Simulates keyboard by sending keys one at a time
         /// </summary>
         /// <param name="selector">Web element selector</param>
@@ -456,6 +464,39 @@ namespace Isotope80
                 return unit;
             })
             select unit;
+
+        /// <summary>
+        /// Drop a payload onto an element, simulating a drag from outside the browser
+        /// </summary>
+        static IsotopeAsync<Unit> drop(Select selector, DropPayload payload) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.DropAsync(payload).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Drops a file onto an element, simulating a drag from the desktop
+        /// </summary>
+        /// <remarks>
+        /// The drag-and-drop path onto a drop zone, which <see cref="setInputFiles(Select, FileInfo)"/>
+        /// does not exercise - that sets the file input directly, as the browse dialog would.
+        /// Use <see cref="dragTo(Select, Select)"/> to drag between two elements already on the page.
+        /// </remarks>
+        /// <param name="selector">Element to drop onto</param>
+        /// <param name="file">File to drop</param>
+        public static IsotopeAsync<Unit> dropFile(Select selector, FileInfo file) =>
+            drop(selector, new DropPayload { FilePaths = new[] { file.FullName } });
+
+        /// <summary>
+        /// Drops files onto an element, simulating a drag from the desktop
+        /// </summary>
+        /// <param name="selector">Element to drop onto</param>
+        /// <param name="files">Files to drop</param>
+        public static IsotopeAsync<Unit> dropFiles(Select selector, IEnumerable<FileInfo> files) =>
+            drop(selector, new DropPayload { FilePaths = files.Map(f => f.FullName).ToArray() });
 
         /// <summary>
         /// Moves the mouse to hover over an element
@@ -1302,6 +1343,39 @@ namespace Isotope80
                 return new IsotopeState<A>(result.Value, result.State.With(FrameScope: state.FrameScope));
             });
 
+        /// <summary>
+        /// Run a computation scoped to an iframe (environment aware). All element operations within
+        /// <paramref name="ma"/> are rooted in the frame matched by <paramref name="frameSelector"/>
+        /// rather than the page. Nesting <c>inFrame</c> calls targets nested iframes.
+        /// </summary>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Bound value type</typeparam>
+        /// <param name="frameSelector">Selector for the iframe element (e.g. <c>css("#my-iframe")</c>)</param>
+        /// <param name="ma">Computation to run within the frame scope</param>
+        /// <returns>Result of the inner computation</returns>
+        public static IsotopeAsync<Env, A> inFrame<Env, A>(Select frameSelector, IsotopeAsync<Env, A> ma) =>
+            new IsotopeAsync<Env, A>(async (env, state) =>
+            {
+                var pageOpt = state.Page;
+                if (pageOpt.IsNone)
+                    return new IsotopeState<A>(default, state.AddError(Error.New("No page available for frame selection")));
+
+                var p = pageOpt.IfNone(() => throw new InvalidOperationException());
+                var sel = frameSelector.PrimarySelector;
+
+                // Build the frame locator from the current root
+                var frame = state.FrameScope.IsEmpty
+                    ? p.FrameLocator(sel)
+                    : state.FrameScope.Peek().FrameLocator(sel);
+
+                // Push frame onto scope stack and run the inner computation
+                var scopedState = state.With(FrameScope: state.FrameScope.Push(frame));
+                var result = await ma.Invoke(env, scopedState).ConfigureAwait(false);
+
+                // Restore original frame scope
+                return new IsotopeState<A>(result.Value, result.State.With(FrameScope: state.FrameScope));
+            });
+
 
         /// <summary>
         /// Gets all cookies from the current browser context
@@ -1402,6 +1476,7 @@ namespace Isotope80
                        ? Some(new BrowserScreenshot(data))
                        : Option<BrowserScreenshot>.None;
 
+
         /// <summary>
         /// Takes a screenshot of the current page and saves it to a file
         /// </summary>
@@ -1411,6 +1486,29 @@ namespace Isotope80
             from _ in isoAsync<Unit>(async () =>
             {
                 await p.ScreenshotAsync(new PageScreenshotOptions { Path = path }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Takes a screenshot of the current page and saves it to a file at the given quality
+        /// </summary>
+        /// <remarks>
+        /// The image format comes from the file extension. Use ".jpeg" for a far smaller file
+        /// than ".png"; quality then applies and is ignored for PNG. Playwright maps only those
+        /// two extensions, so ".webp" is rejected.
+        /// </remarks>
+        /// <param name="path">File path to save the screenshot</param>
+        /// <param name="quality">Image quality, 0-100</param>
+        public static IsotopeAsync<Unit> saveScreenshot(string path, int quality) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.ScreenshotAsync(new PageScreenshotOptions
+                {
+                    Path    = path,
+                    Quality = quality
+                }).ConfigureAwait(false);
                 return unit;
             })
             select unit;
@@ -1429,6 +1527,29 @@ namespace Isotope80
             })
             select unit;
 
+        /// <summary>
+        /// Takes a screenshot of a specific element and saves it to a file at the given quality
+        /// </summary>
+        /// <remarks>
+        /// The image format comes from the file extension. Use ".jpeg" for a far smaller file
+        /// than ".png"; quality then applies and is ignored for PNG. Playwright maps only those
+        /// two extensions, so ".webp" is rejected.
+        /// </remarks>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="path">File path to save the screenshot</param>
+        /// <param name="quality">Image quality, 0-100</param>
+        public static IsotopeAsync<Unit> saveElementScreenshot(Select selector, string path, int quality) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.ScreenshotAsync(new LocatorScreenshotOptions
+                {
+                    Path    = path,
+                    Quality = quality
+                }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
 
         /// <summary>
         /// Waits until an element is visible and enabled (clickable).
@@ -1480,7 +1601,37 @@ namespace Isotope80
             })
             select unit;
 
+        /// <summary>
+        /// Wait until a JavaScript function evaluated against the element returns a truthy value
+        /// </summary>
+        /// <remarks>
+        /// The expression receives the element as its argument, e.g. "el =&gt; el.children.length === 0".
+        /// The wait happens in the browser, so it costs one round-trip rather than one per poll.
+        /// </remarks>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="expression">JavaScript function to evaluate against the element</param>
+        public static IsotopeAsync<Unit> waitForFunction(Select selector, string expression) =>
+            waitForFunction(selector, expression, default);
 
+        /// <summary>
+        /// Wait until a JavaScript function evaluated against the element returns a truthy value
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="expression">JavaScript function to evaluate against the element</param>
+        /// <param name="timeout">How long to wait before failing; falls back to IsotopeSettings.Wait</param>
+        public static IsotopeAsync<Unit> waitForFunction(Select selector, string expression, Option<TimeSpan> timeout) =>
+            from loc in selector.ToIsotopeLocator()
+            from t in timeout.Match(Some: pure, None: defaultWait)
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.WaitForFunctionAsync(
+                    expression,
+                    null,
+                    new LocatorWaitForFunctionOptions { Timeout = (float)t.TotalMilliseconds })
+                    .ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
         /// <summary>
         /// Compares the text of an element with a string
         /// </summary>
@@ -2241,7 +2392,8 @@ namespace Isotope80
         /// <param name="name">Name of the trace</param>
         /// <param name="screenshots">Whether to capture screenshots during tracing</param>
         /// <param name="snapshots">Whether to capture DOM snapshots during tracing</param>
-        public static IsotopeAsync<Unit> startTrace(string name, bool screenshots = true, bool snapshots = true) =>
+        /// <param name="live">Whether the trace can be opened in the trace viewer whilst it is still recording</param>
+        public static IsotopeAsync<Unit> startTrace(string name, bool screenshots = true, bool snapshots = true, bool live = false) =>
             from ctx in browserContext
             from _ in isoAsync<Unit>(async () =>
             {
@@ -2249,7 +2401,8 @@ namespace Isotope80
                 {
                     Name = name,
                     Screenshots = screenshots,
-                    Snapshots = snapshots
+                    Snapshots = snapshots,
+                    Live = live
                 }).ConfigureAwait(false);
                 return unit;
             })
@@ -2332,6 +2485,157 @@ namespace Isotope80
             });
 
         /// <summary>
+        /// Start recording the browser context's network traffic to a HAR file
+        /// </summary>
+        /// <remarks>
+        /// Records only traffic that flows through the browser. Requests made outside it - by an
+        /// HttpClient in the test process, for example - do not appear.
+        /// </remarks>
+        /// <param name="path">Path to write the HAR file to</param>
+        public static IsotopeAsync<Unit> startHar(string path) =>
+            startHar(path, "**/*");
+
+        /// <summary>
+        /// Start recording the browser context's network traffic to a HAR file
+        /// </summary>
+        /// <param name="path">Path to write the HAR file to</param>
+        /// <param name="urlFilter">Glob pattern limiting which requests are recorded</param>
+        public static IsotopeAsync<Unit> startHar(string path, string urlFilter) =>
+            from ctx in browserContext
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await ctx.Tracing.StartHarAsync(path, new TracingStartHarOptions { UrlFilter = urlFilter })
+                    .ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Stop HAR recording and flush the file to disk
+        /// </summary>
+        public static IsotopeAsync<Unit> stopHar =>
+            from ctx in browserContext
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await ctx.Tracing.StopHarAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Run a computation whilst recording the browser's network traffic to a HAR file
+        /// </summary>
+        /// <typeparam name="A">Result type</typeparam>
+        /// <param name="path">Path to write the HAR file to</param>
+        /// <param name="ma">Computation to record</param>
+        /// <returns>The result of the computation</returns>
+        public static IsotopeAsync<A> withHar<A>(string path, IsotopeAsync<A> ma) =>
+            from _1 in startHar(path)
+            from r in ma
+            from _2 in stopHar
+            select r;
+
+        /// <summary>
+        /// Run a computation whilst recording the browser's network traffic to a HAR file
+        /// (environment aware)
+        /// </summary>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Result type</typeparam>
+        /// <param name="path">Path to write the HAR file to</param>
+        /// <param name="ma">Computation to record</param>
+        /// <returns>The result of the computation</returns>
+        public static IsotopeAsync<Env, A> withHar<Env, A>(string path, IsotopeAsync<Env, A> ma) =>
+            from _1 in startHar(path)
+            from r in ma
+            from _2 in stopHar
+            select r;
+
+        /// <summary>
+        /// Start recording a screencast of the page to a video file
+        /// </summary>
+        /// <remarks>
+        /// Recording is started and stopped by the test, and writes to the path given - unlike the
+        /// context's RecordVideoDir option, which runs for the whole context lifetime and names the
+        /// file itself. If video recording is already active on the context, its configuration
+        /// takes precedence.
+        /// </remarks>
+        /// <param name="path">Path to write the video to</param>
+        public static IsotopeAsync<Unit> startScreencast(string path) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.Screencast.StartAsync(new ScreencastStartOptions { Path = path }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Start recording a screencast of the page to a video file
+        /// </summary>
+        /// <param name="path">Path to write the video to</param>
+        /// <param name="quality">Quality of each frame, 0-100</param>
+        /// <param name="width">Frame width. Frames are scaled to preserve the page's aspect ratio.</param>
+        /// <param name="height">Frame height. Frames are scaled to preserve the page's aspect ratio.</param>
+        public static IsotopeAsync<Unit> startScreencast(
+            string path,
+            Option<int> quality,
+            Option<int> width = default,
+            Option<int> height = default) =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.Screencast.StartAsync(new ScreencastStartOptions
+                {
+                    Path    = path,
+                    Quality = quality.IsSome ? (int?)quality.IfNone(80) : null,
+                    Size    = width.IsSome && height.IsSome
+                                  ? new ScreencastSize { Width = width.IfNone(0), Height = height.IfNone(0) }
+                                  : null
+                }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Stop the screencast recording and finalise the video file
+        /// </summary>
+        public static IsotopeAsync<Unit> stopScreencast =>
+            from p in page
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await p.Screencast.StopAsync().ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
+        /// Run a computation whilst recording a screencast of the page
+        /// </summary>
+        /// <typeparam name="A">Result type</typeparam>
+        /// <param name="path">Path to write the video to</param>
+        /// <param name="ma">Computation to record</param>
+        /// <returns>The result of the computation</returns>
+        public static IsotopeAsync<A> withScreencast<A>(string path, IsotopeAsync<A> ma) =>
+            from _1 in startScreencast(path)
+            from r in ma
+            from _2 in stopScreencast
+            select r;
+
+        /// <summary>
+        /// Run a computation whilst recording a screencast of the page (environment aware)
+        /// </summary>
+        /// <typeparam name="Env">Environment type</typeparam>
+        /// <typeparam name="A">Result type</typeparam>
+        /// <param name="path">Path to write the video to</param>
+        /// <param name="ma">Computation to record</param>
+        /// <returns>The result of the computation</returns>
+        public static IsotopeAsync<Env, A> withScreencast<Env, A>(string path, IsotopeAsync<Env, A> ma) =>
+            from _1 in startScreencast(path)
+            from r in ma
+            from _2 in stopScreencast
+            select r;
+
+        /// <summary>
         /// Run a computation in a new, isolated browser context.
         /// Creates a fresh context with separate cookies, storage, etc.
         /// The context and its page are closed after the computation completes.
@@ -2397,6 +2701,40 @@ namespace Isotope80
                     await ctx.CloseAsync().ConfigureAwait(false);
                 }
             });
+
+        /// <summary>
+        /// All console messages the page has recorded so far.
+        /// </summary>
+        /// <remarks>
+        /// Unlike <see cref="withConsoleCapture{A}"/> this needs no handler registered up-front, so it
+        /// can be called after the fact - when a test has already failed, for example.
+        /// The timestamps come from the browser, but Playwright surfaces them as a 32-bit float of
+        /// milliseconds-since-epoch, so they are only accurate to within a few minutes. Use
+        /// <see cref="withConsoleCapture{A}"/> when the ordering of messages in real time matters.
+        /// </remarks>
+        public static IsotopeAsync<Seq<BrowserLogEntry>> consoleMessages =>
+            from p in page
+            from ms in isoAsync<Seq<BrowserLogEntry>>(async () =>
+            {
+                var raw = await p.ConsoleMessagesAsync().ConfigureAwait(false);
+                return raw.ToSeq().Map(m => new BrowserLogEntry(
+                    m.Text,
+                    m.Type,
+                    DateTimeOffset.FromUnixTimeMilliseconds((long)m.Timestamp).UtcDateTime));
+            })
+            select ms;
+
+        /// <summary>
+        /// Uncaught exceptions the page has recorded so far
+        /// </summary>
+        public static IsotopeAsync<Seq<string>> pageErrors =>
+            from p in page
+            from es in isoAsync<Seq<string>>(async () =>
+            {
+                var raw = await p.PageErrorsAsync().ConfigureAwait(false);
+                return raw.ToSeq();
+            })
+            select es;
 
         /// <summary>
         /// Run a computation while capturing browser console messages.

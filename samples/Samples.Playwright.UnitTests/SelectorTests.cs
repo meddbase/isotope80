@@ -87,4 +87,57 @@ public class SelectorTests
 
         await withChromium(test).RunAndThrowOnError();
     }
+
+    [Fact]
+    public void Describe_appears_in_the_select_description()
+    {
+        var described = css("#username").Describe("the username box");
+
+        Assert.Contains("describe: 'the username box'", described.ToString());
+        Assert.Contains("css: #username", described.ToString());
+    }
+
+    [Fact]
+    public void Describe_composes_after_a_wait_step()
+    {
+        // the shape a page object builds: xPath(...).WaitUntilExists.Describe(...)
+        var described = xPath("//div[@id='x']").WaitUntilExists.Describe("Monday 09:00 slot");
+
+        Assert.Contains("describe: 'Monday 09:00 slot'", described.ToString());
+    }
+
+    [Fact]
+    public async Task Describe_does_not_change_what_is_matched()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/login")
+            from plain in elementCount(css("#username"))
+            from described in elementCount(css("#username").Describe("the username box"))
+            from _2 in assert(plain == described, $"Expected describe not to change matching: {plain} vs {described}")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task Description_reads_back_the_label()
+    {
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/login")
+            from d in description(css("#username").Describe("the username box"))
+            from _2 in assert(d == Some("the username box"), $"Expected the label back, got '{d}'")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
+    public async Task Describe_alone_fails_because_it_queries_nothing()
+    {
+        var test = elementCount(Select.describe("orphan"));
+
+        var (state, _) = await withChromium(test).Run();
+
+        Assert.True(state.IsFaulted, "Expected a select that only describes to fail");
+    }
 }
