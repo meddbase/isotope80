@@ -231,6 +231,18 @@ namespace Isotope80
 
 
         /// <summary>
+        /// Attaches a human-readable description to the select
+        /// </summary>
+        /// <remarks>
+        /// The description is what Playwright reports for the element in its own error messages and
+        /// in the trace viewer, in place of the raw selector. It has no effect on what is matched.
+        /// </remarks>
+        /// <param name="description">Description to attach</param>
+        /// <returns>Select</returns>
+        public static Select describe(string description) =>
+            new Select(Seq1<SelectStep>(new DescribeStep(description)));
+
+        /// <summary>
         /// Select must have at least one element
         /// </summary>
         /// <returns>Select</returns>
@@ -517,6 +529,18 @@ namespace Isotope80
         public Select WaitUntilNotExistsFor(Option<TimeSpan> interval = default, Option<TimeSpan> wait = default) =>
             this + waitUntilNotExistsFor(interval, wait);
 
+        /// <summary>
+        /// Attaches a human-readable description to the select
+        /// </summary>
+        /// <remarks>
+        /// The description is what Playwright reports for the element in its own error messages and
+        /// in the trace viewer, in place of the raw selector. It has no effect on what is matched.
+        /// </remarks>
+        /// <param name="description">Description to attach</param>
+        /// <returns>Select</returns>
+        public Select Describe(string description) =>
+            this + describe(description);
+
 
         /// <summary>
         /// Maps the select to a runnable IsotopeAsync computation that returns a Playwright ILocator.
@@ -568,6 +592,14 @@ namespace Isotope80
                          from r in a.Match(
                              None: () => fail<Option<ILocator>>("index selection must follow something that queries elements.  It can't run alone"),
                              Some: locator => pure(Some(locator.Nth(ix.Index))))
+                         select r;
+                }
+                else if (step is DescribeStep desc)
+                {
+                    ma = from a in ma
+                         from r in a.Match(
+                             None: () => fail<Option<ILocator>>("`describe` must follow something that queries elements.  It can't run alone"),
+                             Some: locator => pure(Some(locator.Describe(desc.Description))))
                          select r;
                 }
             }
@@ -722,6 +754,25 @@ namespace Isotope80
         }
 
         public override string Show() => Description;
+    }
+
+    /// <summary>
+    /// Describe step - attaches a description to the locator for Playwright's own reporting
+    /// </summary>
+    internal sealed class DescribeStep : SelectStep
+    {
+        /// <summary>
+        /// Description reported by Playwright in place of the selector
+        /// </summary>
+        public readonly string Description;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        public DescribeStep(string description) =>
+            Description = description;
+
+        public override string Show() => $"describe: '{Description}'";
     }
 
     /// <summary>
