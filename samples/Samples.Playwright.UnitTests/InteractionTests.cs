@@ -38,6 +38,25 @@ public class InteractionTests
     }
 
     [Fact]
+    public async Task SendKeys_with_delay_waits_between_keystrokes()
+    {
+        var keys = "hello";
+        var delay = 100;
+
+        var test =
+            from _1 in nav("https://the-internet.herokuapp.com/login")
+            let start = DateTime.UtcNow
+            from _2 in sendKeys(css("#username"), keys, delay)
+            let elapsed = DateTime.UtcNow - start
+            from v in value(css("#username"))
+            from _3 in assert(v == keys, $"Expected '{keys}' after sendKeys with delay, got '{v}'")
+            from _4 in assert(elapsed.TotalMilliseconds >= (keys.Length - 1) * delay, $"Expected at least {(keys.Length - 1) * delay}ms between keystrokes, took {elapsed.TotalMilliseconds}ms")
+            select unit;
+
+        await withChromium(test).RunAndThrowOnError();
+    }
+
+    [Fact]
     public async Task DoubleClick_triggers_event()
     {
         var dataUrl = "data:text/html,<p id='target' ondblclick=\"this.textContent='double-clicked'\">click me</p>";

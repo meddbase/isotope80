@@ -299,6 +299,21 @@ namespace Isotope80
             select unit;
 
         /// <summary>
+        /// Simulates keyboard by sending keys one at a time, waiting between keystrokes
+        /// </summary>
+        /// <param name="selector">Web element selector</param>
+        /// <param name="keys">String of characters that are typed</param>
+        /// <param name="delay">Milliseconds to wait between keystrokes</param>
+        public static IsotopeAsync<Unit> sendKeys(Select selector, string keys, int delay) =>
+            from loc in selector.ToIsotopeLocator()
+            from _ in isoAsync<Unit>(async () =>
+            {
+                await loc.PressSequentiallyAsync(keys, new LocatorPressSequentiallyOptions { Delay = delay }).ConfigureAwait(false);
+                return unit;
+            })
+            select unit;
+
+        /// <summary>
         /// Presses a single key or key combination on an element.
         /// Supports special keys: "Tab", "Enter", "End", "Home", "Escape", "Backspace", "Delete",
         /// "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", and modifiers like "Shift+Tab".
